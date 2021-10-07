@@ -1,3 +1,5 @@
+const AppError = require('../../utils/errors/AppError');
+
 const allowedOrigins = ['http://localhost:4200', 'http://localhost:4201'];
 
 exports.origin = function (origin, callback) {
