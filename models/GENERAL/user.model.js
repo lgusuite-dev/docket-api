@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const validator = require('validator');
+
+const { _createSessionToken } = require('../../utils/tokens');
+const { sendMail } = require('../../utils/comms/email');
 
 const UserSchema = new mongoose.Schema(
   {
@@ -28,7 +32,11 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      min: [8, 'Password length must be greater or equal 8 characters'],
+      select: false,
+      minlength: [
+        8,
+        'Password length must be greater or equal to 8 characters',
+      ],
       required: [true, 'Please provide password'],
     },
     passwordConfirm: {
@@ -65,4 +73,42 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('User', UserSchema);
+UserSchema.pre('save', async function (next) {
+  if (!this.isNew) return next();
+
+  if (this.type !== 'Superadmin') {
+    const user = await User.findOne({ email: this.email });
+
+    if (!user) {
+      const mailOptions = {
+        to: this.email,
+        subject: 'New Docket Account Created',
+        html: `<h1>Good day ${this.firstName}, this is your new docket account:</h1> <p>email: ${this.email}</p> <p>password:${this.password}</p>`,
+      };
+
+      await sendMail(mailOptions);
+    }
+  }
+
+  next();
+});
+
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+
+  this.password = await bcrypt.hash(this.password, 12);
+  this.passwordConfirm = undefined;
+
+  next();
+});
+
+UserSchema.methods.isPasswordCorrect = async (inputPassword, userPassword) =>
+  await bcrypt.compare(inputPassword, userPassword);
+
+UserSchema.methods.verifySession = function (sessionToken, token) {
+  return sessionToken === _createSessionToken(this, token);
+};
+
+const User = mongoose.model('User', UserSchema);
+
+module.exports = User;

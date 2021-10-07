@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const sgMail = require('@sendgrid/mail');
 
 // sync codes exception safety net
 process.on('uncaughtException', (err) => {
@@ -13,6 +14,8 @@ const app = require('./app');
 mongoose
   .connect(process.env.DATABASE)
   .then(() => console.log('Connected to DB'));
+
+sgMail.setApiKey(process.env.SEND_GRID_APIKEY);
 
 const server = app.listen(process.env.PORT, () =>
   console.log(`Server is running at port ${process.env.PORT}`)
