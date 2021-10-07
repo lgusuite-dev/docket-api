@@ -1,8 +1,4 @@
-const allowedOrigins = [
-  'http://localhost:4200',
-  'http://localhost:4201',
-  'http://localhost',
-];
+const allowedOrigins = ['http://localhost:4200', 'http://localhost:4201'];
 
 exports.origin = function (origin, callback) {
   if (!origin) return callback(null, true);
