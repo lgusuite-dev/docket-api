@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 
 const helmet = require('helmet');
 const xss = require('xss-clean');
@@ -10,8 +11,17 @@ const authRouter = require('./routes/GENERAL/auth.routes');
 const errorController = require('./controllers/GENERAL/error.controller');
 
 const AppError = require('./utils/errors/AppError');
+const { origin } = require('./utils/security');
 
 const app = express();
+
+app.use(
+  cors({
+    origin,
+    methods: ['POST', 'PATCH', 'DELETE', 'GET', 'OPTIONS', 'HEAD'],
+    credentials: true,
+  })
+);
 
 app.use(helmet());
 
