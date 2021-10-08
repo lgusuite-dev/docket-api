@@ -20,11 +20,13 @@ router
 router
   .route('/admins/:id')
   .get(userController.getUser)
+  .put(authController.restrictTo('Superadmin'), userController.updateUser)
   .delete(authController.restrictTo('Superadmin'), userController.deleteUser);
 
 router
   .route('/users/:id')
   .get(userController.getUser)
+  .put(authController.restrictTo('Admin'), userController.updateUser)
   .delete(authController.restrictTo('Admin'), userController.deleteUser);
 
 router
