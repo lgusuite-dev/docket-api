@@ -16,7 +16,7 @@ exports._createSessionToken = (user, token) => {
   return crypto.createHash('sha256').update(csrf_token).digest('hex');
 };
 
-exports._generateRandomPassword = (length) => {
+exports._generateRandomPassword = (length = 8) => {
   if (process.env.NODE_ENV === 'development') return '123qweasdzxc';
 
   // generate random password
