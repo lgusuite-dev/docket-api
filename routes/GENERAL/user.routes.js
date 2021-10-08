@@ -9,8 +9,8 @@ router.use(authController.authenticate);
 
 router
   .route('/admins')
-  .get(authController.restrictTo('Superadmin'), userController.getAllAdmins)
-  .post(authController.restrictTo('Superadmin'), userController.createAdmin);
+  .get(authController.restrictTo('Superadmin'), userController.getAllUsers)
+  .post(authController.restrictTo('Superadmin'), userController.createUser);
 
 router
   .route('/users')
@@ -19,13 +19,13 @@ router
 
 router
   .route('/admins/:id')
-  .get(userController.getAdmin)
-  .delete(userController.deleteAdmin);
+  .get(userController.getUser)
+  .delete(authController.restrictTo('Superadmin'), userController.deleteUser);
 
 router
   .route('/users/:id')
   .get(userController.getUser)
-  .delete(userController.deleteUser);
+  .delete(authController.restrictTo('Admin'), userController.deleteUser);
 
 router
   .route('/admins/:id/suspend')
