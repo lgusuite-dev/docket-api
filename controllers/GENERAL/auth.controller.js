@@ -67,7 +67,10 @@ exports.authenticate = catchAsync(async (req, res, next) => {
 
   const user = await User.findById(verifiedToken.id);
 
-  if (!user) return next(new AppError('User no longer exist', 404));
+  if (!user)
+    return next(
+      new AppError('User no longer exist. Please login to continue', 404)
+    );
 
   if (!user.verifySession(sessionToken, token))
     return next(new AppError('Invalid session', 401));
