@@ -175,6 +175,31 @@ exports.getUser = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updateUser = catchAsync(async (req, res, next) => {
+  const endpoint = req.originalUrl;
+  const validTypes = ['admins', 'users'];
+  const pickFields = ['firstName', 'lastName', 'middleName', 'mobileNumber'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
+  const initialQuery = generateGetOneUserQuery(type, req);
+
+  if (!validTypes.includes(type))
+    return next(new AppError('Invalid type params', 400));
+
+  const updatedUser = await User.findOneAndUpdate(initialQuery, filteredBody, {
+    new: true,
+  });
+
+  if (!updatedUser) return next(new AppError('User not found', 404));
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      user: updatedUser,
+    },
+  });
+});
+
 exports.deleteUser = catchAsync(async (req, res, next) => {
   const endpoint = req.originalUrl;
   const validTypes = ['admins', 'users'];
