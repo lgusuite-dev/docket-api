@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+require('dotenv').config();
 
 const User = require('../../../models/GENERAL/user.model');
 
-const createID = new mongoose.Types.ObjectId();
+const createID = () => new mongoose.Types.ObjectId();
 const mongoServer = new MongoMemoryServer();
 
 const defaultUserInfo = {
@@ -19,25 +20,27 @@ const defaultUserInfo = {
   _tenantId: '615d80fbbc0375a4178188a4',
 };
 
-exports.connect = () => {
-  const mongoURI = await mongoServer.getUri();
+exports.connect = async () => {
+  await mongoServer.start();
+  const mongoURI = mongoServer.getUri();
   await mongoose.connect(mongoURI);
 };
 
-exports.disconnect = () => {
+exports.disconnect = async () => {
   await mongoose.disconnect();
+  await mongoServer.stop();
 };
 
-exports.createSuperAdmin = () => {
+exports.createSuperAdmin = async () => {
   const superadmin = { ...defaultUserInfo };
   superadmin.type = 'Superadmin';
 
   return await User.create(superadmin);
 };
 
-exports.createAdmin = () => {
+exports.createAdmin = async (superadmin) => {
   const admin = { ...defaultUserInfo };
-  const superadmin = this.createSuperAdmin();
+  // const superadmin = await this.createSuperAdmin();
   const _id = createID();
 
   admin._id = _id;
@@ -49,9 +52,8 @@ exports.createAdmin = () => {
   return await User.create(admin);
 };
 
-exports.createDeletedAdmin = () => {
+exports.createDeletedAdmin = async (superadmin) => {
   const admin = { ...defaultUserInfo };
-  const superadmin = this.createSuperAdmin();
   const _id = createID();
 
   admin._id = _id;
@@ -64,24 +66,23 @@ exports.createDeletedAdmin = () => {
   return await User.create(admin);
 };
 
-exports.createSuspendedAdmin = () => {
+exports.createSuspendedAdmin = async (superadmin) => {
   const admin = { ...defaultUserInfo };
-  const superadmin = this.createSuperAdmin();
   const _id = createID();
 
   admin._id = _id;
   admin.type = 'Admin';
-  admin.status = 'Deleted';
-  admin.email = 'joshua.adminasuspended@lgusuite.com';
+  admin.status = 'Suspended';
+  admin.email = 'joshua.adminsuspended@lgusuite.com';
   admin._createdBy = superadmin._id;
   admin._tenantId = _id;
 
   return await User.create(admin);
 };
 
-exports.createUser = () => {
+exports.createUser = async () => {
   const user = { ...defaultUserInfo };
-  const admin = this.createAdmin();
+  const admin = await this.createAdmin();
   const _id = createID();
 
   user._id = _id;
@@ -93,9 +94,9 @@ exports.createUser = () => {
   return await User.create(user);
 };
 
-exports.createDeletedUser = () => {
+exports.createDeletedUser = async () => {
   const user = { ...defaultUserInfo };
-  const admin = this.createAdmin();
+  const admin = await this.createAdmin();
   const _id = createID();
 
   user._id = _id;
@@ -106,4 +107,8 @@ exports.createDeletedUser = () => {
   user._tenantId = admin._id;
 
   return await User.create(user);
+};
+
+exports.deleteUsers = async () => {
+  return await User.deleteMany();
 };
