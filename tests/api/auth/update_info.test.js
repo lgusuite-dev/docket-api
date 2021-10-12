@@ -49,11 +49,6 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   });
 
   it('Should NOT update user info. NO AUTHORIZATION HEADER', async () => {
-    const newUserInfo = {
-      firstName: 'newfirst',
-      lastName: 'newlast',
-      mobileNumber: '09987654321',
-    };
     const updateRes = await callback(updateInfo, newUserInfo, '', sessionToken);
 
     expect(updateRes.status).to.equal(401);
@@ -62,11 +57,6 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   });
 
   it('Should NOT update user info. NO SESSION AUTH HEADER', async () => {
-    const newUserInfo = {
-      firstName: 'newfirst',
-      lastName: 'newlast',
-      mobileNumber: '09987654321',
-    };
     const updateRes = await callback(updateInfo, newUserInfo, token, '');
 
     expect(updateRes.status).to.equal(401);
@@ -75,11 +65,6 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   });
 
   it('Should NOT update user info. INVALID SESSION AUTH VALUE', async () => {
-    const newUserInfo = {
-      firstName: 'newfirst',
-      lastName: 'newlast',
-      mobileNumber: '09987654321',
-    };
     const updateRes = await callback(updateInfo, newUserInfo, token, 'x_val');
 
     expect(updateRes.status).to.equal(401);
@@ -90,11 +75,6 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   it('Should NOT update user info. DELETED USER', async () => {
     await deleteOneUser(superAdmin._id);
 
-    const newUserInfo = {
-      firstName: 'newfirst',
-      lastName: 'newlast',
-      mobileNumber: '09987654321',
-    };
     const updateRes = await callback(
       updateInfo,
       newUserInfo,
