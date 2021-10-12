@@ -1,7 +1,6 @@
 const supertest = require('supertest');
 const app = require('../../../app');
 const request = supertest(app);
-const User = require('../../../models/GENERAL/user.model');
 
 exports.login = async (data, type) =>
   request.post(`/api/v1/auth/login/${type}`).send(data);
