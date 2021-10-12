@@ -2,7 +2,7 @@ const supertest = require('supertest');
 const app = require('../../../app');
 const request = supertest(app);
 
-exports.login = async (data, type) =>
+exports.login = (data, type) =>
   request.post(`/api/v1/auth/login/${type}`).send(data);
 
 exports.updateInfo = (data, token = '', session_token = '') =>
