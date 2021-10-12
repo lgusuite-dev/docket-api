@@ -126,7 +126,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user._id).select('+password');
 
   if (!user || !(await user.isPasswordCorrect(currentPassword, user.password)))
-    return next(new AppError('Incorrect current password', 400));
+    return next(new AppError('Incorrect current password', 401));
 
   user.password = newPassword;
   user.passwordConfirm = confirmNewPassword;
@@ -134,4 +134,13 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   sendAuthResponse(user, 200, res);
+});
+
+exports.getMe = catchAsync(async (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    env: {
+      user: req.user,
+    },
+  });
 });
