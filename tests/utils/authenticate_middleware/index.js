@@ -1,54 +1,47 @@
 const { expect } = require('chai');
-const { login } = require('../response');
+const { login } = require('../response/index');
 const { callback } = require('../callbacks');
 const { deleteOneUser } = require('../db');
 
-exports.authenticateTest = (userCreds, userType, cb, ...params) => {
+exports.authenticateTest = async (userCreds, userType, cb, ...params) => {
   const userLogin = { email: userCreds.email, password: 'password123' };
-
-  const loginRes = login(userLogin, userType).then((res) => res);
+  const loginRes = await login(userLogin, userType);
   const token = loginRes.body.token;
   const sessionToken = loginRes.body.session_token;
+  const args = [...params, token, sessionToken];
 
-  return {
-    a: it('Should NOT update user info. NO AUTHORIZATION HEADER', async () => {
-      const args = [...params, token, sessionToken];
-      const response = await callback(cb, ...args);
+  it('Should NOT update user info. NO AUTHORIZATION HEADER', async () => {
+    const response = await callback(cb, ...args);
 
-      expect(response.status).to.equal(401);
-      expect(response.body.status).to.equal('fail');
-      expect(response.body.message).to.equal('Please login to continue');
-    }),
+    expect(response.status).to.equal(401);
+    expect(response.body.status).to.equal('fail');
+    expect(response.body.message).to.equal('Please login to continue');
+  });
 
-    b: it('Should NOT update user info. NO SESSION AUTH HEADER', async () => {
-      const args = [...params, token, sessionToken];
-      const response = await callback(cb, ...args);
+  it('Should NOT update user info. NO SESSION AUTH HEADER', async () => {
+    const response = await callback(cb, ...args);
 
-      expect(response.status).to.equal(401);
-      expect(response.body.status).to.equal('fail');
-      expect(response.body.message).to.equal('Please login to continue');
-    }),
+    expect(response.status).to.equal(401);
+    expect(response.body.status).to.equal('fail');
+    expect(response.body.message).to.equal('Please login to continue');
+  });
 
-    c: it('Should NOT update user info. INVALID SESSION AUTH VALUE', async () => {
-      const args = [...params, token, sessionToken];
-      const response = await callback(cb, ...args);
+  it('Should NOT update user info. INVALID SESSION AUTH VALUE', async () => {
+    const response = await callback(cb, ...args);
 
-      expect(response.status).to.equal(401);
-      expect(response.body.status).to.equal('fail');
-      expect(response.body.message).to.equal('Invalid session');
-    }),
+    expect(response.status).to.equal(401);
+    expect(response.body.status).to.equal('fail');
+    expect(response.body.message).to.equal('Invalid session');
+  });
 
-    d: it('Should NOT update user info. DELETED USER', async () => {
-      await deleteOneUser(userCreds._id);
+  it('Should NOT update user info. DELETED USER', async () => {
+    await deleteOneUser(userCreds._id);
+    const response = await callback(cb, ...args);
 
-      const args = [...params, token, sessionToken];
-      const response = await callback(cb, ...args);
-
-      expect(response.status).to.equal(404);
-      expect(response.body.status).to.equal('fail');
-      expect(response.body.message).to.equal(
-        'User no longer exist. Please login to continue'
-      );
-    }),
-  };
+    expect(response.status).to.equal(404);
+    expect(response.body.status).to.equal('fail');
+    expect(response.body.message).to.equal(
+      'User no longer exist. Please login to continue'
+    );
+  });
 };
