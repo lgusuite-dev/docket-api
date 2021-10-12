@@ -8,17 +8,13 @@ const {
 } = require('../../utils/db');
 const { login, updateInfo } = require('../../utils/response');
 const { callback } = require('../../utils/callbacks');
+const { newUserInfo } = require('../../constants/auth');
 require('dotenv').config();
 
 describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   let superAdmin;
   let token;
   let sessionToken;
-  const newUserInfo = {
-    firstName: 'newfirst',
-    lastName: 'newlast',
-    mobileNumber: '09987654321',
-  };
 
   before(async () => {
     await connect();

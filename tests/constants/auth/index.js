@@ -2,10 +2,12 @@ const superadminCreds = {
   email: 'joshua.corpin@lgusuite.com',
   password: 'password123',
 };
+
 const adminCreds = {
   email: 'joshua.admin@lgusuite.com',
   password: 'password123',
 };
+
 const userCreds = {
   email: 'joshua.user@lgusuite.com',
   password: 'password123',
@@ -25,3 +27,15 @@ exports.authData = [
     creds: userCreds,
   },
 ];
+
+exports.newUserInfo = {
+  firstName: 'newfirst',
+  lastName: 'newlast',
+  mobileNumber: '09987654321',
+};
+
+exports.userPassData = {
+  currentPassword: 'password123',
+  newPassword: '123password',
+  confirmNewPassword: '123password',
+};

@@ -9,16 +9,12 @@ const {
 const { login } = require('../../utils/response');
 const { updatePassword } = require('../../utils/response');
 const { callback } = require('../../utils/callbacks');
+const { userPassData } = require('../../constants/auth');
 
 describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
   let superAdmin;
   let token;
   let sessionToken;
-  const userPassData = {
-    currentPassword: 'password123',
-    newPassword: '123password',
-    confirmNewPassword: '123password',
-  };
 
   before(async () => {
     await connect();
