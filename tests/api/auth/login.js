@@ -1,5 +1,6 @@
 const sgMail = require('@sendgrid/mail');
 const { expect } = require('chai');
+require('dotenv').config();
 
 const {
   connect,
@@ -14,8 +15,6 @@ const {
 } = require('../../utils/db');
 const { login } = require('../../utils/response');
 const { authData } = require('../../constants/auth');
-
-require('dotenv').config();
 
 describe('AUTH API LOGIN ENDPOINT', () => {
   let superAdmin;
