@@ -73,7 +73,7 @@ exports.authenticate = catchAsync(async (req, res, next) => {
 
   const user = await User.findById(verifiedToken.id);
 
-  if (!user)
+  if (!user || user.status === 'Deleted')
     return next(
       new AppError('User no longer exist. Please login to continue', 404)
     );
