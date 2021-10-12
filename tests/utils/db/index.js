@@ -113,3 +113,7 @@ exports.createDeletedUser = async (superadmin) => {
 exports.deleteUsers = async () => {
   return await User.deleteMany();
 };
+
+exports.deleteOneUser = async (id) => {
+  return await User.findByIdAndUpdate(id, { status: 'Deleted' }, { new: true });
+};
