@@ -7,7 +7,7 @@
     "start": "node server.js",
     "start:dev": "set NODE_ENV=development&& nodemon server.js",
     "start:prod": "set NODE_ENV=production&& nodemon server.js",
-    "test": "set NODE_ENV=test&& mocha --recursive ./tests/api --timeout 30000 --exit"
+    "test": "set NODE_ENV=production&& mocha --recursive ./tests/api --timeout 100000 --exit"
   },
   "keywords": [],
   "author": "",
