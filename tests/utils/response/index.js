@@ -18,3 +18,10 @@ exports.updatePassword = (data, token = '', session_token = '') =>
     .send(data)
     .set('Authorization', `Bearer ${token}`)
     .set('s_auth', session_token);
+
+exports.createUserAPI = (data, type, token = '', session_token = '') =>
+  request
+    .post(`/api/v1/tenants/${type}`)
+    .send(data)
+    .set('Authorization', `Bearer ${token}`)
+    .set('s_auth', session_token);
