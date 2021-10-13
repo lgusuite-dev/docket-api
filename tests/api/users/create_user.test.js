@@ -29,7 +29,7 @@ describe('USER API CREATE ADMIN ENDPOINT', () => {
     admin = await createAdmin(superAdmin);
     const loginAdmin = { email: admin.email, password: 'password123' };
     const responseSuper = await login(loginSuper, 'super');
-    const responseAdmin = await login(loginAdmin, 'admin');
+    const responseAdmin = await login(loginAdmin, 'tenant');
 
     token = responseSuper.body.token;
     sessionToken = responseSuper.body.session_token;
@@ -118,7 +118,7 @@ describe('USER API CREATE ADMIN ENDPOINT', () => {
         const adminEmail = 'joshua.admin1@lgusuite.com';
         user = await createAdmin(superAdmin, adminEmail);
         const loginAdmin = { email: user.email, password: 'password123' };
-        loginResponse = await login(loginAdmin, 'admin');
+        loginResponse = await login(loginAdmin, 'tenant');
         token = loginResponse.body.token;
         sessionToken = loginResponse.body.session_token;
       } else {
@@ -188,139 +188,4 @@ describe('USER API CREATE ADMIN ENDPOINT', () => {
   for (let data of userCreds) {
     createUserUnitTest(data);
   }
-
-  // it(`Should NOT create admin. NO FIRST NAME`, async () => {
-  //   const newAdmin = { ...adminData };
-  //   newAdmin.firstName = undefined;
-
-  //   const response = await createUserAPI(
-  //     newAdmin,
-  //     'admins',
-  //     token,
-  //     sessionToken
-  //   );
-
-  //   expect(response.status).to.equal(400);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal('Please provide first name');
-  // });
-
-  // it(`Should NOT create admin. NO LAST NAME`, async () => {
-  //   const newAdmin = { ...adminData };
-  //   newAdmin.lastName = undefined;
-
-  //   const response = await createUserAPI(
-  //     newAdmin,
-  //     'admins',
-  //     token,
-  //     sessionToken
-  //   );
-
-  //   expect(response.status).to.equal(400);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal('Please provide last name');
-  // });
-
-  // it(`Should NOT create admin. NO EMAIL`, async () => {
-  //   const newAdmin = { ...adminData };
-  //   newAdmin.email = undefined;
-
-  //   const response = await createUserAPI(
-  //     newAdmin,
-  //     'admins',
-  //     token,
-  //     sessionToken
-  //   );
-
-  //   expect(response.status).to.equal(400);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal('Please provide email');
-  // });
-
-  // it(`Should NOT create admin. WRONG EMAIL FORMAT`, async () => {
-  //   const newAdmin = { ...adminData };
-  //   newAdmin.email = 'wrongemailformat.com';
-
-  //   const response = await createUserAPI(
-  //     newAdmin,
-  //     'admins',
-  //     token,
-  //     sessionToken
-  //   );
-
-  //   expect(response.status).to.equal(400);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal('Please provide valid email');
-  // });
-
-  // it(`Should NOT create admin. WRONG USER TYPE`, async () => {
-  //   const newAdmin = { ...adminData };
-  //   const admin = await createAdmin(superAdmin);
-  //   const loginCreds = { email: admin.email, password: 'password123' };
-  //   const loginRes = await login(loginCreds, 'admin');
-  //   const token = loginRes.body.token;
-  //   const sessionToken = loginRes.body.session_token;
-
-  //   const response = await createUserAPI(
-  //     newAdmin,
-  //     'admins',
-  //     token,
-  //     sessionToken
-  //   );
-
-  //   expect(response.status).to.equal(403);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal(
-  //     'You do not have permission to perform this action'
-  //   );
-  // });
-
-  // it(`Should NOT create user. NO AUTHORIZATION HEADER`, async () => {
-  //   const newAdmin = { ...adminData };
-
-  //   const response = await createUserAPI(newAdmin, 'admins', '', sessionToken);
-
-  //   expect(response.status).to.equal(401);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal('Please login to continue');
-  // });
-
-  // it(`Should NOT create user. NO SESSION AUTH HEADER`, async () => {
-  //   const newAdmin = { ...adminData };
-
-  //   const response = await createUserAPI(newAdmin, 'admins', token, '');
-
-  //   expect(response.status).to.equal(401);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal('Please login to continue');
-  // });
-
-  // it(`Should NOT create user. INVALID SESSION AUTH VALUE`, async () =>
-  //   const newAdmin = { ...adminData };
-
-  //   const response = await createUserAPI(newAdmin, 'admins', token, 'x_val');
-
-  //   expect(response.status).to.equal(401);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal('Invalid session');
-  // });
-
-  // it(`Should NOT create user. DELETED USER`, async () => {
-  //   const newAdmin = { ...adminData };
-
-  //   await deleteOneUser(superAdmin._id);
-
-  //   const response = await createUserAPI(
-  //     newAdmin,
-  //     'admins',
-  //     token,
-  //     sessionToken
-  //   );
-
-  //   expect(response.status).to.equal(404);
-  //   expect(response.body.status).to.equal('fail');
-  //   expect(response.body.message).to.equal(
-  //     'User no longer exist. Please login to continue'
-  //   );
-  // });
 });
