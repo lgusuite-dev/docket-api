@@ -9,6 +9,7 @@ const {
 const { login } = require('../../utils/response');
 const { updatePassword } = require('../../utils/response');
 const { userPassData } = require('../../constants/auth');
+require('dotenv').config();
 
 describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
   let superAdmin;
@@ -91,7 +92,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
     expect(response.body.message).to.equal("Password don't match");
   });
 
-  it('Should NOT update user info. NO AUTHORIZATION HEADER', async () => {
+  it('Should NOT update user password. NO AUTHORIZATION HEADER', async () => {
     const updateRes = await updatePassword(userPassData, '', sessionToken);
 
     expect(updateRes.status).to.equal(401);
@@ -99,7 +100,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
     expect(updateRes.body.message).to.equal('Please login to continue');
   });
 
-  it('Should NOT update user info. NO SESSION AUTH HEADER', async () => {
+  it('Should NOT update user password. NO SESSION AUTH HEADER', async () => {
     const updateRes = await updatePassword(userPassData, token, '');
 
     expect(updateRes.status).to.equal(401);
@@ -107,7 +108,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
     expect(updateRes.body.message).to.equal('Please login to continue');
   });
 
-  it('Should NOT update user info. INVALID SESSION AUTH VALUE', async () => {
+  it('Should NOT update user password. INVALID SESSION AUTH VALUE', async () => {
     const updateRes = await updatePassword(userPassData, token, 'x_val');
 
     expect(updateRes.status).to.equal(401);
@@ -115,7 +116,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
     expect(updateRes.body.message).to.equal('Invalid session');
   });
 
-  it('Should NOT update user info. DELETED USER', async () => {
+  it('Should NOT update user password. DELETED USER', async () => {
     await deleteOneUser(superAdmin._id);
 
     const updateRes = await updatePassword(userPassData, token, sessionToken);
