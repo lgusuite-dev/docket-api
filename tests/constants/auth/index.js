@@ -19,11 +19,11 @@ exports.authData = [
     creds: superadminCreds,
   },
   {
-    type: 'admin',
+    type: 'tenant',
     creds: adminCreds,
   },
   {
-    type: 'user',
+    type: 'tenant',
     creds: userCreds,
   },
 ];
