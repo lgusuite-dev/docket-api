@@ -1,1 +1,1 @@
-exports.callback = async (cb, ...params) => await cb.bind(this, ...params)();
+exports.callback = async (cb, ...cbArgs) => await cb.bind(this, ...cbArgs)();

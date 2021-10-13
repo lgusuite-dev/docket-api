@@ -7,7 +7,6 @@ const {
   deleteUsers,
 } = require('../../utils/db');
 const { login, updateInfo } = require('../../utils/response');
-const { callback } = require('../../utils/callbacks');
 const { newUserInfo } = require('../../constants/auth');
 require('dotenv').config();
 
@@ -45,7 +44,7 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   });
 
   it('Should NOT update user info. NO AUTHORIZATION HEADER', async () => {
-    const updateRes = await callback(updateInfo, newUserInfo, '', sessionToken);
+    const updateRes = await updateInfo(newUserInfo, '', sessionToken);
 
     expect(updateRes.status).to.equal(401);
     expect(updateRes.body.status).to.equal('fail');
@@ -53,7 +52,7 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   });
 
   it('Should NOT update user info. NO SESSION AUTH HEADER', async () => {
-    const updateRes = await callback(updateInfo, newUserInfo, token, '');
+    const updateRes = await updateInfo(newUserInfo, token, '');
 
     expect(updateRes.status).to.equal(401);
     expect(updateRes.body.status).to.equal('fail');
@@ -61,7 +60,7 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   });
 
   it('Should NOT update user info. INVALID SESSION AUTH VALUE', async () => {
-    const updateRes = await callback(updateInfo, newUserInfo, token, 'x_val');
+    const updateRes = await updateInfo(newUserInfo, token, 'x_val');
 
     expect(updateRes.status).to.equal(401);
     expect(updateRes.body.status).to.equal('fail');
@@ -71,12 +70,7 @@ describe('AUTH API UPDATE USER INFO ENDPOINT', async () => {
   it('Should NOT update user info. DELETED USER', async () => {
     await deleteOneUser(superAdmin._id);
 
-    const updateRes = await callback(
-      updateInfo,
-      newUserInfo,
-      token,
-      sessionToken
-    );
+    const updateRes = await updateInfo(newUserInfo, token, sessionToken);
 
     expect(updateRes.status).to.equal(404);
     expect(updateRes.body.status).to.equal('fail');

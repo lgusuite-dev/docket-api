@@ -8,7 +8,6 @@ const {
 } = require('../../utils/db');
 const { login } = require('../../utils/response');
 const { updatePassword } = require('../../utils/response');
-const { callback } = require('../../utils/callbacks');
 const { userPassData } = require('../../constants/auth');
 
 describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
@@ -93,12 +92,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
   });
 
   it('Should NOT update user info. NO AUTHORIZATION HEADER', async () => {
-    const updateRes = await callback(
-      updatePassword,
-      userPassData,
-      '',
-      sessionToken
-    );
+    const updateRes = await updatePassword(userPassData, '', sessionToken);
 
     expect(updateRes.status).to.equal(401);
     expect(updateRes.body.status).to.equal('fail');
@@ -106,7 +100,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
   });
 
   it('Should NOT update user info. NO SESSION AUTH HEADER', async () => {
-    const updateRes = await callback(updatePassword, userPassData, token, '');
+    const updateRes = await updatePassword(userPassData, token, '');
 
     expect(updateRes.status).to.equal(401);
     expect(updateRes.body.status).to.equal('fail');
@@ -114,12 +108,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
   });
 
   it('Should NOT update user info. INVALID SESSION AUTH VALUE', async () => {
-    const updateRes = await callback(
-      updatePassword,
-      userPassData,
-      token,
-      'x_val'
-    );
+    const updateRes = await updatePassword(userPassData, token, 'x_val');
 
     expect(updateRes.status).to.equal(401);
     expect(updateRes.body.status).to.equal('fail');
@@ -129,12 +118,7 @@ describe('AUTH API UPDATE USER PASSWORD ENDPOINT', () => {
   it('Should NOT update user info. DELETED USER', async () => {
     await deleteOneUser(superAdmin._id);
 
-    const updateRes = await callback(
-      updatePassword,
-      userPassData,
-      token,
-      sessionToken
-    );
+    const updateRes = await updatePassword(userPassData, token, sessionToken);
 
     expect(updateRes.status).to.equal(404);
     expect(updateRes.body.status).to.equal('fail');
