@@ -13,8 +13,11 @@ const {
 const generateLoginQuery = (type) => {
   if (type === 'super')
     return { type: 'Superadmin', status: { $ne: 'Deleted' } };
-  if (type === 'admin') return { type: 'Admin', status: { $ne: 'Deleted' } };
-  if (type === 'user') return { type: 'User', status: { $ne: 'Deleted' } };
+  if (type === 'tenant')
+    return {
+      $or: [{ type: 'User' }, { type: 'Admin' }],
+      status: { $ne: 'Deleted' },
+    };
 };
 
 const sendAuthResponse = (user, statusCode, res) => {
@@ -36,7 +39,7 @@ const sendAuthResponse = (user, statusCode, res) => {
 exports.login = catchAsync(async (req, res, next) => {
   const { type } = req.params;
   const { email, password } = req.body;
-  const validTypes = ['super', 'admin', 'user'];
+  const validTypes = ['super', 'tenant'];
 
   if (!email) return next(new AppError('Please provide email', 400));
   if (!password) return next(new AppError('Please provide password', 400));
