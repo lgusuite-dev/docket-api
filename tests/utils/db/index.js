@@ -31,8 +31,14 @@ exports.disconnect = async () => {
   await mongoServer.stop();
 };
 
-exports.createSuperAdmin = async () => {
+exports.createSuperAdmin = async (email = '') => {
+  const superID = createID();
+
   const superadmin = { ...defaultUserInfo };
+  superadmin._id = superID;
+  superadmin._tenantId = superID;
+  superadmin._createdBy = superID;
+  superadmin.email = !email ? 'joshua.corpin@lgusuite.com' : email;
   superadmin.type = 'Superadmin';
 
   return await User.create(superadmin);
