@@ -7,7 +7,7 @@ router.post('/login/:type', authController.login);
 router
   .route('/reset-password/:token')
   .get(authController.verifyResetPasswordToken)
-  .post(authController.resetPassword);
+  .put(authController.resetPassword);
 
 router.use(authController.authenticate);
 
