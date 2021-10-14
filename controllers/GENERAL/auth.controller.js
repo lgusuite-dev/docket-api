@@ -221,7 +221,12 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   await user.save();
 
-  sendAuthResponse(user, 200, res);
+  res.status(200).json({
+    status: 'success',
+    env: {
+      user,
+    },
+  });
 });
 
 exports.verifyResetPasswordToken = catchAsync(async (req, res, next) => {
