@@ -2,7 +2,12 @@ const router = require('express').Router();
 
 const authController = require('../../controllers/GENERAL/auth.controller');
 
+router.post('/forgot-password', authController.forgotPassword);
 router.post('/login/:type', authController.login);
+router
+  .route('/reset-password/:token')
+  .get(authController.verifyResetPasswordToken)
+  .post(authController.resetPassword);
 
 router.use(authController.authenticate);
 
