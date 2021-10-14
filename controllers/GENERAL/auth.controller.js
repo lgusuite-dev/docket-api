@@ -256,3 +256,11 @@ exports.getMe = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.logout = (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    token: '',
+    session_token: '',
+  });
+};
