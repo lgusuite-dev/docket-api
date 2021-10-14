@@ -22,13 +22,11 @@ const userData = {
 
 exports.userCreds = [
   {
-    key: 1,
     type: 'admins',
     label: 'admin',
     creds: adminData,
   },
   {
-    key: 2,
     type: 'users',
     label: 'user',
     creds: userData,

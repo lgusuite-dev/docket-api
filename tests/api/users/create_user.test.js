@@ -42,7 +42,7 @@ describe('USER API CREATE ADMIN ENDPOINT', () => {
     await disconnect();
   });
 
-  const createUserUnitTest = ({ creds, type, label, key }) => {
+  const createUserUnitTest = ({ creds, type, label }) => {
     it(`Should create ${label}`, async () => {
       const newAdmin = { ...creds };
       const s_auth = type === 'admins' ? token : adminToken;
