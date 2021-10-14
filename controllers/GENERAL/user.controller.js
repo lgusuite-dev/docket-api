@@ -213,28 +213,62 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 
   if (!user) return next(new AppError('User not found', 404));
 
+  if (type === 'admins') {
+    const query = {
+      type: 'User',
+      status: { $ne: 'Deleted' },
+      _tenantId: user._tenantId,
+    };
+    await User.updateMany(query, { status: 'Deleted' });
+  }
+
   res.status(204).json({
     status: 'success',
   });
 });
 
-exports.suspendAdmin = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
+exports.suspendActiveUser = catchAsync(async (req, res, next) => {
+  const { action } = req.params;
+  const endpoint = req.originalUrl;
+  const allowedActions = ['suspend', 'active'];
+  const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
+  const initialQuery = generateGetOneUserQuery(type, req);
 
-  const initialQuery = {
-    _id: id,
-    type: 'Admin',
-  };
+  if (!allowedActions.includes(action))
+    return next(new AppError('Invalid action params', 400));
 
   const user = await User.findOne(initialQuery);
 
   if (!user) return next(new AppError('User not found', 404));
 
-  if (user.status === 'Suspended')
+  if (user.status === 'Suspended' && action === 'suspend')
     return next(new AppError('This account is already suspended', 400));
 
-  user.status = 'Suspended';
+  if (user.status === 'Active' && action === 'active')
+    return next(new AppError('This account is already active', 400));
+
+  user.status = action === 'suspend' ? 'Suspended' : 'Active';
   await user.save({ validateBeforeSave: false });
+
+  if (type === 'admins') {
+    console.log('admin');
+    const query = {
+      type: 'User',
+      _tenantId: user._tenantId,
+      status: { $eq: 'Active' },
+    };
+
+    if (action === 'suspend') {
+      console.log('admin suspend');
+      await User.updateMany(query, { status: 'Suspended' });
+    } else {
+      console.log('admin active');
+      const activeQuery = { ...query };
+      activeQuery.status = { $eq: 'Suspended' };
+
+      await User.updateMany(activeQuery, { status: 'Active' });
+    }
+  }
 
   res.status(200).json({
     status: 'success',
