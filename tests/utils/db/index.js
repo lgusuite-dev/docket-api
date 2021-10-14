@@ -44,12 +44,13 @@ exports.createSuperAdmin = async (email = '') => {
   return await User.create(superadmin);
 };
 
-exports.createAdmin = async (superadmin, email = '') => {
+exports.createAdmin = async (superadmin, email = '', mobile = '') => {
   const admin = { ...defaultUserInfo };
   const _id = createID();
 
   admin._id = _id;
   admin.type = 'Admin';
+  admin.mobileNumber = !mobile ? '09934182311' : mobile;
   admin.email = !email ? 'joshua.admin@lgusuite.com' : email;
   admin._createdBy = superadmin._id;
   admin._tenantId = _id;
@@ -64,6 +65,7 @@ exports.createDeletedAdmin = async (superadmin) => {
   admin._id = _id;
   admin.type = 'Admin';
   admin.status = 'Deleted';
+  admin.mobileNumber = '09934182342';
   admin.email = 'joshua.admindeleted@lgusuite.com';
   admin._createdBy = superadmin._id;
   admin._tenantId = _id;
@@ -78,6 +80,7 @@ exports.createSuspendedAdmin = async (superadmin) => {
   admin._id = _id;
   admin.type = 'Admin';
   admin.status = 'Suspended';
+  admin.mobileNumber = '09934182343';
   admin.email = 'joshua.adminsuspended@lgusuite.com';
   admin._createdBy = superadmin._id;
   admin._tenantId = _id;
@@ -88,11 +91,14 @@ exports.createSuspendedAdmin = async (superadmin) => {
 exports.createUser = async (superadmin) => {
   const user = { ...defaultUserInfo };
   const adminEmail = 'joshua.admin1@lgusuite.com';
-  const admin = await this.createAdmin(superadmin, adminEmail);
+  const adminMobile = '09748591923';
+
+  const admin = await this.createAdmin(superadmin, adminEmail, adminMobile);
   const _id = createID();
 
   user._id = _id;
   user.type = 'User';
+  user.mobileNumber = '09934182344';
   user.email = 'joshua.user@lgusuite.com';
   user._createdBy = admin._id;
   user._tenantId = admin._id;
@@ -108,6 +114,7 @@ exports.createDeletedUser = async (superadmin) => {
 
   user._id = _id;
   user.type = 'User';
+  user.mobileNumber = '09934182345';
   user.status = 'Deleted';
   user.email = 'joshua.deleteduser@lgusuite.com';
   user._createdBy = admin._id;
