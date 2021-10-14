@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const crypto = require('crypto');
 
 const User = require('../../models/GENERAL/user.model');
 
@@ -9,6 +10,7 @@ const {
   _verifyToken,
   _createSessionToken,
 } = require('../../utils/tokens');
+const { sendMail } = require('../../utils/comms/email');
 
 const generateLoginQuery = (type) => {
   if (type === 'super')
@@ -34,6 +36,39 @@ const sendAuthResponse = (user, statusCode, res) => {
       user,
     },
   });
+};
+
+const mailResetToken = async (user, resetToken) => {
+  try {
+    const resetLink = `https://docket-ph.herokuapp.com/reset-password/${resetToken}`;
+    const validityDate = new Date(Date.now() + 10 * 60 * 1000).toLocaleString();
+
+    const mailOptions = {
+      to: user.email,
+      subject: `Docket Password Reset Token. Valid until ${validityDate}`,
+      html: `<div>
+      <h1>Good day ${user.firstName},</h1> 
+      <p>Someone (hopefully you) has requested a password reset for your Docket account. Follow the link below to set a new password:</p>
+      <div><p><a href=${resetLink}>${resetLink}</a></p></div>
+      <div><p>If you don't wish to reset your password, disregard this email and no action will be taken.</p></div>
+      </div>
+      `,
+    };
+
+    await sendMail(mailOptions);
+  } catch (error) {
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpires = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError(
+        'There was an error sending email. Please try again later!',
+        500
+      )
+    );
+  }
 };
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -137,6 +172,80 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   sendAuthResponse(user, 200, res);
+});
+
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) return next(new AppError('Please provide email', 400));
+
+  const user = await User.findOne({ email, status: { $ne: 'Deleted' } });
+
+  if (!user) return next(new AppError('User not found', 404));
+
+  if (user.status === 'Suspended')
+    return next(new AppError('This account is suspended'), 400);
+
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  await mailResetToken(user, resetToken);
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Reset password token has been sent to email',
+  });
+});
+
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  const { token } = req.params;
+  const { password, passwordConfirm } = req.body;
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetTokenExpires: { $gt: Date.now() },
+    status: { $ne: 'Deleted' },
+  });
+
+  if (!user)
+    return next(
+      new AppError('Password reset token is invalid or has expired', 400)
+    );
+
+  user.password = password;
+  user.passwordConfirm = passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpires = undefined;
+
+  await user.save();
+
+  sendAuthResponse(user, 200, res);
+});
+
+exports.verifyResetPasswordToken = catchAsync(async (req, res, next) => {
+  const { token } = req.params;
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+    status: { $ne: 'Deleted' },
+  });
+
+  if (!user) return next(new AppError('Invalid reset password token', 400));
+
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpires = undefined;
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      user,
+    },
+  });
 });
 
 exports.getMe = catchAsync(async (req, res, next) => {
