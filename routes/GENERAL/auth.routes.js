@@ -12,6 +12,7 @@ router
 router.use(authController.authenticate);
 
 router.get('/me', authController.getMe);
+router.get('/logout', authController.logout);
 router.put('/update-info', authController.updateInfo);
 router.put('/update-password', authController.updatePassword);
 
