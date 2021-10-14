@@ -30,7 +30,14 @@ router
   .delete(authController.restrictTo('Admin'), userController.deleteUser);
 
 router
-  .route('/admins/:id/suspend')
-  .patch(authController.restrictTo('Superadmin'), userController.suspendAdmin);
+  .route('/admins/:id/:action')
+  .patch(
+    authController.restrictTo('Superadmin'),
+    userController.suspendActiveUser
+  );
+
+router
+  .route('/users/:id/:action')
+  .patch(authController.restrictTo('Admin'), userController.suspendActiveUser);
 
 module.exports = router;
