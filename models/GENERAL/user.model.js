@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
+const crypto = require('crypto');
 
 const { _createSessionToken } = require('../../utils/tokens');
 const { sendMail } = require('../../utils/comms/email');
@@ -29,6 +30,8 @@ const UserSchema = new mongoose.Schema(
     },
     mobileNumber: {
       type: String,
+      unique: [true, 'Mobile number already exist'],
+      required: [true, 'Please provide mobile number'],
     },
     password: {
       type: String,
@@ -69,6 +72,9 @@ const UserSchema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'Please provide user id'],
     },
+    passwordResetToken: String,
+    passwordResetTokenExpires: Date,
+    passwordChangedAt: Date,
   },
   { timestamps: true }
 );
@@ -102,11 +108,32 @@ UserSchema.pre('save', async function (next) {
   next();
 });
 
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password') || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now();
+
+  next();
+});
+
 UserSchema.methods.isPasswordCorrect = async (inputPassword, userPassword) =>
   await bcrypt.compare(inputPassword, userPassword);
 
 UserSchema.methods.verifySession = function (sessionToken, token) {
   return sessionToken === _createSessionToken(this, token);
+};
+
+UserSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(16).toString('hex');
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
 };
 
 const User = mongoose.model('User', UserSchema);
