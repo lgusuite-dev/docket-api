@@ -25,3 +25,10 @@ exports.createUserAPI = (data, type, token = '', session_token = '') =>
     .send(data)
     .set('Authorization', `Bearer ${token}`)
     .set('s_auth', session_token);
+
+exports.updateUserAPI = (data, type, id, token = '', session_token = '') =>
+  request
+    .put(`/api/v1/tenants/${type}/${id}`)
+    .send(data)
+    .set('Authorization', `Bearer ${token}`)
+    .set('s_auth', session_token);
