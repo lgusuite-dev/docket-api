@@ -5,6 +5,7 @@ const {
   connect,
   disconnect,
   createAdmin,
+  createUser,
   createSuperAdmin,
   deleteOneUser,
   deleteUsers,
@@ -13,7 +14,7 @@ const { login, createUserAPI } = require('../../utils/response');
 const { userCreds } = require('../../constants/users');
 require('dotenv').config();
 
-describe('USER API CREATE ADMIN ENDPOINT', () => {
+describe('USER API CREATE USER ENDPOINT', () => {
   let superAdmin;
   let admin;
   let token;
@@ -54,6 +55,26 @@ describe('USER API CREATE ADMIN ENDPOINT', () => {
       expect(response.body.status).to.equal('success');
       expect(response.body.env).to.have.property('user');
     });
+
+    if (type === 'users') {
+      it(`Type ${label} can create another User`, async () => {
+        const newAdmin = { ...creds };
+        newAdmin.email = 'corps.user10@lgusuite.com';
+        newAdmin.mobileNumber = '09473938294';
+
+        const user = await createUser(superAdmin, admin);
+        const userCreds = { email: user.email, password: 'password123' };
+        const userLogin = await login(userCreds, 'tenant');
+        const token = userLogin.body.token;
+        const s_token = userLogin.body.session_token;
+
+        const response = await createUserAPI(newAdmin, type, token, s_token);
+
+        expect(response.status).to.equal(201);
+        expect(response.body.status).to.equal('success');
+        expect(response.body.env).to.have.property('user');
+      });
+    }
 
     it(`Should NOT create  ${label}. NO FIRST NAME`, async () => {
       const newAdmin = { ...creds };
@@ -107,7 +128,7 @@ describe('USER API CREATE ADMIN ENDPOINT', () => {
       expect(response.body.message).to.equal('Please provide valid email');
     });
 
-    it(`Should NOT create  ${label}. WRONG USER TYPE`, async () => {
+    it(`Should NOT create ${label}. WRONG USER TYPE`, async () => {
       let user;
       let loginResponse;
       let token;
@@ -116,14 +137,16 @@ describe('USER API CREATE ADMIN ENDPOINT', () => {
 
       if (type === 'admins') {
         const adminEmail = 'joshua.admin1@lgusuite.com';
-        user = await createAdmin(superAdmin, adminEmail);
+        const adminMobile = '09341958481';
+        user = await createAdmin(superAdmin, adminEmail, adminMobile);
         const loginAdmin = { email: user.email, password: 'password123' };
         loginResponse = await login(loginAdmin, 'tenant');
         token = loginResponse.body.token;
         sessionToken = loginResponse.body.session_token;
       } else {
         const superEmail = 'joshua.super@lgusuite.com';
-        user = await createSuperAdmin(superEmail);
+        const superMobile = '09487462194';
+        user = await createSuperAdmin(superEmail, superMobile);
         const loginSuper = { email: user.email, password: 'password123' };
         loginResponse = await login(loginSuper, 'super');
         token = loginResponse.body.token;
