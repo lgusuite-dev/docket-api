@@ -13,7 +13,7 @@ const userData = {
   firstName: 'Joshua',
   lastName: 'Corpin',
   email: 'joshua.corpin25@gmail.com',
-  mobileNumber: '09987654321',
+  mobileNumber: '09987654322',
   password: 'password123',
   passwordConfirm: 'password123',
   type: 'User',
@@ -23,12 +23,33 @@ const userData = {
 exports.userCreds = [
   {
     type: 'admins',
-    label: 'admin',
+    label: 'Admin',
     creds: adminData,
   },
   {
     type: 'users',
-    label: 'user',
+    label: 'User',
     creds: userData,
+  },
+];
+
+exports.updateUserCreds = [
+  {
+    data: {
+      firstName: 'JoshAdmin',
+      lastName: 'CorpsAdmin',
+      mobileNumber: '09894849102',
+    },
+    type: 'admins',
+    label: 'Admin',
+  },
+  {
+    data: {
+      firstName: 'JoshUser',
+      lastName: 'CorpsUser',
+      mobileNumber: '09894849103',
+    },
+    type: 'users',
+    label: 'User',
   },
 ];
