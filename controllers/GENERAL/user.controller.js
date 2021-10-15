@@ -251,7 +251,6 @@ exports.suspendActiveUser = catchAsync(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
 
   if (type === 'admins') {
-    console.log('admin');
     const query = {
       type: 'User',
       _tenantId: user._tenantId,
@@ -259,10 +258,8 @@ exports.suspendActiveUser = catchAsync(async (req, res, next) => {
     };
 
     if (action === 'suspend') {
-      console.log('admin suspend');
       await User.updateMany(query, { status: 'Suspended' });
     } else {
-      console.log('admin active');
       const activeQuery = { ...query };
       activeQuery.status = { $eq: 'Suspended' };
 
