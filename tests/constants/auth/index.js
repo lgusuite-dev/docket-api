@@ -31,7 +31,7 @@ exports.authData = [
 exports.newUserInfo = {
   firstName: 'newfirst',
   lastName: 'newlast',
-  mobileNumber: '09987654321',
+  mobileNumber: '09987654324',
 };
 
 exports.userPassData = {
