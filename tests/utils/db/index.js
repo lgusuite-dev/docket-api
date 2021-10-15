@@ -31,11 +31,12 @@ exports.disconnect = async () => {
   await mongoServer.stop();
 };
 
-exports.createSuperAdmin = async (email = '') => {
+exports.createSuperAdmin = async (email, mobile = '') => {
   const superID = createID();
 
   const superadmin = { ...defaultUserInfo };
   superadmin._id = superID;
+  superadmin.mobileNumber = !mobile ? superadmin.mobileNumber : mobile;
   superadmin._tenantId = superID;
   superadmin._createdBy = superID;
   superadmin.email = !email ? 'joshua.corpin@lgusuite.com' : email;
@@ -88,12 +89,15 @@ exports.createSuspendedAdmin = async (superadmin) => {
   return await User.create(admin);
 };
 
-exports.createUser = async (superadmin) => {
+exports.createUser = async (superadmin, adminCreds = '') => {
   const user = { ...defaultUserInfo };
   const adminEmail = 'joshua.admin1@lgusuite.com';
   const adminMobile = '09748591923';
+  let admin = adminCreds;
 
-  const admin = await this.createAdmin(superadmin, adminEmail, adminMobile);
+  if (!adminCreds)
+    admin = await this.createAdmin(superadmin, adminEmail, adminMobile);
+
   const _id = createID();
 
   user._id = _id;
@@ -101,7 +105,7 @@ exports.createUser = async (superadmin) => {
   user.mobileNumber = '09934182344';
   user.email = 'joshua.user@lgusuite.com';
   user._createdBy = admin._id;
-  user._tenantId = admin._id;
+  user._tenantId = admin._tenantId;
 
   return await User.create(user);
 };
