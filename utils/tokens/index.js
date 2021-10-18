@@ -17,7 +17,7 @@ exports._createSessionToken = (user, token) => {
 };
 
 exports._generateRandomPassword = (length = 8) => {
-  if (process.env.NODE_ENV === 'development') return '123qweasdzxc';
+  if (process.env.NODE_ENV === 'development') return process.env.DEV_USER_PASS;
 
   // generate random password
   const charset =
