@@ -221,6 +221,9 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
       new AppError('Password reset token is invalid or has expired', 400)
     );
 
+  if (user === 'Suspended')
+    return next(new AppError('Your Account is Suspended', 403));
+
   user.password = password;
   user.passwordConfirm = passwordConfirm;
   user.passwordResetToken = undefined;
@@ -247,7 +250,10 @@ exports.verifyResetPasswordToken = catchAsync(async (req, res, next) => {
     status: { $ne: 'Deleted' },
   });
 
-  if (!user) return next(new AppError('Invalid reset password token', 400));
+  if (!user) return next(new AppError('Invalid password reset token', 400));
+
+  if (user === 'Suspended')
+    return next(new AppError('Your Account is Suspended', 403));
 
   user.passwordResetToken = undefined;
   user.passwordResetTokenExpires = undefined;
