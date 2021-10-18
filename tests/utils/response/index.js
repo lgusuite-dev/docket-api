@@ -25,6 +25,15 @@ exports.forgotPassword = (data) =>
 exports.resetPassword = (data, token) =>
   request.put(`/api/v1/auth/reset-password/${token}`).send(data);
 
+exports.verifyRPToken = (token) =>
+  request.get(`/api/v1/auth/reset-password/${token}`);
+
+exports.getMe = (token = '', session_token = '') =>
+  request
+    .get('/me')
+    .set('Authorization', `Bearer ${token}`)
+    .set('s_auth', session_token);
+
 exports.createUserAPI = (data, type, token = '', session_token = '') =>
   request
     .post(`/api/v1/tenants/${type}`)
