@@ -39,3 +39,8 @@ exports.userPassData = {
   newPassword: '123password',
   confirmNewPassword: '123password',
 };
+
+exports.passCreds = {
+  password: '123password',
+  passwordConfirm: '123password',
+};
