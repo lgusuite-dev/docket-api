@@ -19,6 +19,12 @@ exports.updatePassword = (data, token = '', session_token = '') =>
     .set('Authorization', `Bearer ${token}`)
     .set('s_auth', session_token);
 
+exports.forgotPassword = (data) =>
+  request.post('/api/v1/auth/forgot-password').send(data);
+
+exports.resetPassword = (data, token) =>
+  request.put(`/api/v1/auth/reset-password/${token}`).send(data);
+
 exports.createUserAPI = (data, type, token = '', session_token = '') =>
   request
     .post(`/api/v1/tenants/${type}`)
