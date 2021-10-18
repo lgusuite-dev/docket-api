@@ -16,7 +16,7 @@ const {
 const { login } = require('../../utils/response');
 const { authData } = require('../../constants/auth');
 
-describe('AUTH API LOGIN ENDPOINT', () => {
+describe('AUTH LOGIN API ENDPOINT', () => {
   let superAdmin;
 
   before(async () => {
