@@ -1,7 +1,7 @@
 const AppError = require('../../utils/errors/AppError');
 
 const allowedOrigins = [
-  'https://docket-ph.herokuapp.com/',
+  'https://docket-ph.herokuapp.com',
   'http://localhost:4200',
   'http://localhost:4201',
 ];
