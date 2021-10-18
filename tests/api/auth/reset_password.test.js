@@ -10,7 +10,7 @@ const { forgotPassword, resetPassword } = require('../../utils/response');
 const { passCreds } = require('../../constants/auth');
 require('dotenv').config();
 
-describe('AUTH FORGOT PASSWORD API ENDPOINT', () => {
+describe('AUTH RESET PASSWORD API ENDPOINT', () => {
   let superAdmin;
 
   before(async () => {
