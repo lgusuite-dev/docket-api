@@ -80,7 +80,7 @@ const UserSchema = new mongoose.Schema(
 );
 
 UserSchema.pre('save', async function (next) {
-  if (!this.isNew) return next();
+  if (!this.isNew || process.env.NODE_ENV === 'test') return next();
 
   if (this.type !== 'Superadmin') {
     const user = await User.findOne({ email: this.email });
@@ -124,7 +124,10 @@ UserSchema.methods.verifySession = function (sessionToken, token) {
 };
 
 UserSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(16).toString('hex');
+  let resetToken = crypto.randomBytes(16).toString('hex');
+
+  if (process.env.NODE_ENV === 'test')
+    resetToken = process.env.TEST_RESET_TOKEN;
 
   this.passwordResetToken = crypto
     .createHash('sha256')
