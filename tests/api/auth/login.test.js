@@ -32,7 +32,7 @@ describe('AUTH LOGIN API ENDPOINT', () => {
     await disconnect();
   });
 
-  const authUnitTest = (type, creds) => {
+  const authUnitTest = ({ type, creds }) => {
     it(`Should login the ${type}`, async () => {
       const response = await login(creds, type);
 
@@ -125,6 +125,6 @@ describe('AUTH LOGIN API ENDPOINT', () => {
   };
 
   for (let data of authData) {
-    authUnitTest(data.type, data.creds);
+    authUnitTest(data);
   }
 });
