@@ -39,6 +39,8 @@ const sendAuthResponse = (user, statusCode, res) => {
 };
 
 const mailResetToken = async (user, resetToken) => {
+  if (process.env.NODE_ENV === 'test') return;
+
   try {
     const resetLink = `https://docket-ph.herokuapp.com/reset-password/${resetToken}`;
     const validityDate = new Date(Date.now() + 10 * 60 * 1000).toLocaleString();
@@ -184,7 +186,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   if (!user) return next(new AppError('User not found', 404));
 
   if (user.status === 'Suspended')
-    return next(new AppError('This account is suspended'), 400);
+    return next(new AppError('This account is suspended', 400));
 
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
@@ -200,6 +202,11 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 exports.resetPassword = catchAsync(async (req, res, next) => {
   const { token } = req.params;
   const { password, passwordConfirm } = req.body;
+
+  if (!password) return next(new AppError('Please provide new password', 400));
+
+  if (!passwordConfirm)
+    return next(new AppError('Please confirm new password', 400));
 
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
