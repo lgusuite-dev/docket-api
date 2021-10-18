@@ -246,7 +246,7 @@ exports.verifyResetPasswordToken = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetExpires: { $gt: Date.now() },
+    passwordResetTokenExpires: { $gt: Date.now() },
     status: { $ne: 'Deleted' },
   });
 
