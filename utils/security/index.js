@@ -1,6 +1,10 @@
 const AppError = require('../../utils/errors/AppError');
 
-const allowedOrigins = ['http://localhost:4200', 'http://localhost:4201'];
+const allowedOrigins = [
+  'https://docket-ph.herokuapp.com/',
+  'http://localhost:4200',
+  'http://localhost:4201',
+];
 
 exports.origin = function (origin, callback) {
   if (!origin) return callback(null, true);
