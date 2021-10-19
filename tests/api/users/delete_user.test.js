@@ -12,7 +12,7 @@ const {
 const { login, deleteUserAPI } = require('../../utils/response');
 const { deleteUserCreds } = require('../../constants/users');
 
-describe.only('USER API DELETE USER ENDPOINT', () => {
+describe('USER API DELETE USER ENDPOINT', () => {
   let superAdmin;
   let admin;
   let user;
