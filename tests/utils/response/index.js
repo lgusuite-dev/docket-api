@@ -56,8 +56,8 @@ exports.updateUserAPI = (data, type, id, token = '', session_token = '') =>
     .set('Authorization', `Bearer ${token}`)
     .set('s_auth', session_token);
 
-exports.deleteUserAPI = (id, type, token = '', session_token = '') =>
+exports.deleteUserAPI = (type, id, token = '', session_token = '') =>
   request
-    .patch(`/api/v1/${type}/${id}`)
+    .delete(`/api/v1/tenants/${type}/${id}`)
     .set('Authorization', `Bearer ${token}`)
     .set('s_auth', session_token);
