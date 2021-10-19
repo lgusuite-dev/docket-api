@@ -31,7 +31,7 @@ exports.disconnect = async () => {
   await mongoServer.stop();
 };
 
-exports.createSuperAdmin = async (email, mobile = '') => {
+exports.createSuperAdmin = async (email = '', mobile = '') => {
   const superID = createID();
 
   const superadmin = { ...defaultUserInfo };
@@ -89,7 +89,12 @@ exports.createSuspendedAdmin = async (superadmin) => {
   return await User.create(admin);
 };
 
-exports.createUser = async (superadmin, adminCreds = '') => {
+exports.createUser = async (
+  superadmin,
+  adminCreds = '',
+  email = '',
+  mobile = ''
+) => {
   const user = { ...defaultUserInfo };
   const adminEmail = 'joshua.admin1@lgusuite.com';
   const adminMobile = '09748591923';
@@ -102,8 +107,8 @@ exports.createUser = async (superadmin, adminCreds = '') => {
 
   user._id = _id;
   user.type = 'User';
-  user.mobileNumber = '09934182344';
-  user.email = 'joshua.user@lgusuite.com';
+  user.mobileNumber = !mobile ? '09934182344' : mobile;
+  user.email = !email ? 'joshua.user@lgusuite.com' : email;
   user._createdBy = admin._id;
   user._tenantId = admin._tenantId;
 
@@ -127,10 +132,10 @@ exports.createDeletedUser = async (superadmin) => {
   return await User.create(user);
 };
 
-exports.deleteUsers = async () => {
-  return await User.deleteMany();
-};
+exports.deleteUsers = async () => await User.deleteMany();
 
-exports.deleteOneUser = async (id) => {
-  return await User.findByIdAndUpdate(id, { status: 'Deleted' }, { new: true });
-};
+exports.deleteOneUser = async (id) =>
+  await User.findByIdAndUpdate(id, { status: 'Deleted' }, { new: true });
+
+exports.getAdminUsers = async (tenantID) =>
+  await User.find({ _tenantId: tenantID, status: { $ne: 'Deleted' } });
