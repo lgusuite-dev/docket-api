@@ -16,6 +16,7 @@ const defaultUserInfo = {
   password: 'password123',
   passwordConfirm: 'password123',
   status: 'Active',
+  sex: 'Male',
   _createdBy: '615d80fbbc0375a4178188a4',
   _tenantId: '615d80fbbc0375a4178188a4',
 };
