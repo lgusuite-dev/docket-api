@@ -71,6 +71,43 @@ const generateUserData = (type, req) => {
   return filteredBody;
 };
 
+const validateAction = async (action, user, body) => {
+  const { access_level } = body;
+
+  if (action === 'access-level') {
+    const allowedAccessLevel = [1, 2, 3, 4];
+
+    if (!allowedAccessLevel.includes(access_level)) {
+      const message = 'Invalid access level value';
+      return { haveError: true, message, status: 400 };
+    }
+
+    user.access_level = access_level;
+    await user.save({ validateBeforeSave: false });
+    return { haveError: false };
+  }
+
+  user.status = action === 'suspend' ? 'Suspended' : 'Active';
+  await user.save({ validateBeforeSave: false });
+  return { haveError: false };
+};
+
+const updateChildBasedOnAction = async (type, action, user) => {
+  if (action === 'access-level' || type === 'users') return;
+
+  const { _tenantId } = user;
+  const query = { type: 'User', _tenantId, status: { $eq: 'Active' } };
+
+  if (action === 'suspend') {
+    await User.updateMany(query, { status: 'Suspended' });
+  } else {
+    const activeQuery = { ...query };
+    activeQuery.status = { $eq: 'Suspended' };
+
+    await User.updateMany(activeQuery, { status: 'Active' });
+  }
+};
+
 exports.createSuper = catchAsync(async (req, res, next) => {
   if (!req.headers.supertoken || !req.headers.superuser)
     return next(new AppError('Forbidden', 403));
@@ -245,10 +282,10 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.suspendActiveUser = catchAsync(async (req, res, next) => {
+exports.patchUser = catchAsync(async (req, res, next) => {
   const { action } = req.params;
   const endpoint = req.originalUrl;
-  const allowedActions = ['suspend', 'active'];
+  const allowedActions = ['suspend', 'active', 'access-level'];
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
   const initialQuery = generateGetOneUserQuery(type, req);
 
@@ -265,25 +302,11 @@ exports.suspendActiveUser = catchAsync(async (req, res, next) => {
   if (user.status === 'Active' && action === 'active')
     return next(new AppError('This account is already active', 400));
 
-  user.status = action === 'suspend' ? 'Suspended' : 'Active';
-  await user.save({ validateBeforeSave: false });
+  const err = await validateAction(action, user, req.body);
 
-  if (type === 'admins') {
-    const query = {
-      type: 'User',
-      _tenantId: user._tenantId,
-      status: { $eq: 'Active' },
-    };
+  if (err.haveError) return next(new AppError(err.message, err.status));
 
-    if (action === 'suspend') {
-      await User.updateMany(query, { status: 'Suspended' });
-    } else {
-      const activeQuery = { ...query };
-      activeQuery.status = { $eq: 'Suspended' };
-
-      await User.updateMany(activeQuery, { status: 'Active' });
-    }
-  }
+  await updateChildBasedOnAction(type, action, user);
 
   res.status(200).json({
     status: 'success',
