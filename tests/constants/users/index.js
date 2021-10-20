@@ -5,6 +5,7 @@ const adminData = {
   mobileNumber: '09987654321',
   password: 'password123',
   passwordConfirm: 'password123',
+  sex: 'Male',
   type: 'Admin',
   status: 'Active',
 };
@@ -16,6 +17,7 @@ const userData = {
   mobileNumber: '09987654322',
   password: 'password123',
   passwordConfirm: 'password123',
+  sex: 'Male',
   type: 'User',
   status: 'Active',
 };
