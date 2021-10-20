@@ -43,6 +43,7 @@ const generateUserData = (type, req) => {
     'middleName',
     'email',
     'mobileNumber',
+    'sex',
   ];
 
   const filteredBody = _.pick(req.body, pickFields);
@@ -178,7 +179,14 @@ exports.getUser = catchAsync(async (req, res, next) => {
 exports.updateUser = catchAsync(async (req, res, next) => {
   const endpoint = req.originalUrl;
   const validTypes = ['admins', 'users'];
-  const pickFields = ['firstName', 'lastName', 'middleName', 'mobileNumber'];
+  const pickFields = [
+    'firstName',
+    'lastName',
+    'middleName',
+    'mobileNumber',
+    'sex',
+    'others',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
   const initialQuery = generateGetOneUserQuery(type, req);
@@ -186,11 +194,20 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   if (!validTypes.includes(type))
     return next(new AppError('Invalid type params', 400));
 
-  const updatedUser = await User.findOneAndUpdate(initialQuery, filteredBody, {
+  const user = await User.findOne(initialQuery);
+
+  if (!user) return next(new AppError('User not found', 404));
+
+  const { others } = filteredBody;
+
+  if (others) {
+    const filteredOthers = _.pick(others, ['prefix', 'suffix', 'position']);
+    filteredBody.others = { ...user.others, ...filteredOthers };
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(user._id, filteredBody, {
     new: true,
   });
-
-  if (!updatedUser) return next(new AppError('User not found', 404));
 
   res.status(200).json({
     status: 'success',
