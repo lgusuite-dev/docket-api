@@ -52,10 +52,20 @@ const UserSchema = new mongoose.Schema(
         message: "Password don't match",
       },
     },
+    access_level: {
+      type: Number,
+      enum: [1, 2, 3, 4],
+    },
     type: {
       type: String,
       default: 'Admin',
       enum: ['Superadmin', 'Admin', 'User'],
+    },
+    sex: {
+      type: String,
+      trim: true,
+      required: [true, 'Please provide sex'],
+      enum: ['Male', 'Female'],
     },
     status: {
       type: String,
@@ -72,6 +82,7 @@ const UserSchema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'Please provide user id'],
     },
+    others: Object,
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
     passwordChangedAt: Date,
