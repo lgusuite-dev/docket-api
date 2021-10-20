@@ -1,4 +1,3 @@
-const sgMail = require('@sendgrid/mail');
 const { expect } = require('chai');
 require('dotenv').config();
 
@@ -20,7 +19,6 @@ describe('AUTH LOGIN API ENDPOINT', () => {
   let superAdmin;
 
   before(async () => {
-    sgMail.setApiKey(process.env.SEND_GRID_APIKEY);
     await connect();
     superAdmin = await createSuperAdmin();
     await createAdmin(superAdmin);

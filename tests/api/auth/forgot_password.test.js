@@ -1,4 +1,3 @@
-const sgMail = require('@sendgrid/mail');
 const { expect } = require('chai');
 const {
   connect,
@@ -17,7 +16,6 @@ describe('AUTH FORGOT PASSWORD API ENDPOINT', () => {
   let suspendedAdmin;
 
   before(async () => {
-    sgMail.setApiKey(process.env.SEND_GRID_APIKEY);
     await connect();
     superAdmin = await createSuperAdmin();
     deletedAdmin = await createDeletedAdmin(superAdmin);

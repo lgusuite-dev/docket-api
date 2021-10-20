@@ -1,4 +1,3 @@
-const sgMail = require('@sendgrid/mail');
 const { expect } = require('chai');
 
 const {
@@ -23,7 +22,6 @@ describe('USER API CREATE USER ENDPOINT', () => {
   let adminSessionToken;
 
   before(async () => {
-    sgMail.setApiKey(process.env.SEND_GRID_APIKEY);
     await connect();
     superAdmin = await createSuperAdmin();
     const loginSuper = { email: superAdmin.email, password: 'password123' };
@@ -126,6 +124,34 @@ describe('USER API CREATE USER ENDPOINT', () => {
       expect(response.status).to.equal(400);
       expect(response.body.status).to.equal('fail');
       expect(response.body.message).to.equal('Please provide valid email');
+    });
+
+    it(`Should NOT create  ${label}. NO SEX`, async () => {
+      const newAdmin = { ...creds };
+      const s_auth = type === 'admins' ? token : adminToken;
+      const s_token = type === 'admins' ? sessionToken : adminSessionToken;
+      newAdmin.sex = undefined;
+
+      const response = await createUserAPI(newAdmin, type, s_auth, s_token);
+
+      expect(response.status).to.equal(400);
+      expect(response.body.status).to.equal('fail');
+      expect(response.body.message).to.equal('Please provide sex');
+    });
+
+    it(`Should NOT create  ${label}. INVALID SEX VALUE`, async () => {
+      const newAdmin = { ...creds };
+      const s_auth = type === 'admins' ? token : adminToken;
+      const s_token = type === 'admins' ? sessionToken : adminSessionToken;
+      newAdmin.sex = '123';
+      const message =
+        '`' + newAdmin.sex + '`' + ' is not a valid enum value for path `sex`.';
+
+      const response = await createUserAPI(newAdmin, type, s_auth, s_token);
+
+      expect(response.status).to.equal(400);
+      expect(response.body.status).to.equal('fail');
+      expect(response.body.message).to.equal(message);
     });
 
     it(`Should NOT create ${label}. WRONG USER TYPE`, async () => {
