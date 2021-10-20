@@ -31,13 +31,10 @@ router
 
 router
   .route('/admins/:id/:action')
-  .patch(
-    authController.restrictTo('Superadmin'),
-    userController.suspendActiveUser
-  );
+  .patch(authController.restrictTo('Superadmin'), userController.patchUser);
 
 router
   .route('/users/:id/:action')
-  .patch(authController.restrictTo('Admin'), userController.suspendActiveUser);
+  .patch(authController.restrictTo('Admin'), userController.patchUser);
 
 module.exports = router;
