@@ -59,7 +59,7 @@ exports.updateUserCreds = [
 exports.deleteUserCreds = [
   {
     type: 'admins',
-    label: 'admin',
+    label: 'Admin',
     users: [
       {
         email: 'deleted.one@lgusuite.com',
@@ -73,6 +73,27 @@ exports.deleteUserCreds = [
   },
   {
     type: 'users',
-    label: 'user',
+    label: 'User',
+  },
+];
+
+exports.suspendActiveUsers = [
+  {
+    type: 'admins',
+    label: 'Admin',
+    users: [
+      {
+        email: 'patch.one@lgusuite.com',
+        mobile: '09314921453',
+      },
+      {
+        email: 'patch.two@lgusuite.com',
+        mobile: '09314921454',
+      },
+    ],
+  },
+  {
+    type: 'users',
+    label: 'User',
   },
 ];
