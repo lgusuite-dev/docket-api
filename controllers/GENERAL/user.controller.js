@@ -303,9 +303,10 @@ exports.patchUser = catchAsync(async (req, res, next) => {
   if (user.status === 'Active' && action === 'active')
     return next(new AppError('This account is already active', 400));
 
-  const err = await validateAction(action, user, req.body);
+  const result = await validateAction(action, user, req.body);
 
-  if (err.haveError) return next(new AppError(err.message, err.status));
+  if (result.haveError)
+    return next(new AppError(result.message, result.status));
 
   await updateChildBasedOnAction(type, action, user);
 
