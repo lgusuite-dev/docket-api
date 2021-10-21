@@ -122,7 +122,5 @@ describe('AUTH LOGIN API ENDPOINT', () => {
     }
   };
 
-  for (let data of authData) {
-    authUnitTest(data);
-  }
+  for (let data of authData) authUnitTest(data);
 });
