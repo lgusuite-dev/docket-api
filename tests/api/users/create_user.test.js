@@ -154,7 +154,7 @@ describe('USER API CREATE USER ENDPOINT', () => {
       expect(response.body.message).to.equal(message);
     });
 
-    it(`Should NOT create ${label}. WRONG USER TYPE`, async () => {
+    it(`Should NOT create ${label}. INVALID USER TYPE`, async () => {
       let user;
       let loginResponse;
       let token;
@@ -234,7 +234,5 @@ describe('USER API CREATE USER ENDPOINT', () => {
     });
   };
 
-  for (let data of userCreds) {
-    createUserUnitTest(data);
-  }
+  for (let data of userCreds) createUserUnitTest(data);
 });
