@@ -55,10 +55,10 @@ describe('USER API DELETE USER ENDPOINT', () => {
         const adminUsers = await getAdminUsers(admin._tenantId);
 
         expect(response.status).to.equal(204);
-        for (let user of adminUsers) expect(user.status).to.equal('Suspended');
+        for (let user of adminUsers) expect(user.status).to.equal('Deleted');
       });
 
-      it(`Should NOT delete ${label} and its child users. DELETED PARENT(ADMIN)`, async () => {
+      it(`Should NOT delete ${label} and its child users. ADMIN ALREADY DELETED`, async () => {
         const id = admin._id;
         const response = await deleteUserAPI(type, id, s_token, s_session);
 
@@ -86,7 +86,7 @@ describe('USER API DELETE USER ENDPOINT', () => {
         expect(response.status).to.equal(204);
       });
 
-      it(`Should NOT update ${label}. DELETED ACCOUNT`, async () => {
+      it(`Should NOT delete ${label}. USER ALREADY DELETED`, async () => {
         const id = user._id;
         const response = await deleteUserAPI(type, id, a_token, a_session);
 
@@ -96,7 +96,7 @@ describe('USER API DELETE USER ENDPOINT', () => {
       });
     }
 
-    it(`Should NOT create ${label}. NO AUTHORIZATION HEADER`, async () => {
+    it(`Should NOT delete ${label}. NO AUTHORIZATION HEADER`, async () => {
       const session = type === 'admins' ? s_session : a_session;
       const id = type === 'admins' ? admin._id : superAdmin._id;
 
@@ -107,7 +107,7 @@ describe('USER API DELETE USER ENDPOINT', () => {
       expect(response.body.message).to.equal('Please login to continue');
     });
 
-    it(`Should NOT create ${label}. NO SESSION AUTH HEADER`, async () => {
+    it(`Should NOT delete ${label}. NO SESSION AUTH HEADER`, async () => {
       const token = type === 'admins' ? s_token : a_token;
       const id = type === 'admins' ? admin._id : superAdmin._id;
 
@@ -118,7 +118,7 @@ describe('USER API DELETE USER ENDPOINT', () => {
       expect(response.body.message).to.equal('Please login to continue');
     });
 
-    it(`Should NOT create ${label}. INVALID AUTH SESSION VALUE`, async () => {
+    it(`Should NOT delete ${label}. INVALID AUTH SESSION VALUE`, async () => {
       if (type === 'users') {
         const superEmail = 'super.corps@lgusuite.com';
         const superMobile = '09147421581';
@@ -141,7 +141,7 @@ describe('USER API DELETE USER ENDPOINT', () => {
       expect(response.body.message).to.equal('Invalid session');
     });
 
-    it(`Should NOT create ${label}. DELETED USER`, async () => {
+    it(`Should NOT delete ${label}. DELETED USER`, async () => {
       const token = s_token;
       const session = s_session;
       const id = type === 'admins' ? admin._id : superAdmin._id;
@@ -158,7 +158,5 @@ describe('USER API DELETE USER ENDPOINT', () => {
     });
   };
 
-  for (let user of deleteUserCreds) {
-    deleteUserTest(user);
-  }
+  for (let user of deleteUserCreds) deleteUserTest(user);
 });
