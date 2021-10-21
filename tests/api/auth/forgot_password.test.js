@@ -16,7 +16,6 @@ describe('AUTH FORGOT PASSWORD API ENDPOINT', () => {
   let suspendedAdmin;
 
   before(async () => {
-    console.log(process.env.NODE_ENV);
     await connect();
     superAdmin = await createSuperAdmin();
     deletedAdmin = await createDeletedAdmin(superAdmin);
