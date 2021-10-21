@@ -10,7 +10,7 @@ const {
 const { forgotPassword } = require('../../utils/response');
 require('dotenv').config();
 
-describe.only('AUTH FORGOT PASSWORD API ENDPOINT', () => {
+describe('AUTH FORGOT PASSWORD API ENDPOINT', () => {
   let superAdmin;
   let deletedAdmin;
   let suspendedAdmin;
@@ -35,7 +35,7 @@ describe.only('AUTH FORGOT PASSWORD API ENDPOINT', () => {
     expect(response.status).to.equal(200);
     expect(response.body.status).to.equal('success');
     expect(response.body.message).to.equal(
-      'Reset password token has been sent to emaill'
+      'Reset password token has been sent to email'
     );
   });
 
