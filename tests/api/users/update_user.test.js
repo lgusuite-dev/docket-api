@@ -69,7 +69,7 @@ describe('USER API UPDATE USER ENDPOINT', () => {
       expect(response.body.message).to.equal('User not found');
     });
 
-    it(`Should NOT update ${label}. WRONG USER TYPE`, async () => {
+    it(`Should NOT update ${label}. INVALID USER TYPE`, async () => {
       let token;
       let session;
       let id;
@@ -150,9 +150,5 @@ describe('USER API UPDATE USER ENDPOINT', () => {
     });
   };
 
-  for (let data of updateUserCreds) {
-    const userData = { ...data };
-
-    updateUserUnitTest(userData);
-  }
+  for (let data of updateUserCreds) updateUserUnitTest(data);
 });
