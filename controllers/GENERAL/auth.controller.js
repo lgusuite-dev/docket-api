@@ -118,6 +118,9 @@ exports.authenticate = catchAsync(async (req, res, next) => {
       new AppError('User no longer exist. Please login to continue', 404)
     );
 
+  if (user.status === 'Suspended')
+    return next(new AppError('Unauthorized. Account is Suspended', 403));
+
   if (!user.verifySession(sessionToken, token))
     return next(new AppError('Invalid session', 401));
 
