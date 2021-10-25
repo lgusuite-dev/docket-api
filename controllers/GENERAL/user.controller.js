@@ -51,6 +51,7 @@ const generateUserData = (type, req) => {
     'access_level',
     'others',
     'sex',
+    'address',
   ];
 
   const filteredBody = _.pick(req.body, pickFields);
@@ -163,6 +164,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
     return next(new AppError('Invalid type params', 400));
 
   const newUser = await User.create(userData);
+  newUser.password = undefined;
 
   res.status(201).json({
     status: 'success',

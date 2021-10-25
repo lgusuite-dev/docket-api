@@ -33,6 +33,11 @@ const UserSchema = new mongoose.Schema(
       unique: [true, 'Mobile number already exist'],
       required: [true, 'Please provide mobile number'],
     },
+    address: {
+      type: String,
+      trim: true,
+      required: [true, 'Please provide address'],
+    },
     password: {
       type: String,
       select: false,
@@ -72,6 +77,10 @@ const UserSchema = new mongoose.Schema(
       default: 'Active',
       enum: ['Active', 'Suspended', 'Deleted'],
     },
+    isNewUser: {
+      type: Boolean,
+      default: true,
+    },
     _tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -106,6 +115,14 @@ UserSchema.pre('save', async function (next) {
       await sendMail(mailOptions);
     }
   }
+
+  next();
+});
+
+UserSchema.pre('save', async function (next) {
+  if (!this.isNewUser || !this.isModified('password')) return next();
+
+  this.isNewUser = false;
 
   next();
 });
