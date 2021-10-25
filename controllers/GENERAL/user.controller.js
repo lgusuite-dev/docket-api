@@ -23,12 +23,17 @@ const generateGetUsersQuery = (type, req) => {
 
 const generateGetOneUserQuery = (type, req) => {
   const { id } = req.params;
+  const { prevStatus } = req.query
 
   const query = { _id: id, status: { $ne: 'Deleted' } };
 
-  if (type === 'admins') query.type = 'Admin';
+  if (type === 'admins') {
+    if (prevStatus) delete query.status;
+    query.type = 'Admin';
+  }
 
   if (type === 'users') {
+    if (prevStatus) delete query.status;
     query.type = 'User';
     query._tenantId = req.user._tenantId;
   }
@@ -73,8 +78,9 @@ const generateUserData = (type, req) => {
   return filteredBody;
 };
 
-const validateAction = async (action, user, body) => {
-  const { access_level } = body;
+const validateAction = async (action, user, req) => {
+  const { access_level } = req.body;
+  const { prevStatus } = req.query;
 
   if (action === 'access-level') {
     const allowedAccessLevel = [1, 2, 3, 4];
@@ -85,6 +91,15 @@ const validateAction = async (action, user, body) => {
     }
 
     user.access_level = access_level;
+    await user.save({ validateBeforeSave: false });
+    return { haveError: false };
+  }
+  if (action === 'undo') {
+    if (user.status !== 'Deleted') {
+      const message = 'Cant retrieve user';
+      return { haveError: true, message, status: 400 };
+    }
+    user.status = prevStatus;
     await user.save({ validateBeforeSave: false });
     return { haveError: false };
   }
@@ -289,7 +304,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 exports.patchUser = catchAsync(async (req, res, next) => {
   const { action } = req.params;
   const endpoint = req.originalUrl;
-  const allowedActions = ['suspend', 'active', 'access-level'];
+  const allowedActions = ['suspend', 'active', 'access-level', 'undo'];
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
   const initialQuery = generateGetOneUserQuery(type, req);
 
@@ -306,7 +321,7 @@ exports.patchUser = catchAsync(async (req, res, next) => {
   if (user.status === 'Active' && action === 'active')
     return next(new AppError('This account is already active', 400));
 
-  const result = await validateAction(action, user, req.body);
+  const result = await validateAction(action, user, req);
 
   if (result.haveError)
     return next(new AppError(result.message, result.status));
