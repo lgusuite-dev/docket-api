@@ -5,6 +5,7 @@ const RoleSchema = new mongoose.Schema(
     name: {
       type: String,
       trim: true,
+      unique: [true, 'Role already exist'],
       required: [true, 'Please provide a name'],
     },
     description: {
