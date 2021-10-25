@@ -13,11 +13,15 @@ exports.getAllRoles = catchAsync(async (req, res, next) => {
     .filter()
     .paginate()
     .populate();
+  const countRoles = new QueryFeatures(Role.find(initialQuery), req.query)
+    .filter()
+    .count();
 
+  const total = await countRoles.query;
   const roles = await queryFeatures.query;
-
   res.status(200).json({
     status: 'Success',
+    total,
     env: {
       roles,
     },
@@ -84,7 +88,7 @@ exports.deleteRole = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
 
-  const role = await Team.findOneAndUpdate(initialQuery, { status: 'Deleted' });
+  const role = await Role.findOneAndUpdate(initialQuery, { status: 'Deleted' });
 
   if (!role) return next(new AppError('Role not found!', 400));
 
