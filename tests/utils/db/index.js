@@ -13,6 +13,7 @@ const defaultUserInfo = {
   lastName: 'Corpin',
   email: 'joshua.corpin@lgusuite.com',
   mobileNumber: '09123456789',
+  address: '123 test st. usa',
   password: 'password123',
   passwordConfirm: 'password123',
   status: 'Active',
