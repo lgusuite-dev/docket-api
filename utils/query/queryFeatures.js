@@ -1,5 +1,52 @@
 const _ = require('lodash');
 
+const createQuery = (fields, searchVal) => {
+  const orQuery = [];
+
+  const booleanFields = ['isNewUser'];
+  const numberFields = ['access_level'];
+  const otherTypeFields = [
+    '_id',
+    '_createdBy',
+    '_tenantId',
+    'createdAt',
+    'updatedAt',
+    'passwordChangedAt',
+    'passwordResetTokenExpires',
+    'password',
+  ];
+
+  for (const field of fields) {
+    let query;
+
+    // Number Fields
+    if (numberFields.includes(field)) {
+      // check if searhVal is Number
+      if (!Number.isNaN(+searchVal)) query = { [field]: +searchVal };
+    }
+    // Boolean fields
+    else if (booleanFields.includes(field)) {
+      if ('true'.includes(searchVal)) query = { [field]: true };
+
+      if ('false'.includes(searchVal)) query = { [field]: false };
+    }
+    // String Fields
+    else {
+      if (!otherTypeFields.includes(field))
+        query = {
+          [field]: {
+            $regex: `.*${searchVal.toString().toLowerCase()}.*`,
+            $options: 'i',
+          },
+        };
+    }
+
+    if (query) orQuery.push(query);
+  }
+
+  return orQuery;
+};
+
 class QueryFeatures {
   constructor(query, queryString) {
     this.query = query;
@@ -32,7 +79,15 @@ class QueryFeatures {
       }
     }
 
-    const orQuery = [];
+    let orQuery = [];
+
+    if (queryObj.searchVal && queryObj.searchFields) {
+      const fields = queryObj.searchFields.split(',');
+      orQuery = createQuery(fields, queryObj.searchVal);
+
+      delete queryObj.searchVal;
+      delete queryObj.searchFields;
+    }
 
     // normal query
     let queryStr = JSON.stringify(queryObj);
