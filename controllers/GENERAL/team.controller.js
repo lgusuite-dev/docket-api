@@ -5,22 +5,9 @@ const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
-const teamUsersCleanup = (inputUsers, teamUsers = []) => {
+const teamUsersCleanup = (inputUsers) => {
   let uniqueUsers = [];
 
-  if (teamUsers.length) {
-    // get all unique _id values of teamUsers array
-    for (const _id of teamUsers)
-      if (!uniqueUsers.includes(_id)) uniqueUsers.push(_id.toString());
-
-    // get all unique _id values of inputUsers array
-    for (const _id of inputUsers)
-      if (!uniqueUsers.includes(_id)) uniqueUsers.push(_id.toString());
-
-    return uniqueUsers;
-  }
-
-  // get all unique _id values of inputUsers array if no teamUsrs
   for (const _id of inputUsers)
     if (!uniqueUsers.includes(_id)) uniqueUsers.push(_id);
 
@@ -95,7 +82,7 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
   if (!team) return next(new AppError('Team not found', 404));
 
   if (filteredBody.users.length)
-    filteredBody.users = teamUsersCleanup(filteredBody.users, team.users);
+    filteredBody.users = teamUsersCleanup(filteredBody.users);
 
   const updatedTeam = await Team.findByIdAndUpdate(team._id, filteredBody, {
     new: true,
