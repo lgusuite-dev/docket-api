@@ -139,6 +139,19 @@ describe('USER API CREATE USER ENDPOINT', () => {
       expect(response.body.message).to.equal('Please provide sex');
     });
 
+    it(`Should NOT create  ${label}. NO Address`, async () => {
+      const newAdmin = { ...creds };
+      const s_auth = type === 'admins' ? token : adminToken;
+      const s_token = type === 'admins' ? sessionToken : adminSessionToken;
+      newAdmin.address = undefined;
+
+      const response = await createUserAPI(newAdmin, type, s_auth, s_token);
+
+      expect(response.status).to.equal(400);
+      expect(response.body.status).to.equal('fail');
+      expect(response.body.message).to.equal('Please provide address');
+    });
+
     it(`Should NOT create  ${label}. INVALID SEX VALUE`, async () => {
       const newAdmin = { ...creds };
       const s_auth = type === 'admins' ? token : adminToken;

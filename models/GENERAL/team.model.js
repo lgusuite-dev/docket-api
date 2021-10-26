@@ -16,7 +16,6 @@ const TeamSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        unique: [true, 'User already in the team'],
       },
     ],
     status: {
