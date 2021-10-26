@@ -48,6 +48,7 @@ const generateUserData = (type, req) => {
     'middleName',
     'email',
     'mobileNumber',
+    'role',
     'access_level',
     'others',
     'sex',

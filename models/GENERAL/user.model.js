@@ -72,6 +72,11 @@ const UserSchema = new mongoose.Schema(
       required: [true, 'Please provide sex'],
       enum: ['Male', 'Female'],
     },
+    role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: [true, 'Please provide a role'],
+    },
     status: {
       type: String,
       default: 'Active',
