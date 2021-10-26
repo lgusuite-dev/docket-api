@@ -323,7 +323,7 @@ exports.patchUser = catchAsync(async (req, res, next) => {
   if (action === 'undo' && !prevStatus)
     return next(new AppError('Please provide previous status value', 400));
 
-  if (!allowedStatus.includes(prevStatus))
+  if (action === 'undo' && !allowedStatus.includes(prevStatus))
     return next(new AppError('Invalid previous status value', 400));
 
   const user = await User.findOne(initialQuery);
