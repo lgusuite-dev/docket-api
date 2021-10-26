@@ -23,7 +23,7 @@ const generateGetUsersQuery = (type, req) => {
 
 const generateGetOneUserQuery = (type, req) => {
   const { id } = req.params;
-  const { prevStatus } = req.query
+  const { prevStatus } = req.query;
 
   const query = { _id: id, status: { $ne: 'Deleted' } };
 
@@ -48,6 +48,7 @@ const generateUserData = (type, req) => {
     'middleName',
     'email',
     'mobileNumber',
+    'role',
     'access_level',
     'others',
     'sex',
