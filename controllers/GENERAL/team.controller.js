@@ -5,7 +5,7 @@ const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
-const teamUsersCleanup = (inputUsers) => {
+const filterTeamUsersID = (inputUsers) => {
   let uniqueUsers = [];
 
   for (const _id of inputUsers)
@@ -20,7 +20,7 @@ exports.createTeam = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
 
   if (filteredBody.users.length)
-    filteredBody.users = teamUsersCleanup(filteredBody.users);
+    filteredBody.users = filterTeamUsersID(filteredBody.users);
 
   const team = await Team.create(filteredBody);
 
@@ -82,7 +82,7 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
   if (!team) return next(new AppError('Team not found', 404));
 
   if (filteredBody.users.length)
-    filteredBody.users = teamUsersCleanup(filteredBody.users);
+    filteredBody.users = filterTeamUsersID(filteredBody.users);
 
   const updatedTeam = await Team.findByIdAndUpdate(team._id, filteredBody, {
     new: true,
