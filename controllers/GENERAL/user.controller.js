@@ -95,6 +95,7 @@ const validateAction = async (action, user, req) => {
     await user.save({ validateBeforeSave: false });
     return { haveError: false };
   }
+
   if (action === 'undo') {
     if (user.status !== 'Deleted') {
       const message = 'Cant retrieve user';
