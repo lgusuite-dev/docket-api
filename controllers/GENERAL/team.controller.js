@@ -61,7 +61,7 @@ const updateTeamBasedOnAction = async (req) => {
 
   const query = {
     _id: id,
-    status: { $eq: 'Deleted' },
+    status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
 
