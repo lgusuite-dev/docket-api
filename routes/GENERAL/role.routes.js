@@ -13,7 +13,7 @@ router
 router
   .route('/:id')
   .get(roleController.getRole)
-  .patch(roleController.updateRole)
+  .put(roleController.updateRole)
   .delete(roleController.deleteRole);
 
 module.exports = router;
