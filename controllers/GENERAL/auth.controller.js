@@ -270,10 +270,12 @@ exports.verifyResetPasswordToken = catchAsync(async (req, res, next) => {
 });
 
 exports.getMe = catchAsync(async (req, res, next) => {
+  const user = await req.user.populate('_role');
+
   res.status(200).json({
     status: 'success',
     env: {
-      user: req.user,
+      user,
     },
   });
 });
