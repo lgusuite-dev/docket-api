@@ -6,14 +6,7 @@ const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
-const filterTeamUsersID = (inputUsers) => {
-  let uniqueUsers = [];
-
-  for (const _id of inputUsers)
-    if (!uniqueUsers.includes(_id)) uniqueUsers.push(_id);
-
-  return uniqueUsers;
-};
+const filterTeamUsersID = (inputUsers) => [...new Set(inputUsers)];
 
 const addOrRemoveTeamIdToUsers = async (users, teamID, action) => {
   for (const id of users) {
