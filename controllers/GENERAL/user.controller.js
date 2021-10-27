@@ -250,6 +250,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     'mobileNumber',
     'sex',
     'others',
+    '_role',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
