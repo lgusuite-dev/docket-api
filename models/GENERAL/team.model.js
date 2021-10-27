@@ -24,6 +24,11 @@ const TeamSchema = new mongoose.Schema(
       default: 'Active',
       enum: ['Active', 'Deleted'],
     },
+    _tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Please provide tenant id'],
+    },
     _createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -32,5 +37,7 @@ const TeamSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+TeamSchema.index({ name: 1, _tenantId: 1 }, { unique: true });
 
 module.exports = mongoose.model('Team', TeamSchema);

@@ -13,4 +13,6 @@ router
   .put(teamController.updateTeam)
   .delete(teamController.deleteTeam);
 
+router.route('/:id/:action').patch(teamController.patchTeam);
+
 module.exports = router;

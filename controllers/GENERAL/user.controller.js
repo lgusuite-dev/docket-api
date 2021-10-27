@@ -95,6 +95,7 @@ const validateAction = async (action, user, req) => {
     await user.save({ validateBeforeSave: false });
     return { haveError: false };
   }
+
   if (action === 'undo') {
     if (user.status !== 'Deleted') {
       const message = 'Cant retrieve user';
@@ -110,7 +111,7 @@ const validateAction = async (action, user, req) => {
   return { haveError: false };
 };
 
-const updateChildBasedOnAction = async (type, action, user) => {
+const updateChildBasedOnAction = async (type, action, user, req) => {
   if (action === 'access-level' || type === 'users') return;
 
   const { _tenantId } = user;
@@ -118,6 +119,12 @@ const updateChildBasedOnAction = async (type, action, user) => {
 
   if (action === 'suspend') {
     await User.updateMany(query, { status: 'Suspended' });
+  } else if (action === 'undo') {
+    const undoQuery = { ...query };
+    const { prevStatus } = req.query;
+    undoQuery.status = { $eq: 'Deleted' };
+
+    await User.updateMany(undoQuery, { status: prevStatus });
   } else {
     const activeQuery = { ...query };
     activeQuery.status = { $eq: 'Suspended' };
@@ -243,6 +250,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     'mobileNumber',
     'sex',
     'others',
+    '_role',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
@@ -304,13 +312,21 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 
 exports.patchUser = catchAsync(async (req, res, next) => {
   const { action } = req.params;
+  const { prevStatus } = req.query;
   const endpoint = req.originalUrl;
   const allowedActions = ['suspend', 'active', 'access-level', 'undo'];
+  const allowedStatus = ['Active', 'Suspended', 'Deleted'];
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
   const initialQuery = generateGetOneUserQuery(type, req);
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
+
+  if (action === 'undo' && !prevStatus)
+    return next(new AppError('Please provide previous status value', 400));
+
+  if (action === 'undo' && !allowedStatus.includes(prevStatus))
+    return next(new AppError('Invalid previous status value', 400));
 
   const user = await User.findOne(initialQuery);
 
@@ -327,7 +343,7 @@ exports.patchUser = catchAsync(async (req, res, next) => {
   if (result.haveError)
     return next(new AppError(result.message, result.status));
 
-  await updateChildBasedOnAction(type, action, user);
+  await updateChildBasedOnAction(type, action, user, req);
 
   res.status(200).json({
     status: 'success',

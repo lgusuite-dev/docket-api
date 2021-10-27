@@ -5,8 +5,37 @@ const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
+const updateTeamBasedOnAction = async (req) => {
+  const { id, action } = req.params;
+  const { prevStatus } = req.query;
+
+  const query = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  if (action === 'undo') {
+    const undoQuery = { ...query };
+    undoQuery.status = { $eq: 'Deleted' };
+
+    const undoTeam = await Role.findOneAndUpdate(
+      undoQuery,
+      {
+        status: prevStatus,
+      },
+      { new: true, runValidators: true }
+    );
+
+    return undoTeam;
+  }
+};
+
 exports.getAllRoles = catchAsync(async (req, res, next) => {
-  const initialQuery = { status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
   const queryFeatures = new QueryFeatures(Role.find(initialQuery), req.query)
     .sort()
     .limitFields()
@@ -30,7 +59,11 @@ exports.getAllRoles = catchAsync(async (req, res, next) => {
 
 exports.getRole = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const queryFeatures = new QueryFeatures(Role.findOne(initialQuery), req.query)
     .limitFields()
@@ -50,8 +83,8 @@ exports.getRole = catchAsync(async (req, res, next) => {
 exports.createRole = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'access'];
   const filteredBody = _.pick(req.body, pickFields);
-  //   console.log(req.user);
   filteredBody._createdBy = req.user._id;
+  filteredBody._tenantId = req.user._tenantId;
 
   const role = await Role.create(filteredBody);
 
@@ -64,10 +97,14 @@ exports.createRole = catchAsync(async (req, res, next) => {
 });
 
 exports.updateRole = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', 'description', 'accesss'];
+  const pickFields = ['name', 'description', 'access'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const role = await Role.findOneAndUpdate(initialQuery, filteredBody, {
     new: true,
@@ -86,7 +123,11 @@ exports.updateRole = catchAsync(async (req, res, next) => {
 
 exports.deleteRole = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const role = await Role.findOneAndUpdate(initialQuery, { status: 'Deleted' });
 
@@ -94,5 +135,32 @@ exports.deleteRole = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: 'success',
+  });
+});
+
+exports.patchRole = catchAsync(async (req, res, next) => {
+  const { action } = req.params;
+  const { prevStatus } = req.query;
+  const allowedActions = ['undo'];
+  const allowedStatus = ['Active'];
+
+  if (!allowedActions.includes(action))
+    return next(new AppError('Invalid action params', 400));
+
+  if (action === 'undo' && !prevStatus)
+    return next(new AppError('Please provide previous status value', 400));
+
+  if (action === 'undo' && !allowedStatus.includes(prevStatus))
+    return next(new AppError('Invalid previous status value', 400));
+
+  const updatedTeam = await updateTeamBasedOnAction(req);
+
+  if (!updatedTeam) return next(new AppError('Role not found', 404));
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      team: updatedTeam,
+    },
   });
 });
