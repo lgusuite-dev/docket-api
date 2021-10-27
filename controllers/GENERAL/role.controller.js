@@ -58,6 +58,7 @@ exports.createRole = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'access'];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
+  filteredBody._tenantId = req.user._tenantId;
 
   const role = await Role.create(filteredBody);
 
