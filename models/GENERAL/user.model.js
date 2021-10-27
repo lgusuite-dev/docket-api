@@ -72,10 +72,6 @@ const UserSchema = new mongoose.Schema(
       required: [true, 'Please provide sex'],
       enum: ['Male', 'Female'],
     },
-    role: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Role',
-    },
     status: {
       type: String,
       default: 'Active',
@@ -84,6 +80,16 @@ const UserSchema = new mongoose.Schema(
     isNewUser: {
       type: Boolean,
       default: true,
+    },
+    _teams: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Team',
+      },
+    ],
+    _role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
     },
     _tenantId: {
       type: mongoose.Schema.Types.ObjectId,
