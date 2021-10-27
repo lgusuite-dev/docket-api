@@ -214,7 +214,7 @@ exports.patchTeam = catchAsync(async (req, res, next) => {
   const { action } = req.params;
   const { prevStatus } = req.query;
   const allowedActions = ['undo'];
-  const allowdStatus = ['Active'];
+  const allowedStatus = ['Active'];
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
@@ -222,7 +222,7 @@ exports.patchTeam = catchAsync(async (req, res, next) => {
   if (action === 'undo' && !prevStatus)
     return next(new AppError('Please provide previous status value', 400));
 
-  if (action === 'undo' && !allowdStatus.includes(prevStatus))
+  if (action === 'undo' && !allowedStatus.includes(prevStatus))
     return next(new AppError('Invalid previous status value', 400));
 
   const updatedTeam = await updateTeamBasedOnAction(req);
