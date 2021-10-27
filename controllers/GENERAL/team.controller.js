@@ -78,7 +78,11 @@ exports.createTeam = catchAsync(async (req, res, next) => {
 });
 
 exports.getTeams = catchAsync(async (req, res, next) => {
-  const initialQuery = { status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
   const queryFeatures = new QueryFeatures(Team.find(initialQuery), req.query)
     .sort()
     .limitFields()
@@ -98,7 +102,11 @@ exports.getTeams = catchAsync(async (req, res, next) => {
 
 exports.getTeam = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const queryFeatures = new QueryFeatures(Team.findOne(initialQuery), req.query)
     .limitFields()
@@ -120,7 +128,11 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'users'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const team = await Team.findOne(initialQuery);
 
@@ -154,7 +166,11 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
 
 exports.deleteTeam = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const team = await Team.findOneAndUpdate(initialQuery, { status: 'Deleted' });
 
