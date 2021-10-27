@@ -70,7 +70,7 @@ exports.createRole = catchAsync(async (req, res, next) => {
 });
 
 exports.updateRole = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', 'description', 'accesss'];
+  const pickFields = ['name', 'description', 'access'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   const initialQuery = {
