@@ -13,6 +13,11 @@ const RoleSchema = new mongoose.Schema(
       trim: true,
       required: [true, 'Please provide description'],
     },
+    _tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Please provide tenant id'],
+    },
     _createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
