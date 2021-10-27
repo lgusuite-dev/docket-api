@@ -183,3 +183,19 @@ exports.deleteTeam = catchAsync(async (req, res, next) => {
     status: 'success',
   });
 });
+
+exports.patchTeam = catchAsync(async (req, res, next) => {
+  const { id, action } = req.params;
+  const { prevStatus } = req.query;
+  const allowedActions = ['undo'];
+  const query = { _id: id, status: { $eq: 'D' } };
+
+  if (!allowedActions.includes(action))
+    return next(new AppError('Invalid action params', 400));
+
+  if (action === 'undo' && !prevStatus)
+    return next(new AppError('Please provide previous status value', 400));
+
+  if (action === 'undo' && !allowedStatus.includes(prevStatus))
+    return next(new AppError('Invalid previous status value', 400));
+});
