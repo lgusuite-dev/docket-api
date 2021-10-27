@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const Team = require('../../models/GENERAL/team.model');
+const User = require('../../models/GENERAL/user.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -14,15 +15,66 @@ const filterTeamUsersID = (inputUsers) => {
   return uniqueUsers;
 };
 
+const addOrRemoveTeamIdToUsers = async (users, teamID, action) => {
+  for (const id of users) {
+    const user = await User.findById(id);
+
+    if (user) {
+      if (action === 'upsert') {
+        let userTeams = [];
+
+        if (user._teams.length) userTeams = [...user._teams];
+
+        userTeams.push(teamID);
+
+        user._teams = userTeams;
+      }
+
+      if (action === 'delete') {
+        const updatedUserTeams = user._teams.filter(
+          (id) => id.toString() !== teamID.toString()
+        );
+
+        user._teams = updatedUserTeams;
+      }
+
+      await user.save({ validateBeforeSave: false });
+    }
+  }
+};
+
+const identifyRemovedAndAddedIDs = (oldIDs, updatedIDs) => {
+  const removedData = [];
+  const addedData = [];
+
+  if (oldIDs.length) {
+    for (const id of oldIDs) {
+      if (!updatedIDs.includes(id)) removedData.push(id);
+    }
+  }
+
+  if (updatedIDs.length) {
+    for (const id of updatedIDs) {
+      if (!oldIDs.includes(id)) addedData.push(id);
+    }
+  }
+
+  return { removedData, addedData };
+};
+
 exports.createTeam = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'users'];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
+  filteredBody._tenantId = req.user._tenantId;
 
   if (filteredBody.users.length)
     filteredBody.users = filterTeamUsersID(filteredBody.users);
 
   const team = await Team.create(filteredBody);
+
+  if (team.users)
+    await addOrRemoveTeamIdToUsers(team.users, team._id, 'upsert');
 
   res.status(201).json({
     status: 'success',
@@ -88,6 +140,16 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
     new: true,
     runValidators: true,
   });
+
+  const { addedData, removedData } = identifyRemovedAndAddedIDs(
+    team.users,
+    updatedTeam.users
+  );
+
+  if (addedData.length)
+    await addOrRemoveTeamIdToUsers(addedData, updatedTeam._id, 'upsert');
+  if (removedData.length)
+    await addOrRemoveTeamIdToUsers(removedData, updatedTeam._id, 'delete');
 
   res.status(200).json({
     status: 'success',
