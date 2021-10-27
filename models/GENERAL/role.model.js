@@ -34,4 +34,6 @@ const RoleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+RoleSchema.index({ name: 1, _tenantId: 1 }, { unique: true });
+
 module.exports = mongoose.model('Role', RoleSchema);
