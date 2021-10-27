@@ -6,7 +6,10 @@ const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
 exports.getAllRoles = catchAsync(async (req, res, next) => {
-  const initialQuery = { status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
   const queryFeatures = new QueryFeatures(Role.find(initialQuery), req.query)
     .sort()
     .limitFields()
@@ -30,7 +33,11 @@ exports.getAllRoles = catchAsync(async (req, res, next) => {
 
 exports.getRole = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const queryFeatures = new QueryFeatures(Role.findOne(initialQuery), req.query)
     .limitFields()
@@ -50,7 +57,6 @@ exports.getRole = catchAsync(async (req, res, next) => {
 exports.createRole = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'access'];
   const filteredBody = _.pick(req.body, pickFields);
-  //   console.log(req.user);
   filteredBody._createdBy = req.user._id;
 
   const role = await Role.create(filteredBody);
@@ -67,7 +73,11 @@ exports.updateRole = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'accesss'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const role = await Role.findOneAndUpdate(initialQuery, filteredBody, {
     new: true,
@@ -86,7 +96,11 @@ exports.updateRole = catchAsync(async (req, res, next) => {
 
 exports.deleteRole = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const initialQuery = { _id: id, status: { $ne: 'Deleted' } };
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
 
   const role = await Role.findOneAndUpdate(initialQuery, { status: 'Deleted' });
 
