@@ -38,4 +38,6 @@ const TeamSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+TeamSchema.index({ name: 1, _tenantId: 1 }, { unique: true });
+
 module.exports = mongoose.model('Team', TeamSchema);
