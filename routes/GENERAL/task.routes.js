@@ -1,0 +1,18 @@
+const router = require('express').Router();
+
+const authController = require('../../controllers/GENERAL/auth.controller');
+const taskController = require('../../controllers/GENERAL/task.controller');
+
+router.use(authController.authenticate);
+
+router.route('/').post(taskController.createTask).get(taskController.getTasks);
+
+router
+  .route('/:id')
+  .get(taskController.getTask)
+  .put(taskController.updateTask)
+  .delete(taskController.deleteTask);
+
+router.route('/:id/:action').patch(taskController.patchTask);
+
+module.exports = router;
