@@ -178,7 +178,7 @@ exports.checkRoleInUsers = catchAsync(async (req, res, next) => {
     .count();
 
   const total = await queryFeatures.query;
-  if (!total) return next(new AppError('App not found!', 404));
+  if (!total) total = 0;
 
   res.status(200).json({
     status: 'success',
