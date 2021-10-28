@@ -37,6 +37,13 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/teams', teamRouter);
 app.use('/api/v1/roles', roleRouter);
 
+app.get('/api/v1/health', (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Up and Running!',
+  });
+});
+
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server`, 404));
 });

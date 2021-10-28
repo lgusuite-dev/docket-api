@@ -48,7 +48,7 @@ const generateUserData = (type, req) => {
     'middleName',
     'email',
     'mobileNumber',
-    'role',
+    '_role',
     'access_level',
     'others',
     'sex',
@@ -251,6 +251,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     'sex',
     'others',
     '_role',
+    'access_level',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
