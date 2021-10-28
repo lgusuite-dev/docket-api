@@ -4,6 +4,7 @@ const Role = require('../../models/GENERAL/role.model');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
+const User = require('../../models/GENERAL/user.model');
 
 const updateTeamBasedOnAction = async (req) => {
   const { id, action } = req.params;
@@ -162,5 +163,25 @@ exports.patchRole = catchAsync(async (req, res, next) => {
     env: {
       team: updatedTeam,
     },
+  });
+});
+
+exports.checkRoleInUsers = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _role: id,
+  };
+
+  const queryFeatures = new QueryFeatures(User.findOne(initialQuery), req.query)
+    .filter()
+    .count();
+
+  const total = await queryFeatures.query;
+  if (!total) return next(new AppError('App not found!', 404));
+
+  res.status(200).json({
+    status: 'success',
+    total,
   });
 });

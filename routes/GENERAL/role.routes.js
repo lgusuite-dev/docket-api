@@ -18,4 +18,6 @@ router
 
 router.route('/:id/:action').patch(roleController.patchRole);
 
+router.route('/checkRoleInUsers/:id').get(roleController.checkRoleInUsers);
+
 module.exports = router;
