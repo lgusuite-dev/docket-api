@@ -177,9 +177,10 @@ exports.checkRoleInUsers = catchAsync(async (req, res, next) => {
     .filter()
     .count();
 
-  const total = await queryFeatures.query;
-  if (!total) total = 0;
-
+  let total = 0;
+  if (queryFeatures) {
+    total = await queryFeatures.query;
+  }
   res.status(200).json({
     status: 'success',
     total,
