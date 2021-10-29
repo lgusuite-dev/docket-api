@@ -44,6 +44,9 @@ exports.createTask = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
+  if (filteredBody.assignedTo.length)
+    filteredBody.assignedTo = filterTaskUsersID(filteredBody.assignedTo);
+
   const task = await Task.create(filteredBody);
 
   res.status(201).json({
@@ -91,10 +94,13 @@ exports.getTask = catchAsync(async (req, res, next) => {
 
   if (!task) return next(new AppError('Task not found', 404));
 
-  await Task.findByIdAndUpdate(task._id, body, {
-    new: true,
-    runValidators: true,
-  });
+  const stringifyAssignedTo = [...task.assignedTo.toString().split(',')];
+
+  if (stringifyAssignedTo.includes(req.user._id.toString()))
+    await Task.findByIdAndUpdate(task._id, body, {
+      new: true,
+      runValidators: true,
+    });
 
   const queryFeatures = new QueryFeatures(Task.findOne(initialQuery), req.query)
     .limitFields()
@@ -111,6 +117,7 @@ exports.getTask = catchAsync(async (req, res, next) => {
 });
 
 exports.updateTask = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
   const pickFields = [
     'name',
     'description',
@@ -121,26 +128,23 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     'dueDate',
     'assignedTo',
   ];
-  const filteredBody = _.pick(req.body, pickFields);
-  filteredBody._updatedBy = req.user._id;
-  const { id } = req.params;
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
-
-  const task = await Task.findOne(initialQuery);
-
-  if (!task) return next(new AppError('Task not found', 404));
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._updatedBy = req.user._id;
 
   if (filteredBody.assignedTo.length)
     filteredBody.users = filterTaskUsersID(filteredBody.users);
 
-  const updatedTask = await Task.findByIdAndUpdate(task._id, filteredBody, {
+  const updatedTask = await Task.findByIdAndUpdate(initialQuery, filteredBody, {
     new: true,
     runValidators: true,
   });
+
+  if (!updatedTask) return next(new AppError('Task not found', 404));
 
   res.status(200).json({
     status: 'success',
@@ -172,9 +176,7 @@ exports.patchTask = catchAsync(async (req, res, next) => {
   const { prevStatus } = req.query;
   const allowedActions = ['pending', 'todo', 'completed', 'undo'];
   const allowedStatus = ['Pending', 'Todo', 'Completed'];
-  const initialQuery = {
-    _id: id,
-  };
+  const initialQuery = { _id: id, _tenantId: req.user._tenantId };
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
