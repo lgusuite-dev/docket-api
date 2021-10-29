@@ -130,7 +130,7 @@ UserSchema.pre('save', async function (next) {
 });
 
 UserSchema.pre('save', async function (next) {
-  if (!this.isNewUser || !this.isModified('password')) return next();
+  if (this.isNew && this.isNewUser) return next();
 
   this.isNewUser = false;
 
