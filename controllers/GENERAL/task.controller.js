@@ -44,6 +44,14 @@ exports.createTask = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
+  const foundTask = await Task.findOne({
+    name: filteredBody.name,
+    status: 'Deleted',
+    _tenantId: req.user._tenantId,
+  });
+
+  if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+
   if (filteredBody.assignedTo.length)
     filteredBody.assignedTo = filterTaskUsersID(filteredBody.assignedTo);
 
