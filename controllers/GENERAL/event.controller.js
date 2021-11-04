@@ -46,9 +46,9 @@ exports.getEvent = catchAsync(async (req, res, next) => {
     .populate();
 
   const event = await queryFeatures.query;
-  if (!query) return next(new AppError('Event not found', 404));
+  if (!event) return next(new AppError('Event not found', 404));
 
-  res.status({
+  res.status(200).json({
     status: 'success',
     env: {
       event,
@@ -153,7 +153,9 @@ exports.deleteEvent = catchAsync(async (req, res, next) => {
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
-  const event = findOneAndUpdate(initialQuery, { status: 'Deleted' });
+  const event = await Event.findOneAndUpdate(initialQuery, {
+    status: 'Deleted',
+  });
 
   if (!event) return next(new AppError('Event not found!', 400));
 
