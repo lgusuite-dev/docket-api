@@ -90,6 +90,14 @@ exports.createTeam = catchAsync(async (req, res, next) => {
   if (filteredBody.users.length)
     filteredBody.users = filterTeamUsersID(filteredBody.users);
 
+  const foundTeam = await Team.findOne({
+    name: filteredBody.name,
+    status: 'Deleted',
+    _tenantId: req.user._tenantId,
+  });
+
+  if (foundTeam) await Team.findByIdAndDelete(foundTeam._id);
+
   const team = await Team.create(filteredBody);
 
   if (team.users)
