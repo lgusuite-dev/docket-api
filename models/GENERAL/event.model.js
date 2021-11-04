@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { createMeeting } = require('../../utils/zoom');
 
 const EventSchema = new mongoose.Schema(
   {
@@ -64,6 +65,14 @@ const EventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// EventSchema.index({ name: 1, _tenantId: 1 }, { unique: true });
+EventSchema.pre('save', async function (next) {
+  if(!this.isNew) return next();
+
+  const {data: {join_url}} =  await createMeeting(this.name, this.dateFrom);
+
+  this.zoomLink = join_url
+  
+  next();
+})
 
 module.exports = mongoose.model('Event', EventSchema);
