@@ -66,10 +66,12 @@ const EventSchema = new mongoose.Schema(
 );
 
 EventSchema.pre('save', async function (next) {
-  // if(!this.isNew) return next();
+  if(!this.isNew) return next();
 
   // const {data: {join_url}} =  await createMeeting(this.name, this.dateFrom);
-  // this.zoomLink = join_url;
+  const link =  await createMeeting(this.name, this.dateFrom);
+  this.zoomLink = link.join_url;
+
   next();
 })
 
