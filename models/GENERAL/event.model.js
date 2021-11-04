@@ -54,6 +54,12 @@ const EventSchema = new mongoose.Schema(
       },
     ],
     tags: String,
+    attachments: [
+      {
+        type: Object,
+      },
+    ],
+    zoomLink: String,
     _tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
