@@ -2,7 +2,6 @@ const router = require('express').Router();
 
 const authController = require('../../controllers/GENERAL/auth.controller');
 const eventController = require('../../controllers/GENERAL/event.controller');
-//const eventController
 
 router.use(authController.authenticate);
 
