@@ -5,6 +5,6 @@ const zoomController = require('../../controllers/ZOOM/zoom.controller');
 
 router.use(authController.authenticate);
 
-router.post('/create', zoomController.createMeeting);
+router.post('/', zoomController.createMeeting);
 
 module.exports = router;
