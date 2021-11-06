@@ -87,7 +87,7 @@ exports.createTeam = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
-  if (filteredBody.users.length)
+  if (filteredBody.users && filteredBody.users.length)
     filteredBody.users = filterTeamUsersID(filteredBody.users);
 
   const foundTeam = await Team.findOne({
@@ -172,11 +172,10 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
 
   if (!team) return next(new AppError('Team not found', 404));
 
-  if (filteredBody.users.length)
+  if (filteredBody.users && filteredBody.users.length)
     filteredBody.users = filterTeamUsersID(filteredBody.users);
 
   const foundTeam = await Team.findOne({
-    _id: id,
     name: filteredBody.name || '',
     status: 'Deleted',
     _tenantId: req.user._tenantId,
