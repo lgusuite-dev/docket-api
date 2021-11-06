@@ -52,7 +52,7 @@ exports.createTask = catchAsync(async (req, res, next) => {
 
   if (foundTask) await Task.findByIdAndDelete(foundTask._id);
 
-  if (filteredBody.assignedTo.length)
+  if (filteredBody.assignedTo && filteredBody.assignedTo.length)
     filteredBody.assignedTo = filterTaskUsersID(filteredBody.assignedTo);
 
   const task = await Task.create(filteredBody);
@@ -144,10 +144,18 @@ exports.updateTask = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
 
-  if (filteredBody.assignedTo.length)
+  if (filteredBody.assignedTo && filteredBody.assignedTo.length)
     filteredBody.users = filterTaskUsersID(filteredBody.users);
 
-  const updatedTask = await Task.findByIdAndUpdate(initialQuery, filteredBody, {
+  const foundTask = await Task.findOne({
+    name: filteredBody.name || '',
+    status: 'Deleted',
+    _tenantId: req.user._tenantId,
+  });
+
+  if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+
+  const updatedTask = await Task.findOneAndUpdate(initialQuery, filteredBody, {
     new: true,
     runValidators: true,
   });

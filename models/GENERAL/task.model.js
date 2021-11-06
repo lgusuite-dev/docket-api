@@ -43,6 +43,14 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    _mainTaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
+    },
+    _fromTaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
+    },
     isRead: {
       type: Boolean,
       default: false,
