@@ -65,14 +65,4 @@ const EventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-EventSchema.pre('save', async function (next) {
-  if(!this.isNew) return next();
-
-  // const {data: {join_url}} =  await createMeeting(this.name, this.dateFrom);
-  const link =  await createMeeting(this.name, this.dateFrom);
-  this.zoomLink = link.join_url;
-
-  next();
-})
-
 module.exports = mongoose.model('Event', EventSchema);
