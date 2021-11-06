@@ -147,7 +147,16 @@ exports.updateTask = catchAsync(async (req, res, next) => {
   if (filteredBody.assignedTo.length)
     filteredBody.users = filterTaskUsersID(filteredBody.users);
 
-  const updatedTask = await Task.findByIdAndUpdate(initialQuery, filteredBody, {
+  const foundTask = await Task.findOne({
+    _id: id,
+    name: filteredBody.name || '',
+    status: 'Deleted',
+    _tenantId: req.user._tenantId,
+  });
+
+  if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+
+  const updatedTask = await Task.findOneAndUpdate(initialQuery, filteredBody, {
     new: true,
     runValidators: true,
   });
