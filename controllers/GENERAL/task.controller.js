@@ -23,8 +23,11 @@ const updateTaskBasedOnAction = async (action, task, prevStatus) => {
     return { haveError: true, message, status: 400 };
   }
 
-  task.status =
-    action === 'pending' ? 'Pending' : action === 'todo' ? 'Todo' : 'Completed';
+  if (action === 'pending') task.status = 'Pending';
+  else if (action === 'todo') task.status = 'Todo';
+  else if (action === 'declined') task.status === 'Declined';
+  else task.status = 'Completed';
+
   await task.save({ validateBeforeSave: false });
   return { haveError: false };
 };
@@ -197,7 +200,7 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
 exports.patchTask = catchAsync(async (req, res, next) => {
   const { id, action } = req.params;
   const { prevStatus } = req.query;
-  const allowedActions = ['pending', 'todo', 'completed', 'undo'];
+  const allowedActions = ['pending', 'todo', 'completed', 'undo', 'declined'];
   const allowedStatus = ['Pending', 'Todo', 'Completed'];
   const initialQuery = { _id: id, _tenantId: req.user._tenantId };
 

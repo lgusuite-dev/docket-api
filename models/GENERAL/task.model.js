@@ -27,7 +27,7 @@ const TaskSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: 'Todo',
-      enum: ['Pending', 'Todo', 'Completed', 'Deleted'],
+      enum: ['Pending', 'Todo', 'Completed', 'Deleted', 'Declined'],
     },
     isRead: {
       type: Boolean,
