@@ -7,7 +7,7 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
 
-const updateTeamBasedOnAction = async (action, task, prevStatus) => {
+const updateTaskBasedOnAction = async (action, task, prevStatus) => {
   if (action === 'undo') {
     if (task.status !== 'Deleted') {
       const message = 'Cant retrieve task';
@@ -223,7 +223,7 @@ exports.patchTask = catchAsync(async (req, res, next) => {
   if (task.status === 'Completed' && action === 'completed')
     return next(new AppError('This task is already completed', 400));
 
-  const result = await updateTeamBasedOnAction(action, task, prevStatus);
+  const result = await updateTaskBasedOnAction(action, task, prevStatus);
 
   if (result.haveError)
     return next(new AppError(result.message, result.status));
