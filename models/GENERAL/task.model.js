@@ -29,6 +29,15 @@ const TaskSchema = new mongoose.Schema(
       default: 'Todo',
       enum: ['Pending', 'Todo', 'Completed', 'Deleted'],
     },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
+    _references: [
+      {
+        type: Object,
+      },
+    ],
     _tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -51,12 +60,8 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',
     },
-    isRead: {
-      type: Boolean,
-      default: false,
-    },
     attachments: Object,
-    _references: Object,
+    _mainReference: Object,
     startDate: Date,
     dueDate: Date,
   },
