@@ -44,6 +44,13 @@ exports.createTask = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
+  let prevTaskId = req.params['id'];
+  if (prevTaskId) {
+    let prevTask = await Task.findById(prevTaskId);
+    filteredBody['_mainTaskId'] = prevTask._mainTaskId || prevTaskId;
+    filteredBody['_fromTaskId'] = prevTaskId;
+  }
+
   const foundTask = await Task.findOne({
     name: filteredBody.name,
     status: 'Deleted',
