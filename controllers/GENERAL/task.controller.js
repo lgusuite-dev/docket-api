@@ -12,28 +12,37 @@ const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
 const sendTaskEmailWithAttachment = async (action, req) => {
   const { attachments, sendTo, subject } = req.body;
   const allowedActions = ['completed-reply', 'declined-reply'];
+  const emailAttachments = [];
 
   if (!allowedActions.includes(action)) return;
 
-  const file = await axios.get(attachments);
-  if (file) {
-    const bufferedFile = Buffer.from(file.data).toString('base64');
+  if (attachments && attachments.length) {
+    for (let [index, attachment] of attachments.entries()) {
+      const file = await axios.get(attachment.link);
 
-    const emailOptions = {
-      to: sendTo,
-      subject,
-      html: '<p>Here’s an attachment for you!</p>',
-      attachments: {
-        content: bufferedFile,
-        filename: 'some-attachment.pdf',
-        type: 'application/pdf',
-        disposition: 'attachment',
-        content_id: 'mytext',
-      },
-    };
+      if (file) {
+        const bufferedFile = Buffer.from(file.data).toString('base64');
+        const emailAttachment = {
+          content: bufferedFile,
+          filename: `some-attachment${index}.pdf`,
+          type: 'application/pdf',
+          disposition: 'attachment',
+          content_id: 'mytext',
+        };
 
-    await sendMail(emailOptions);
+        emailAttachments.push(emailAttachment);
+      }
+    }
   }
+
+  const emailOptions = {
+    to: sendTo,
+    subject,
+    html: '<p>Here’s an attachment for you!</p>',
+    attachments: emailAttachments,
+  };
+
+  await sendMail(emailOptions);
 };
 
 const updateTaskBasedOnAction = async (action, task, prevStatus, req) => {
