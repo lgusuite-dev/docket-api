@@ -44,19 +44,27 @@ exports.getAllByTeam = catchAsync(async (req, res, next) => {
   let teamIDs = req.user._teams;
   let tasks = [];
   let events = [];
-  //   console.log(req.params.id);
-  //   console.log(teamIDs);
 
-  const team = await Team.findById(req.params.id).populate('users');
-  //   console.log(team.users);
-  team.users.forEach(async (user) => {
-    // console.log(user, 'Here');
-    let t = await Task.find({ assignedTo: { $elemMatch: { $eq: user._id } } });
-    let e = await Event.find({ guests: { $elemMatch: { email: user.email } } });
-    console.log(e);
-    events.concat(e);
-    console.log(resp);
-  });
+  const team = await Team.findById(req.params.id).populate('users', 'email');
+
+  //   });
+  for (let user of team.users) {
+    console.log(user);
+    let _tasks = await Task.find({
+      assignedTo: { $elemMatch: { $eq: user._id } },
+      status: { $nin: ['Deleted'] },
+      _tenantId: req.user._tenantId,
+    });
+    let _events = await Event.find({
+      guests: { $elemMatch: { email: user.email } },
+      status: { $nin: ['Deleted'] },
+      _tenantId: req.user._tenantId,
+    });
+
+    if (_tasks.length) for (const doc of _tasks) tasks.push(doc);
+
+    if (_events.length) for (const doc of _events) events.push(doc);
+  }
 
   res.status(200).json({
     message: 'success',
