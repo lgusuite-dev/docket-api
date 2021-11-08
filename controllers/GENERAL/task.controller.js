@@ -10,7 +10,7 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
 
 const sendTaskEmailWithAttachment = async (action, req) => {
-  const { attachments, sendTo, subject } = req.body;
+  const { attachments, sendTo, subject, message } = req.body;
   const allowedActions = ['completed-reply', 'declined-reply'];
   const emailAttachments = [];
 
@@ -38,7 +38,7 @@ const sendTaskEmailWithAttachment = async (action, req) => {
   const emailOptions = {
     to: sendTo,
     subject,
-    html: '<p>Here’s an attachment for you!</p>',
+    html: `<p>${message}</p>`,
     attachments: emailAttachments,
   };
 
