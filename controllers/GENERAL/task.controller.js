@@ -54,13 +54,15 @@ exports.createTask = catchAsync(async (req, res, next) => {
     filteredBody['_fromTaskId'] = prevTaskId;
   }
 
-  const foundTask = await Task.findOne({
-    name: filteredBody.name,
-    status: 'Deleted',
-    _tenantId: req.user._tenantId,
-  });
+  if (filteredBody.name) {
+    const foundTask = await Task.findOne({
+      name: filteredBody.name,
+      status: 'Deleted',
+      _tenantId: req.user._tenantId,
+    });
 
-  if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+    if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+  }
 
   if (filteredBody.assignedTo && filteredBody.assignedTo.length)
     filteredBody.assignedTo = filterTaskUsersID(filteredBody.assignedTo);
@@ -157,13 +159,15 @@ exports.updateTask = catchAsync(async (req, res, next) => {
   if (filteredBody.assignedTo && filteredBody.assignedTo.length)
     filteredBody.users = filterTaskUsersID(filteredBody.users);
 
-  const foundTask = await Task.findOne({
-    name: filteredBody.name || '',
-    status: 'Deleted',
-    _tenantId: req.user._tenantId,
-  });
+  if (filteredBody.name) {
+    const foundTask = await Task.findOne({
+      name: filteredBody.name,
+      status: 'Deleted',
+      _tenantId: req.user._tenantId,
+    });
 
-  if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+    if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+  }
 
   const updatedTask = await Task.findOneAndUpdate(initialQuery, filteredBody, {
     new: true,
