@@ -5,6 +5,8 @@ const calendarController = require('../../controllers/GENERAL/calendar.controlle
 
 router.use(authController.authenticate);
 
-router.route('/team').get(calendarController.getAllByTeam);
+router.route('/').get(calendarController.getAll);
+router.route('/byUser').get(calendarController.getAllByUser);
+router.route('/byTeam').get(calendarController.getAllByTeam);
 
 module.exports = router;
