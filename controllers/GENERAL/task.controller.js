@@ -1,13 +1,42 @@
 const _ = require('lodash');
-const Task = require('../../models/GENERAL/task.model');
+const axios = require('axios');
 
+const Task = require('../../models/GENERAL/task.model');
+const { sendMail } = require('../../utils/comms/email');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
 
-const updateTaskBasedOnAction = async (action, task, prevStatus) => {
+const sendTaskEmailWithAttachment = async (action, req) => {
+  const { attachments, sendTo, subject } = req.body;
+  const allowedActions = ['completed-reply', 'declined-reply'];
+
+  if (!allowedActions.includes(action)) return;
+
+  const file = await axios.get(attachments);
+  if (file) {
+    const bufferedFile = Buffer.from(file.data).toString('base64');
+
+    const emailOptions = {
+      to: sendTo,
+      subject,
+      html: '<p>Here’s an attachment for you!</p>',
+      attachments: {
+        content: bufferedFile,
+        filename: 'some-attachment.pdf',
+        type: 'application/pdf',
+        disposition: 'attachment',
+        content_id: 'mytext',
+      },
+    };
+
+    await sendMail(emailOptions);
+  }
+};
+
+const updateTaskBasedOnAction = async (action, task, prevStatus, req) => {
   if (action === 'undo') {
     if (task.status !== 'Deleted') {
       const message = 'Cant retrieve task';
@@ -25,8 +54,15 @@ const updateTaskBasedOnAction = async (action, task, prevStatus) => {
 
   if (action === 'pending') task.status = 'Pending';
   else if (action === 'todo') task.status = 'Todo';
-  else if (action === 'declined') task.status = 'Declined';
-  else task.status = 'Completed';
+  else if (action === 'declined' || action === 'declined-reply') {
+    const { taskReply } = req.body;
+    task.taskReply = taskReply;
+    task.status = 'Declined';
+  } else {
+    const { taskReply } = req.body;
+    task.taskReply = taskReply;
+    task.status = 'Completed';
+  }
 
   await task.save({ validateBeforeSave: false });
   return { haveError: false };
@@ -204,7 +240,16 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
 exports.patchTask = catchAsync(async (req, res, next) => {
   const { id, action } = req.params;
   const { prevStatus } = req.query;
-  const allowedActions = ['pending', 'todo', 'completed', 'undo', 'declined'];
+  const allowedActions = [
+    'pending',
+    'todo',
+    'completed',
+    'undo',
+    'declined',
+    'reply',
+    'completed-reply',
+    'declined-reply',
+  ];
   const allowedStatus = ['Pending', 'Todo', 'Completed'];
   const initialQuery = { _id: id, _tenantId: req.user._tenantId };
 
@@ -233,10 +278,12 @@ exports.patchTask = catchAsync(async (req, res, next) => {
   if (task.status === 'Declined' && action === 'declined')
     return next(new AppError('This task is already completed', 400));
 
-  const result = await updateTaskBasedOnAction(action, task, prevStatus);
+  const result = await updateTaskBasedOnAction(action, task, prevStatus, req);
 
   if (result.haveError)
     return next(new AppError(result.message, result.status));
+
+  await sendTaskEmailWithAttachment(action, req);
 
   res.status(200).json({
     status: 'success',
