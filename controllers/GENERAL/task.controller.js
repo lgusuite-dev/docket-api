@@ -90,10 +90,16 @@ exports.getTasks = catchAsync(async (req, res, next) => {
     .paginate()
     .populate();
 
+  const nQueryFeature = new QueryFeatures(Task.find(initialQuery), req.query)
+    .filter()
+    .count();
+
   const tasks = await queryFeatures.query;
+  const nTasks = await nQueryFeature.query;
 
   res.status(200).json({
     status: 'success',
+    total_docs: nTasks,
     env: {
       tasks,
     },
@@ -231,7 +237,7 @@ exports.patchTask = catchAsync(async (req, res, next) => {
     return next(new AppError('This task is already completed', 400));
 
   if (task.status === 'Declined' && action === 'declined')
-    return next(new AppError('This task is already completed', 400));
+    return next(new AppError('This task is already declined', 400));
 
   const result = await updateTaskBasedOnAction(action, task, prevStatus);
 

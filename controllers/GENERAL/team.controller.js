@@ -126,10 +126,16 @@ exports.getTeams = catchAsync(async (req, res, next) => {
     .paginate()
     .populate();
 
+  const nQueryFeature = new QueryFeatures(Team.find(initialQuery), req.query)
+    .filter()
+    .count();
+
   const teams = await queryFeatures.query;
+  const nTeams = await nQueryFeature.query;
 
   res.status(200).json({
     status: 'success',
+    total_docs: nTeams,
     env: {
       teams,
     },
