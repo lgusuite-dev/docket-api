@@ -11,6 +11,7 @@ const teamRouter = require('./routes/GENERAL/team.routes');
 const roleRouter = require('./routes/GENERAL/role.routes');
 const taskRouter = require('./routes/GENERAL/task.routes');
 const eventRouter = require('./routes/GENERAL/event.routes');
+const calendarRouter = require('./routes/GENERAL/calendar.routes');
 const zoomRouter = require('./routes/ZOOM/zoom.routes');
 
 const errorController = require('./controllers/GENERAL/error.controller');
@@ -42,6 +43,7 @@ app.use('/api/v1/roles', roleRouter);
 app.use('/api/v1/tasks', taskRouter);
 app.use('/api/v1/events', eventRouter);
 app.use('/api/v1/zoom', zoomRouter);
+app.use('/api/v1/calendar', calendarRouter);
 
 app.get('/api/v1/health', (req, res, next) => {
   res.status(200).json({
