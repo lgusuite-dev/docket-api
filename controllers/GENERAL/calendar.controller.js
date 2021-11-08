@@ -8,6 +8,37 @@ const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
+exports.getAll = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const taskQuery = new QueryFeatures(Task.find(initialQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+  const eventQuery = new QueryFeatures(Event.find(initialQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const tasks = await taskQuery.query;
+  const events = await eventQuery.query;
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      events,
+      tasks,
+    },
+  });
+});
+
 exports.getAllByTeam = catchAsync(async (req, res, next) => {
   const user = req.user;
   let teamIDs = req.user._teams;
@@ -22,6 +53,38 @@ exports.getAllByTeam = catchAsync(async (req, res, next) => {
       tasks,
       events,
       user,
+    },
+  });
+});
+
+exports.getAllByUser = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+    _id: req.user._id,
+  };
+
+  const taskQuery = new QueryFeatures(Task.find(initialQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+  const eventQuery = new QueryFeatures(Event.find(initialQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const tasks = await taskQuery.query;
+  const events = await eventQuery.query;
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      events,
+      tasks,
     },
   });
 });

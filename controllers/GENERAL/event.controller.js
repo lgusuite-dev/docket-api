@@ -9,7 +9,6 @@ exports.getAllEvents = catchAsync(async (req, res, next) => {
   const initialQuery = {
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
-    status: { $ne: 'Deleted' },
   };
 
   const queryFeatures = new QueryFeatures(Event.find(initialQuery), req.query)
