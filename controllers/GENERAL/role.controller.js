@@ -94,7 +94,7 @@ exports.createRole = catchAsync(async (req, res, next) => {
       _tenantId: req.user._tenantId,
     });
 
-    if (foundRole) await Team.findByIdAndDelete(foundRole._id);
+    if (foundRole) await Role.findByIdAndDelete(foundRole._id);
   }
 
   const role = await Role.create(filteredBody);
@@ -117,13 +117,15 @@ exports.updateRole = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  const foundRole = await Role.findOne({
-    name: filteredBody.name,
-    status: 'Deleted',
-    _tenantId: req.user._tenantId,
-  });
+  if (filteredBody.name) {
+    const foundRole = await Role.findOne({
+      name: filteredBody.name,
+      status: 'Deleted',
+      _tenantId: req.user._tenantId,
+    });
 
-  if (foundRole) await Team.findByIdAndDelete(foundRole._id);
+    if (foundRole) await Role.findByIdAndDelete(foundRole._id);
+  }
 
   const role = await Role.findOneAndUpdate(initialQuery, filteredBody, {
     new: true,
