@@ -25,7 +25,7 @@ const updateTaskBasedOnAction = async (action, task, prevStatus) => {
 
   if (action === 'pending') task.status = 'Pending';
   else if (action === 'todo') task.status = 'Todo';
-  else if (action === 'declined') task.status === 'Declined';
+  else if (action === 'declined') task.status = 'Declined';
   else task.status = 'Completed';
 
   await task.save({ validateBeforeSave: false });
@@ -224,6 +224,9 @@ exports.patchTask = catchAsync(async (req, res, next) => {
     return next(new AppError('This task is already pending', 400));
 
   if (task.status === 'Completed' && action === 'completed')
+    return next(new AppError('This task is already completed', 400));
+
+  if (task.status === 'Declined' && action === 'declined')
     return next(new AppError('This task is already completed', 400));
 
   const result = await updateTaskBasedOnAction(action, task, prevStatus);
