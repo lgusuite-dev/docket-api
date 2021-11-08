@@ -7,6 +7,6 @@ router.use(authController.authenticate);
 
 router.route('/').get(calendarController.getAll);
 router.route('/byUser').get(calendarController.getAllByUser);
-router.route('/byTeam').get(calendarController.getAllByTeam);
+router.route('/byTeam/:id').get(calendarController.getAllByTeam);
 
 module.exports = router;

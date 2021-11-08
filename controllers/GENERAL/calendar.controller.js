@@ -42,35 +42,40 @@ exports.getAll = catchAsync(async (req, res, next) => {
 exports.getAllByTeam = catchAsync(async (req, res, next) => {
   const user = req.user;
   let teamIDs = req.user._teams;
-  let tasks, events;
+  let tasks = [];
+  let events = [];
+  //   console.log(req.params.id);
   //   console.log(teamIDs);
 
-  const team = await Team.find({ _id: { $in: teamIDs } });
+  const team = await Team.findById(req.params.id).populate('users');
+  //   console.log(team.users);
+  team.users.forEach(async (user) => {
+    // console.log(user, 'Here');
+    let t = await Task.find({ assignedTo: { $elemMatch: { $eq: user._id } } });
+    let e = await Event.find({ guests: { $elemMatch: { email: user.email } } });
+    console.log(e);
+    events.concat(e);
+    console.log(resp);
+  });
 
   res.status(200).json({
     message: 'success',
     env: {
       tasks,
       events,
-      user,
     },
   });
 });
 
 exports.getAllByUser = catchAsync(async (req, res, next) => {
-  const initialQuery = {
+  //   console.log(req.user._id);
+  let initialQuery = {
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
-    _id: req.user._id,
+    assignedTo: { $elemMatch: { $eq: req.user._id } },
   };
-
+  console.log(initialQuery, '1');
   const taskQuery = new QueryFeatures(Task.find(initialQuery), req.query)
-    .sort()
-    .limitFields()
-    .filter()
-    .paginate()
-    .populate();
-  const eventQuery = new QueryFeatures(Event.find(initialQuery), req.query)
     .sort()
     .limitFields()
     .filter()
@@ -78,6 +83,21 @@ exports.getAllByUser = catchAsync(async (req, res, next) => {
     .populate();
 
   const tasks = await taskQuery.query;
+
+  const eventInitQuery = _.omit(initialQuery, ['assignedTo']);
+  eventInitQuery.guests = { $elemMatch: { email: req.user.email } };
+
+  console.log(req.user._id);
+  console.log(req.user._tenantId);
+
+  console.log(eventInitQuery, '2');
+  const eventQuery = new QueryFeatures(Event.find(eventInitQuery), req.query)
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate()
+    .populate();
+
   const events = await eventQuery.query;
 
   res.status(200).json({
