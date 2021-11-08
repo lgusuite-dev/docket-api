@@ -33,6 +33,23 @@ const TaskSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    taskReply: {
+      message: {
+        type: String,
+        trim: true,
+      },
+      attachments: [
+        {
+          type: Object,
+        },
+      ],
+      documentIds: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Task',
+        },
+      ],
+    },
     _references: [
       {
         type: Object,
