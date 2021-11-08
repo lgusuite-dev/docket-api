@@ -9,6 +9,7 @@ router.route('/').post(taskController.createTask).get(taskController.getTasks);
 
 router
   .route('/:id')
+  .post(taskController.createTask) // creating subtask
   .get(taskController.getTask)
   .put(taskController.updateTask)
   .delete(taskController.deleteTask);

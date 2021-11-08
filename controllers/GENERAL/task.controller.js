@@ -7,7 +7,7 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
 
-const updateTeamBasedOnAction = async (action, task, prevStatus) => {
+const updateTaskBasedOnAction = async (action, task, prevStatus) => {
   if (action === 'undo') {
     if (task.status !== 'Deleted') {
       const message = 'Cant retrieve task';
@@ -23,8 +23,11 @@ const updateTeamBasedOnAction = async (action, task, prevStatus) => {
     return { haveError: true, message, status: 400 };
   }
 
-  task.status =
-    action === 'pending' ? 'Pending' : action === 'todo' ? 'Todo' : 'Completed';
+  if (action === 'pending') task.status = 'Pending';
+  else if (action === 'todo') task.status = 'Todo';
+  else if (action === 'declined') task.status = 'Declined';
+  else task.status = 'Completed';
+
   await task.save({ validateBeforeSave: false });
   return { haveError: false };
 };
@@ -44,13 +47,22 @@ exports.createTask = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
-  const foundTask = await Task.findOne({
-    name: filteredBody.name,
-    status: 'Deleted',
-    _tenantId: req.user._tenantId,
-  });
+  let prevTaskId = req.params['id'];
+  if (prevTaskId) {
+    let prevTask = await Task.findById(prevTaskId);
+    filteredBody['_mainTaskId'] = prevTask._mainTaskId || prevTaskId;
+    filteredBody['_fromTaskId'] = prevTaskId;
+  }
 
-  if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+  if (filteredBody.name) {
+    const foundTask = await Task.findOne({
+      name: filteredBody.name,
+      status: 'Deleted',
+      _tenantId: req.user._tenantId,
+    });
+
+    if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+  }
 
   if (filteredBody.assignedTo && filteredBody.assignedTo.length)
     filteredBody.assignedTo = filterTaskUsersID(filteredBody.assignedTo);
@@ -147,13 +159,15 @@ exports.updateTask = catchAsync(async (req, res, next) => {
   if (filteredBody.assignedTo && filteredBody.assignedTo.length)
     filteredBody.users = filterTaskUsersID(filteredBody.users);
 
-  const foundTask = await Task.findOne({
-    name: filteredBody.name || '',
-    status: 'Deleted',
-    _tenantId: req.user._tenantId,
-  });
+  if (filteredBody.name) {
+    const foundTask = await Task.findOne({
+      name: filteredBody.name,
+      status: 'Deleted',
+      _tenantId: req.user._tenantId,
+    });
 
-  if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+    if (foundTask) await Task.findByIdAndDelete(foundTask._id);
+  }
 
   const updatedTask = await Task.findOneAndUpdate(initialQuery, filteredBody, {
     new: true,
@@ -190,7 +204,7 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
 exports.patchTask = catchAsync(async (req, res, next) => {
   const { id, action } = req.params;
   const { prevStatus } = req.query;
-  const allowedActions = ['pending', 'todo', 'completed', 'undo'];
+  const allowedActions = ['pending', 'todo', 'completed', 'undo', 'declined'];
   const allowedStatus = ['Pending', 'Todo', 'Completed'];
   const initialQuery = { _id: id, _tenantId: req.user._tenantId };
 
@@ -216,7 +230,10 @@ exports.patchTask = catchAsync(async (req, res, next) => {
   if (task.status === 'Completed' && action === 'completed')
     return next(new AppError('This task is already completed', 400));
 
-  const result = await updateTeamBasedOnAction(action, task, prevStatus);
+  if (task.status === 'Declined' && action === 'declined')
+    return next(new AppError('This task is already completed', 400));
+
+  const result = await updateTaskBasedOnAction(action, task, prevStatus);
 
   if (result.haveError)
     return next(new AppError(result.message, result.status));
