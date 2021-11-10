@@ -16,6 +16,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
     'department',
     'position',
     'mobileNumber',
+    'email',
     'requestDate',
     'dateReceived',
     'receivedThru',
