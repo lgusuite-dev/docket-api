@@ -66,7 +66,7 @@ const DocumentSchema = new mongoose.Schema(
     others: Object,
     requestDate: Date,
     dateRecieved: Date,
-    recievedThru: String,
+    receivedThru: String,
   },
   { timestamps: true }
 );
