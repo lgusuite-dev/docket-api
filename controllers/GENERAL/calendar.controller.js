@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const Event = require('../../models/GENERAL/event.model');
-const Task = require('../../models/GENERAL/task.model');
+// const Task = require('../../models/GENERAL/task.model');
 const User = require('../../models/GENERAL/user.model');
 const Team = require('../../models/GENERAL/team.model');
 
@@ -76,7 +76,6 @@ exports.getAllByTeam = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllByUser = catchAsync(async (req, res, next) => {
-  //   console.log(req.user._id);
   let initialQuery = {
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
