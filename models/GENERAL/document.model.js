@@ -25,6 +25,10 @@ const DocumentSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide mobile number'],
     },
+    email: {
+      type: String,
+      required: [true, 'Please provide email address'],
+    },
     status: {
       type: String,
       default: 'Active',
