@@ -9,231 +9,47 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
 
-const sendTaskEmailWithAttachment = async (action, req) => {
-  const { attachments, sendTo, subject, message } = req.body;
-  const allowedActions = ['completed-reply', 'declined-reply'];
-  const emailAttachments = [];
+// const sendTaskEmailWithAttachment = async (action, req) => {
+//   const { attachments, sendTo, subject, message } = req.body;
+//   const allowedActions = ['completed-reply', 'declined-reply'];
+//   const emailAttachments = [];
 
-  if (!allowedActions.includes(action)) return;
+//   if (!allowedActions.includes(action)) return;
 
-  if (attachments && attachments.length) {
-    for (let [index, attachment] of attachments.entries()) {
-      const file = await axios.get(attachment.link);
+//   if (attachments && attachments.length) {
+//     for (let [index, attachment] of attachments.entries()) {
+//       const file = await axios.get(attachment.link);
 
-      if (file) {
-        const bufferedFile = Buffer.from(file.data).toString('base64');
-        const emailAttachment = {
-          content: bufferedFile,
-          filename: `some-attachment${index}.pdf`,
-          type: 'application/pdf',
-          disposition: 'attachment',
-          content_id: 'mytext',
-        };
+//       if (file) {
+//         const bufferedFile = Buffer.from(file.data).toString('base64');
+//         const emailAttachment = {
+//           content: bufferedFile,
+//           filename: `some-attachment${index}.pdf`,
+//           type: 'application/pdf',
+//           disposition: 'attachment',
+//           content_id: 'mytext',
+//         };
 
-        emailAttachments.push(emailAttachment);
-      }
-    }
-  }
+//         emailAttachments.push(emailAttachment);
+//       }
+//     }
+//   }
 
-  const emailOptions = {
-    to: sendTo,
-    subject,
-    html: `<p>${message}</p>`,
-    attachments: emailAttachments,
-  };
+//   const emailOptions = {
+//     to: sendTo,
+//     subject,
+//     html: `<p>${message}</p>`,
+//     attachments: emailAttachments,
+//   };
 
-  await sendMail(emailOptions);
-};
+//   await sendMail(emailOptions);
+// };
 
-const updateTaskBasedOnAction = async (action, task, prevStatus, req) => {
-  if (action === 'undo') {
-    if (task.status !== 'Deleted') {
-      const message = 'Cant retrieve task';
-      return { haveError: true, message, status: 400 };
-    }
-    task.status = prevStatus;
-    await task.save({ validateBeforeSave: false });
-    return { haveError: false };
-  }
+exports.createTask = catchAsync(async (req, res, next) => {});
 
-  if (task.status === 'Deleted') {
-    const message = 'This task is deleted';
-    return { haveError: true, message, status: 400 };
-  }
+exports.getTasks = catchAsync(async (req, res, next) => {});
 
-  if (action === 'pending') task.status = 'Pending';
-  else if (action === 'todo') task.status = 'Todo';
-  else if (action === 'declined' || action === 'declined-reply') {
-    const { taskReply } = req.body;
-    task.taskReply = taskReply;
-    task.status = 'Declined';
-  } else {
-    const { taskReply } = req.body;
-    task.taskReply = taskReply;
-    task.status = 'Completed';
-  }
-
-  await task.save({ validateBeforeSave: false });
-  return { haveError: false };
-};
-
-exports.createTask = catchAsync(async (req, res, next) => {
-  const pickFields = [
-    'name',
-    'description',
-    'instruction',
-    'attachments',
-    '_references',
-    'startDate',
-    'dueDate',
-    'assignedTo',
-  ];
-  const filteredBody = _.pick(req.body, pickFields);
-  filteredBody._createdBy = req.user._id;
-  filteredBody._tenantId = req.user._tenantId;
-
-  let prevTaskId = req.params['id'];
-  if (prevTaskId) {
-    let prevTask = await Task.findById(prevTaskId);
-    filteredBody['_mainTaskId'] = prevTask._mainTaskId || prevTaskId;
-    filteredBody['_fromTaskId'] = prevTaskId;
-  }
-
-  if (filteredBody.name) {
-    const foundTask = await Task.findOne({
-      name: filteredBody.name,
-      status: 'Deleted',
-      _tenantId: req.user._tenantId,
-    });
-
-    if (foundTask) await Task.findByIdAndDelete(foundTask._id);
-  }
-
-  if (filteredBody.assignedTo && filteredBody.assignedTo.length)
-    filteredBody.assignedTo = filterTaskUsersID(filteredBody.assignedTo);
-
-  const task = await Task.create(filteredBody);
-
-  res.status(201).json({
-    status: 'success',
-    env: {
-      task,
-    },
-  });
-});
-
-exports.getTasks = catchAsync(async (req, res, next) => {
-  const initialQuery = {
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
-
-  const queryFeatures = new QueryFeatures(Task.find(initialQuery), req.query)
-    .sort()
-    .limitFields()
-    .filter()
-    .paginate()
-    .populate();
-
-  const nQueryFeature = new QueryFeatures(Task.find(initialQuery), req.query)
-    .filter()
-    .count();
-
-  const tasks = await queryFeatures.query;
-  const nTasks = await nQueryFeature.query;
-
-  res.status(200).json({
-    status: 'success',
-    total_docs: nTasks,
-    env: {
-      tasks,
-    },
-  });
-});
-
-//needs refactoring -ryan
-exports.getTask = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-  const body = { isRead: true };
-  const initialQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
-
-  const task = await Task.findOne(initialQuery);
-
-  if (!task) return next(new AppError('Task not found', 404));
-
-  const stringifyAssignedTo = [...task.assignedTo.toString().split(',')];
-
-  if (stringifyAssignedTo.includes(req.user._id.toString()))
-    await Task.findByIdAndUpdate(task._id, body, {
-      new: true,
-      runValidators: true,
-    });
-
-  const queryFeatures = new QueryFeatures(Task.findOne(initialQuery), req.query)
-    .limitFields()
-    .populate();
-
-  const taskRow = await queryFeatures.query;
-
-  res.status(200).json({
-    status: 'success',
-    env: {
-      taskRow,
-    },
-  });
-});
-
-exports.updateTask = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-  const pickFields = [
-    'name',
-    'description',
-    'instruction',
-    'attachments',
-    '_references',
-    'startDate',
-    'dueDate',
-    'assignedTo',
-  ];
-  const initialQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
-  const filteredBody = _.pick(req.body, pickFields);
-  filteredBody._updatedBy = req.user._id;
-
-  if (filteredBody.assignedTo && filteredBody.assignedTo.length)
-    filteredBody.users = filterTaskUsersID(filteredBody.users);
-
-  if (filteredBody.name) {
-    const foundTask = await Task.findOne({
-      name: filteredBody.name,
-      status: 'Deleted',
-      _tenantId: req.user._tenantId,
-    });
-
-    if (foundTask) await Task.findByIdAndDelete(foundTask._id);
-  }
-
-  const updatedTask = await Task.findOneAndUpdate(initialQuery, filteredBody, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!updatedTask) return next(new AppError('Task not found', 404));
-
-  res.status(200).json({
-    status: 'success',
-    env: {
-      task: updatedTask,
-    },
-  });
-});
+exports.updateTask = catchAsync(async (req, res, next) => {});
 
 exports.deleteTask = catchAsync(async (req, res, next) => {
   const { id } = req.params;
@@ -252,58 +68,4 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.patchTask = catchAsync(async (req, res, next) => {
-  const { id, action } = req.params;
-  const { prevStatus } = req.query;
-  const allowedActions = [
-    'pending',
-    'todo',
-    'completed',
-    'undo',
-    'declined',
-    'reply',
-    'completed-reply',
-    'declined-reply',
-  ];
-  const allowedStatus = ['Pending', 'Todo', 'Completed'];
-  const initialQuery = { _id: id, _tenantId: req.user._tenantId };
-
-  if (!allowedActions.includes(action))
-    return next(new AppError('Invalid action params', 400));
-
-  if (action === 'undo' && !prevStatus)
-    return next(new AppError('Please provide previous status value', 400));
-
-  if (action === 'undo' && !allowedStatus.includes(prevStatus))
-    return next(new AppError('Invalid previous status value', 400));
-
-  const task = await Task.findOne(initialQuery);
-
-  if (!task) return next(new AppError('Task not found', 404));
-
-  if (task.status === 'Todo' && action === 'todo')
-    return next(new AppError('This task is already todo', 400));
-
-  if (task.status === 'Pending' && action === 'pending')
-    return next(new AppError('This task is already pending', 400));
-
-  if (task.status === 'Completed' && action === 'completed')
-    return next(new AppError('This task is already completed', 400));
-
-  if (task.status === 'Declined' && action === 'declined')
-    return next(new AppError('This task is already declined', 400));
-
-  const result = await updateTaskBasedOnAction(action, task, prevStatus, req);
-
-  if (result.haveError)
-    return next(new AppError(result.message, result.status));
-
-  await sendTaskEmailWithAttachment(action, req);
-
-  res.status(200).json({
-    status: 'success',
-    env: {
-      task: task,
-    },
-  });
-});
+exports.patchTask = catchAsync(async (req, res, next) => {});
