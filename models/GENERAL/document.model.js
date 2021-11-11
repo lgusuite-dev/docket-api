@@ -28,7 +28,7 @@ const DocumentSchema = new mongoose.Schema(
     status: {
       type: String,
       default: 'Active',
-      enum: ['Active', 'Deleted'],
+      enum: ['Incoming', 'Outgoing', 'Internal', 'Archive', 'Deleted'],
     },
     _files: [
       {
@@ -61,8 +61,8 @@ const DocumentSchema = new mongoose.Schema(
     remarks: String,
     others: Object,
     requestDate: Date,
-    dateRecieved: Date,
-    recievedThru: String,
+    dateReceived: Date,
+    receivedThru: String,
   },
   { timestamps: true }
 );

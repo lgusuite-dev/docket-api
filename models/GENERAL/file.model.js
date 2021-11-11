@@ -15,6 +15,11 @@ const FileSchema = new mongoose.Schema(
       type: Object,
       required: [true, 'Please provide the file'],
     },
+    _documentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Document',
+      required: [true, 'Please provide document id'],
+    },
     _tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -23,7 +28,7 @@ const FileSchema = new mongoose.Schema(
     _createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Please provide _id'],
+      required: [true, 'Please provide tenant id'],
     },
     description: String,
   },

@@ -96,12 +96,57 @@ exports.getDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getDocumentFiles = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const queryFeatures = new QueryFeatures(
+    Document.findOne(initialQuery),
+    req.query
+  );
+
+  const document = await queryFeatures.query;
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const fileQuery = {
+    _documentId: id,
+    status: { $ne: 'Deleted' },
+  };
+
+  const fileQueryFeature = new QueryFeatures(File.find(fileQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nFileQueryFeature = new QueryFeatures(File.find(fileQuery), req.query)
+    .filter()
+    .count();
+
+  const files = await fileQueryFeature.query;
+  const nFiles = await nFileQueryFeature.query;
+
+  res.status(200).json({
+    status: 'Success',
+    total_docs: nFiles,
+    env: {
+      files,
+    },
+  });
+});
+
 exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'dropbox'];
   const filteredBody = _.pick(req.body, pickFields);
+  const { id } = req.params;
+  filteredBody._documentId = id;
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
-  const { id } = req.params;
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
@@ -115,14 +160,12 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
 
   document._files.push(file._id);
 
-  const updatedDocument = await Document.findByIdAndUpdate(
-    id,
-    { _updatedBy: req.user._id, _files: document._files },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  const updateBody = { _updatedBy: req.user._id, _files: document._files };
+
+  const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
+    new: true,
+    runValidators: true,
+  });
 
   res.status(200).json({
     status: 'success',
