@@ -7,45 +7,31 @@ const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
-const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
+exports.createTask = catchAsync(async (req, res, next) => {
+  const pickFields = [
+    'name',
+    'dueDate',
+    'description',
+    'workflow',
+    'instruction',
+    'remarks',
+    '_assigneeId',
+    '_documentId',
+  ];
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._createdBy = req.user._id;
+  filteredBody._updatedBy = req.user._id;
+  filteredBody._tenantId = req.user._tenantId;
 
-// const sendTaskEmailWithAttachment = async (action, req) => {
-//   const { attachments, sendTo, subject, message } = req.body;
-//   const allowedActions = ['completed-reply', 'declined-reply'];
-//   const emailAttachments = [];
+  const task = await Task.create(filteredBody);
 
-//   if (!allowedActions.includes(action)) return;
-
-//   if (attachments && attachments.length) {
-//     for (let [index, attachment] of attachments.entries()) {
-//       const file = await axios.get(attachment.link);
-
-//       if (file) {
-//         const bufferedFile = Buffer.from(file.data).toString('base64');
-//         const emailAttachment = {
-//           content: bufferedFile,
-//           filename: `some-attachment${index}.pdf`,
-//           type: 'application/pdf',
-//           disposition: 'attachment',
-//           content_id: 'mytext',
-//         };
-
-//         emailAttachments.push(emailAttachment);
-//       }
-//     }
-//   }
-
-//   const emailOptions = {
-//     to: sendTo,
-//     subject,
-//     html: `<p>${message}</p>`,
-//     attachments: emailAttachments,
-//   };
-
-//   await sendMail(emailOptions);
-// };
-
-exports.createTask = catchAsync(async (req, res, next) => {});
+  res.status(201).json({
+    status: 'success',
+    env: {
+      task,
+    },
+  });
+});
 
 exports.getTasks = catchAsync(async (req, res, next) => {});
 
