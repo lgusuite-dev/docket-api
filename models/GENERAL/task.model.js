@@ -15,46 +15,50 @@ const TaskSchema = new mongoose.Schema(
     instruction: {
       type: String,
       trim: true,
-      required: [true, 'Please provide instruction'],
     },
-    assignedTo: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+    workflow: {
+      type: String,
+      trim: true,
+      required: [true, 'Please provide workflow'],
+      enums: [
+        'One-Way',
+        'Two-Way',
+        'Complex with Approval',
+        'Complex without Approval',
+      ],
+    },
+    remarks: {
+      type: String,
+      trim: true,
+    },
+    assignee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
     status: {
       type: String,
       trim: true,
       default: 'Todo',
-      enum: ['Pending', 'Todo', 'Completed', 'Deleted', 'Declined'],
+      enum: ['Pending', 'Completed', 'Deleted', 'Declined'],
     },
-    isRead: {
-      type: Boolean,
-      default: false,
+    document: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Document',
     },
-    taskReply: {
-      message: {
-        type: String,
-        trim: true,
-      },
-      attachments: [
-        {
-          type: Object,
-        },
-      ],
-      documentIds: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Task',
-        },
-      ],
+    dueDate: Date,
+    reference: {
+      type: String,
+      trim: true,
     },
-    _references: [
-      {
-        type: Object,
-      },
-    ],
+
+    // _mainTaskId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'Task',
+    // },
+    // _fromTaskId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'Task',
+    // },
     _tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -69,18 +73,6 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
-    _mainTaskId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Task',
-    },
-    _fromTaskId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Task',
-    },
-    attachments: Object,
-    _mainReference: Object,
-    startDate: Date,
-    dueDate: Date,
   },
 
   { timestamps: true }
