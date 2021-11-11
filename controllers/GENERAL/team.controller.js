@@ -87,8 +87,18 @@ exports.createTeam = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
-  if (filteredBody.users.length)
+  if (filteredBody.users && filteredBody.users.length)
     filteredBody.users = filterTeamUsersID(filteredBody.users);
+
+  if (filteredBody.name) {
+    const foundTeam = await Team.findOne({
+      name: filteredBody.name,
+      status: 'Deleted',
+      _tenantId: req.user._tenantId,
+    });
+
+    if (foundTeam) await Team.findByIdAndDelete(foundTeam._id);
+  }
 
   const team = await Team.create(filteredBody);
 
@@ -116,10 +126,16 @@ exports.getTeams = catchAsync(async (req, res, next) => {
     .paginate()
     .populate();
 
+  const nQueryFeature = new QueryFeatures(Team.find(initialQuery), req.query)
+    .filter()
+    .count();
+
   const teams = await queryFeatures.query;
+  const nTeams = await nQueryFeature.query;
 
   res.status(200).json({
     status: 'success',
+    total_docs: nTeams,
     env: {
       teams,
     },
@@ -164,8 +180,18 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
 
   if (!team) return next(new AppError('Team not found', 404));
 
-  if (filteredBody.users.length)
+  if (filteredBody.users && filteredBody.users.length)
     filteredBody.users = filterTeamUsersID(filteredBody.users);
+
+  if (filteredBody.name) {
+    const foundTeam = await Team.findOne({
+      name: filteredBody.name,
+      status: 'Deleted',
+      _tenantId: req.user._tenantId,
+    });
+
+    if (foundTeam) await Team.findByIdAndDelete(foundTeam._id);
+  }
 
   const updatedTeam = await Team.findByIdAndUpdate(team._id, filteredBody, {
     new: true,
