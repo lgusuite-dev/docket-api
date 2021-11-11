@@ -32,7 +32,7 @@ const DocumentSchema = new mongoose.Schema(
     status: {
       type: String,
       default: 'Incoming',
-      enum: ['Incoming', 'Outgoing', 'Internal', 'Archive', 'Deleted'],
+      enum: ['Incoming', 'Outgoing', 'Internal', 'Archived', 'Deleted'],
     },
     _files: [
       {
