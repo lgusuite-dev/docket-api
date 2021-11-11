@@ -42,7 +42,6 @@ const TaskSchema = new mongoose.Schema(
     _documentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Document',
-      required: [true, 'Please provide _documentId'],
     },
     status: {
       type: String,

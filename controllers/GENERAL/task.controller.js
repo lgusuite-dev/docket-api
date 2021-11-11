@@ -1,11 +1,12 @@
 const _ = require('lodash');
-const axios = require('axios');
 
 const Task = require('../../models/GENERAL/task.model');
+const Document = require('../../models/GENERAL/document.model');
 const { sendMail } = require('../../utils/comms/email');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
+var ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createTask = catchAsync(async (req, res, next) => {
   const pickFields = [
@@ -18,10 +19,29 @@ exports.createTask = catchAsync(async (req, res, next) => {
     '_assigneeId',
     '_documentId',
   ];
-  const filteredBody = _.pick(req.body, pickFields);
+  let filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
   filteredBody._updatedBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
+
+  if (filteredBody._documentId && !ObjectId.isValid(filteredBody._documentId)) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Document reference id is not valid.',
+    });
+  } else if (filteredBody._documentId) {
+    const document = await Document.findById(filteredBody._documentId);
+
+    if (!document)
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          message: 'Document reference id not found.',
+        },
+      });
+  } else {
+    delete filteredBody._documentId;
+  }
 
   const task = await Task.create(filteredBody);
 
