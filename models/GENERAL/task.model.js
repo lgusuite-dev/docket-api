@@ -7,14 +7,11 @@ const TaskSchema = new mongoose.Schema(
       trim: true,
       required: [true, 'Please provide name'],
     },
+    dueDate: { type: Date, required: true },
     description: {
       type: String,
       trim: true,
       required: [true, 'Please provide description'],
-    },
-    instruction: {
-      type: String,
-      trim: true,
     },
     workflow: {
       type: String,
@@ -27,38 +24,42 @@ const TaskSchema = new mongoose.Schema(
         'Complex without Approval',
       ],
     },
+    instruction: {
+      type: String,
+      trim: true,
+      required: [true, 'Please provide instruction'],
+    },
     remarks: {
       type: String,
       trim: true,
+      required: [true, 'Please provide remarks'],
     },
-    assignee: {
+    _assigneeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      required: [true, 'Please provide assignee id'],
+    },
+    _documentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Document',
+      required: [true, 'Please provide _documentId'],
     },
     status: {
       type: String,
       trim: true,
-      default: 'Todo',
+      default: 'Pending',
       enum: ['Pending', 'Completed', 'Deleted', 'Declined'],
     },
-    document: {
+    // tracker
+    _mainTaskId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Document',
+      ref: 'Task',
     },
-    dueDate: Date,
-    reference: {
-      type: String,
-      trim: true,
+    _previousTaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
     },
-
-    // _mainTaskId: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'Task',
-    // },
-    // _fromTaskId: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'Task',
-    // },
+    // default
     _tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
