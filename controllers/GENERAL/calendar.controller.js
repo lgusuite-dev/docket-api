@@ -27,6 +27,7 @@ exports.getAll = catchAsync(async (req, res, next) => {
     .paginate()
     .populate();
 
+  // const tasks = await taskQuery.query;
   const events = await eventQuery.query;
 
   res.status(200).json({
