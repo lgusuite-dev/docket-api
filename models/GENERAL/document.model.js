@@ -8,7 +8,6 @@ const DocumentSchema = new mongoose.Schema(
     },
     senderType: {
       type: String,
-      trim: true,
       enum: ['Private', 'Other Government Agencies', 'Courts'],
     },
     senderFirstName: {
@@ -25,13 +24,14 @@ const DocumentSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide mobile number'],
     },
-    email: {
+    email: String,
+    controlNumber: {
       type: String,
-      required: [true, 'Please provide email address'],
+      unique: [true, 'Control number already exist'],
     },
     status: {
       type: String,
-      default: 'Active',
+      default: 'Incoming',
       enum: ['Incoming', 'Outgoing', 'Internal', 'Archive', 'Deleted'],
     },
     _files: [

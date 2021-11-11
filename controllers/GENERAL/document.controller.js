@@ -227,6 +227,12 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
+
+  //control number generator
+  filteredBody.controlNumber = Math.floor(
+    Math.random() * 1000000000
+  ).toString();
+
   const { id } = req.params;
   const initialQuery = {
     _id: id,
