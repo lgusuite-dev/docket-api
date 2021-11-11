@@ -24,13 +24,19 @@ const UserSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      unique: [true, 'Email already exist'],
+      unique: [
+        true,
+        'The Email you provided is currently used by another account or you can check the deleted tab if the account is already deleted.',
+      ],
       validate: [validator.isEmail, 'Please provide valid email'],
       required: [true, 'Please provide email'],
     },
     mobileNumber: {
       type: String,
-      unique: [true, 'Mobile number already exist'],
+      unique: [
+        true,
+        'The Mobile Number you provided is currently used by another account or you can check the deleted tab if the account is already deleted.',
+      ],
       required: [true, 'Please provide mobile number'],
     },
     address: {
