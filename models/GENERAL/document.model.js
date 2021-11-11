@@ -40,6 +40,10 @@ const DocumentSchema = new mongoose.Schema(
         ref: 'File',
       },
     ],
+    _folderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Folder',
+    },
     _assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
