@@ -4,16 +4,29 @@ const createQuery = (fields, searchVal) => {
   const orQuery = [];
 
   const booleanFields = ['isNewUser'];
-  const numberFields = ['access_level'];
+  const numberFields = ['access_level', 'fileLength'];
   const otherTypeFields = [
     '_id',
     '_createdBy',
     '_tenantId',
+    '_files',
+    '_folderId',
+    '_assignedTo',
+    '_parentId',
+    'dueDate',
+    '_mainTaskId',
+    '_previousTaskId',
+    '_updatedBy',
+    '_documentId',
     'createdAt',
     'updatedAt',
     'passwordChangedAt',
     'passwordResetTokenExpires',
     'password',
+    'requestDate',
+    'dateReceived',
+    'others',
+    'guests',
   ];
 
   for (const field of fields) {
