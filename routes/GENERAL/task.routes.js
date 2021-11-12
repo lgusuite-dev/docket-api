@@ -5,7 +5,7 @@ const taskController = require('../../controllers/GENERAL/task.controller');
 
 router.use(authController.authenticate);
 
-// router.route('/').post(taskController.createTask).get(taskController.getTasks);
+router.route('/').post(taskController.createTask).get(taskController.getTasks);
 
 // router
 //   .route('/:id')
