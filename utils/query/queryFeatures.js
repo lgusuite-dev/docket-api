@@ -81,7 +81,6 @@ class QueryFeatures {
 
     // manipulate "in" and "nin" operator value to array if available
     for (let key of Object.keys(queryObj)) {
-      if (queryObj[key] === 'null') queryObj[key] = null;
       if (queryObj[key] === 'true') queryObj[key] = true;
       if (queryObj[key] === 'false') queryObj[key] = false;
 
