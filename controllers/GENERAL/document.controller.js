@@ -315,7 +315,6 @@ exports.createFolder = catchAsync(async (req, res, next) => {
 
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
-
   const folder = await Folder.create(filteredBody);
 
   res.status(201).json({
@@ -327,7 +326,7 @@ exports.createFolder = catchAsync(async (req, res, next) => {
 });
 
 exports.updateFolder = catchAsync(async (req, res, next) => {
-  const pickFields = ['_name', '_parentId'];
+  const pickFields = ['name', '_parentId'];
   const filteredBody = _.pick(req.body, pickFields);
   const { folderId } = req.params;
 
@@ -340,14 +339,10 @@ exports.updateFolder = catchAsync(async (req, res, next) => {
   const folder = await Folder.findOne(initialQuery);
   if (!folder) return next(new AppError('Folder not found', 404));
 
-  const updatedFolder = await Document.findByIdAndUpdate(
-    folderId,
-    filteredBody,
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  const updatedFolder = await Folder.findByIdAndUpdate(folderId, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
 
   res.status(200).json({
     status: 'success',
