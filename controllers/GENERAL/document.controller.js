@@ -73,6 +73,7 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
 });
 
 exports.getDocument = catchAsync(async (req, res, next) => {
+  console.log('doc api with id params')
   const { id } = req.params;
   const initialQuery = {
     _id: id,
@@ -279,6 +280,8 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
 
 exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
   // console.log(req.user._id)
+  console.log('folder and docs')
+
   const initialQuery = {
     _createdBy: req.user._id,
     status: { $ne: 'Deleted' },
