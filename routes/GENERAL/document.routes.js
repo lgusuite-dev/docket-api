@@ -11,7 +11,7 @@ router
   .post(documentController.createDocument)
   .get(documentController.getAllDocuments);
 
-router.route('/folders-and-docs').get(documentController.getMyDocAndFolders)
+router.get('/folders-and-docs', documentController.getMyDocAndFolders)
 
 
 router
