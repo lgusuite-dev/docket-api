@@ -5,7 +5,6 @@ const authController = require('../../controllers/GENERAL/auth.controller');
 
 router.use(authController.authenticate);
 
-
 router.route('/all-folder-and-docs').get(documentController.getMyDocAndFolders)
 
 router
@@ -18,6 +17,7 @@ router
   .put(documentController.updateDocument)
   .get(documentController.getDocument)
   .delete(documentController.deleteDocument);
+
 
 router.route('/:id/files').get(documentController.getDocumentFiles);
 router.route('/upload/:id').put(documentController.uploadDocumentFile);

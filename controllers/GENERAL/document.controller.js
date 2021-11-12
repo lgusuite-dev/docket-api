@@ -290,7 +290,7 @@ exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
   // if (!document) return next(new AppError('Document not found', 404))
   // if (!document) return next(new AppError('Document not found', 404))
 
-  res.status(200).json({
+  return res.status(200).json({
     status: 'success',
     document,
     folder
