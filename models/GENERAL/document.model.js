@@ -34,6 +34,10 @@ const DocumentSchema = new mongoose.Schema(
       default: 'Incoming',
       enum: ['Incoming', 'Outgoing', 'Internal', 'Archived', 'Deleted'],
     },
+    fileLength: {
+      type: Number,
+      default: 0,
+    },
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,
