@@ -1,7 +1,7 @@
 const _ = require('lodash');
 
 const Document = require('../../models/GENERAL/document.model');
-const Folder = require('../../models/GENERAL/folder.model')
+const Folder = require('../../models/GENERAL/folder.model');
 const File = require('../../models/GENERAL/file.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
@@ -202,8 +202,13 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   const file = await File.create(filteredBody);
 
   document._files.push(file._id);
+  document.fileLength = document._files.length;
 
-  const updateBody = { _updatedBy: req.user._id, _files: document._files };
+  const updateBody = {
+    _updatedBy: req.user._id,
+    _files: document._files,
+    fileLength: document.fileLength,
+  };
 
   const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
     new: true,
@@ -276,23 +281,23 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
   // console.log(req.user._id)
+
   const initialQuery = {
     _createdBy: req.user._id,
     status: { $ne: 'Deleted' },
   };
-  const document = await Document.find(initialQuery)
-  const folder = await Folder.find(initialQuery)
+  const document = await Document.find(initialQuery);
+  const folder = await Folder.find(initialQuery);
   // console.log(document)
 
   // if (!document) return next(new AppError('Document not found', 404))
   // if (!document) return next(new AppError('Document not found', 404))
 
-  res.status(200).json({
+  return res.status(200).json({
     status: 'success',
     document,
-    folder
-  })
-})
+    folder,
+  });
+});
