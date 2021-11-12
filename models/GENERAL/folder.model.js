@@ -12,6 +12,11 @@ const FolderSchema = new mongoose.Schema(
         _createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
+        },
+        status: {
+            type: String,
+            enum: ['Active', 'Deleted'],
+            default: 'Active'
         }
     },
     {

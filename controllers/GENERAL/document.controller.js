@@ -278,13 +278,14 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
 
 
 exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
+  // console.log(req.user._id)
   const initialQuery = {
     _createdBy: req.user._id,
     status: { $ne: 'Deleted' },
   };
   const document = await Document.find(initialQuery)
   const folder = await Folder.find(initialQuery)
-  console.log(document)
+  // console.log(document)
 
   // if (!document) return next(new AppError('Document not found', 404))
   // if (!document) return next(new AppError('Document not found', 404))
