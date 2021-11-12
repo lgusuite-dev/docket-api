@@ -1,6 +1,7 @@
 const _ = require('lodash');
 
 const Document = require('../../models/GENERAL/document.model');
+const Folder = require('../../models/GENERAL/folder.model')
 const File = require('../../models/GENERAL/file.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
@@ -274,3 +275,23 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
     status: 'success',
   });
 });
+
+
+exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    _createdBy: req.user._id,
+    status: { $ne: 'Deleted' },
+  };
+  const document = await Document.find(initialQuery)
+  const folder = await Folder.find(initialQuery)
+  console.log(document)
+
+  // if (!document) return next(new AppError('Document not found', 404))
+  // if (!document) return next(new AppError('Document not found', 404))
+
+  res.status(200).json({
+    status: 'success',
+    document,
+    folder
+  })
+})
