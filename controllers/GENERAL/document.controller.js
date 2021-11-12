@@ -293,7 +293,7 @@ exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
   };
   const document = await Document.find(initialQuery);
   delete initialQuery._parentId;
-  initialQuery._folderId = { $eq: null };
+  initialQuery['_folderId'] = { $eq: null };
   const folder = await Folder.find(initialQuery);
   // console.log(document)
 
