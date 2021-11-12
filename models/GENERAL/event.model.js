@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { createMeeting } = require('../../utils/zoom');
 
 const EventSchema = new mongoose.Schema(
   {
