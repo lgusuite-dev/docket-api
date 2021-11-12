@@ -281,14 +281,19 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+///// DOCUMENTS/FOLDER Controllers //////////////
+
 exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
   // console.log(req.user._id)
 
   const initialQuery = {
     _createdBy: req.user._id,
     status: { $ne: 'Deleted' },
+    _parentId: { $eq: null },
   };
   const document = await Document.find(initialQuery);
+  delete initialQuery._parentId;
+  initialQuery['_folderId'] = { $eq: null };
   const folder = await Folder.find(initialQuery);
   // console.log(document)
 
@@ -299,5 +304,70 @@ exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
     status: 'success',
     document,
     folder,
+  });
+});
+
+exports.createFolder = catchAsync(async (req, res, next) => {
+  const pickFields = ['name', '_parentId'];
+
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._createdBy = req.user._id;
+
+  const folder = await Folder.create(filteredBody);
+
+  res.status(201).json({
+    status: 'success',
+    env: {
+      folder,
+    },
+  });
+});
+
+exports.deleteFolder = catchAsync(async (req, res, next) => {
+  const { folderId } = req.params;
+  const initialQuery = {
+    _id: folderId,
+    status: { $ne: 'Deleted' },
+    _createdBy: req.user._id,
+  };
+  const folder = await Folder.findOneAndUpdate(initialQuery, {
+    status: 'Deleted',
+  });
+
+  if (!folder) return next(new AppError('Folder not found', 404));
+
+  req.status(204).json({
+    status: 'success',
+  });
+});
+
+exports.updateFolder = catchAsync(async (req, res, next) => {
+  const { folderId } = req.params;
+  const pickFields = ['name', '_parentId'];
+
+  const filteredBody = _.pick(req.body, pickFields);
+
+  const initialQuery = {
+    _id: folderId,
+    status: { $ne: 'Deleted' },
+  };
+
+  const folder = await Folder.findOne(initialQuery);
+  if (!folder) return next(new AppError('Folder not found', 404));
+
+  const updatedFolder = await Document.findByIdAndUpdate(
+    folderId,
+    filteredBody,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedFolder,
+    },
   });
 });
