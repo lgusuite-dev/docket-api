@@ -202,13 +202,8 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   const file = await File.create(filteredBody);
 
   document._files.push(file._id);
-  document.fileLength = document._files.length;
 
-  const updateBody = {
-    _updatedBy: req.user._id,
-    _files: document._files,
-    fileLength: document.fileLength,
-  };
+  const updateBody = { _updatedBy: req.user._id, _files: document._files };
 
   const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
     new: true,
