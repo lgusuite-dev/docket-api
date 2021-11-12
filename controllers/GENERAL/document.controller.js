@@ -296,7 +296,6 @@ exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
   delete initialQuery._parentId;
 
   initialQuery['_folderId'] = { $eq: null };
-  console.log(initialQuery)
 
   // console.log(document)
 
@@ -371,26 +370,23 @@ exports.deleteFolder = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
-
   const initialQuery = {
     status: { $ne: 'Deleted' },
     _createdBy: req.user._id,
-    _parentId: req.body.id
-  }
+    _parentId: req.body.id,
+  };
 
-  const folder = await Folder.find(initialQuery)
+  const folder = await Folder.find(initialQuery);
 
   delete initialQuery._parentId;
 
   initialQuery['_folderId'] = req.body.id;
-  const document = await Document.find(initialQuery)
-
+  const document = await Document.find(initialQuery);
 
   res.status(200).json({
-    status: "success",
+    status: 'success',
     folder,
-    document
-  })
-})
+    document,
+  });
+});
