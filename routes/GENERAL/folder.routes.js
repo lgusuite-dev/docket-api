@@ -6,5 +6,9 @@ const documentController = require('../../controllers/GENERAL/document.controlle
 router.use(authController.authenticate);
 
 router.route('/').post(documentController.createFolder);
+router
+  .route('/:folderId')
+  .put(documentController.updateFolder)
+  .delete(documentController.deleteFolder);
 
 module.exports = router;
