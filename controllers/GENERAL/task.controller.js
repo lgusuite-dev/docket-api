@@ -1,51 +1,57 @@
 const _ = require('lodash');
-const axios = require('axios');
 
 const Task = require('../../models/GENERAL/task.model');
+const Document = require('../../models/GENERAL/document.model');
 const { sendMail } = require('../../utils/comms/email');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
+var ObjectId = require('mongoose').Types.ObjectId;
 
-const filterTaskUsersID = (inputUsers) => [...new Set(inputUsers)];
+exports.createTask = catchAsync(async (req, res, next) => {
+  const pickFields = [
+    'name',
+    'dueDate',
+    'description',
+    'workflow',
+    'instruction',
+    'remarks',
+    '_assigneeId',
+    '_documentId',
+  ];
+  let filteredBody = _.pick(req.body, pickFields);
+  filteredBody._createdBy = req.user._id;
+  filteredBody._updatedBy = req.user._id;
+  filteredBody._tenantId = req.user._tenantId;
 
-// const sendTaskEmailWithAttachment = async (action, req) => {
-//   const { attachments, sendTo, subject, message } = req.body;
-//   const allowedActions = ['completed-reply', 'declined-reply'];
-//   const emailAttachments = [];
+  if (filteredBody._documentId && !ObjectId.isValid(filteredBody._documentId)) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Document reference id is not valid.',
+    });
+  } else if (filteredBody._documentId) {
+    const document = await Document.findById(filteredBody._documentId);
 
-//   if (!allowedActions.includes(action)) return;
+    if (!document)
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          message: 'Document reference id not found.',
+        },
+      });
+  } else {
+    delete filteredBody._documentId;
+  }
 
-//   if (attachments && attachments.length) {
-//     for (let [index, attachment] of attachments.entries()) {
-//       const file = await axios.get(attachment.link);
+  const task = await Task.create(filteredBody);
 
-//       if (file) {
-//         const bufferedFile = Buffer.from(file.data).toString('base64');
-//         const emailAttachment = {
-//           content: bufferedFile,
-//           filename: `some-attachment${index}.pdf`,
-//           type: 'application/pdf',
-//           disposition: 'attachment',
-//           content_id: 'mytext',
-//         };
-
-//         emailAttachments.push(emailAttachment);
-//       }
-//     }
-//   }
-
-//   const emailOptions = {
-//     to: sendTo,
-//     subject,
-//     html: `<p>${message}</p>`,
-//     attachments: emailAttachments,
-//   };
-
-//   await sendMail(emailOptions);
-// };
-
-exports.createTask = catchAsync(async (req, res, next) => {});
+  res.status(201).json({
+    status: 'success',
+    env: {
+      task,
+    },
+  });
+});
 
 exports.getTasks = catchAsync(async (req, res, next) => {});
 
