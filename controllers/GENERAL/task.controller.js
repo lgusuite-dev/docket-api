@@ -53,9 +53,126 @@ exports.createTask = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getTasks = catchAsync(async (req, res, next) => {});
+exports.replyToTask = catchAsync(async (req, res, next) => {
+  const pickFields = ['message', 'link', 'status'];
 
-exports.updateTask = catchAsync(async (req, res, next) => {});
+  const { id } = req.params;
+
+  res.status(201).json({
+    status: 'success',
+  });
+});
+
+exports.getTasks = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const queryFeatures = new QueryFeatures(Task.find(initialQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeature = new QueryFeatures(Task.find(initialQuery), req.query)
+    .filter()
+    .count();
+
+  const tasks = await queryFeatures.query;
+  const ntasks = await nQueryFeature.query;
+
+  res.status(200).json({
+    status: 'success',
+    total_docs: ntasks,
+    env: {
+      tasks,
+    },
+  });
+});
+
+exports.getTasksAssignedToMe = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _assigneeId: req.user._id,
+  };
+
+  const queryFeatures = new QueryFeatures(Task.find(initialQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeature = new QueryFeatures(Task.find(initialQuery), req.query)
+    .filter()
+    .count();
+
+  const tasks = await queryFeatures.query;
+  const ntasks = await nQueryFeature.query;
+
+  res.status(200).json({
+    status: 'success',
+    total_docs: ntasks,
+    env: {
+      tasks,
+    },
+  });
+});
+
+exports.updateTask = catchAsync(async (req, res, next) => {
+  const pickFields = [
+    'name',
+    'dueDate',
+    'description',
+    'workflow',
+    'instruction',
+    'remarks',
+    '_assigneeId',
+    '_documentId',
+  ];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  if (filteredBody._documentId && !ObjectId.isValid(filteredBody._documentId)) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Document reference id is not valid.',
+    });
+  } else if (filteredBody._documentId) {
+    const document = await Document.findById(filteredBody._documentId);
+
+    if (!document)
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          message: 'Document reference id not found.',
+        },
+      });
+  } else {
+    delete filteredBody._documentId;
+  }
+
+  const task = await Task.findOneAndUpdate(initialQuery, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!task) return next(new AppError('Task not found!'));
+
+  res.status(201).json({
+    status: 'success',
+    env: {
+      task,
+    },
+  });
+});
 
 exports.deleteTask = catchAsync(async (req, res, next) => {
   const { id } = req.params;
