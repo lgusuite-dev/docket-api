@@ -373,7 +373,7 @@ exports.deleteFolder = catchAsync(async (req, res, next) => {
 
 
 exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
-
+  console.log(req.body.id)
   const initialQuery = {
     status: { $ne: 'Deleted' },
     _createdBy: req.user._id,
