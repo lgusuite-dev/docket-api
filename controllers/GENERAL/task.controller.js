@@ -9,6 +9,8 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 var ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createTask = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
   const pickFields = [
     'name',
     'dueDate',
@@ -33,14 +35,16 @@ exports.createTask = catchAsync(async (req, res, next) => {
     const document = await Document.findById(filteredBody._documentId);
 
     if (!document)
-      return res.status(404).json({
-        status: 'error',
-        error: {
-          message: 'Document reference id not found.',
-        },
-      });
+      return next(new AppError(`Document reference id not found.`, 404));
   } else {
     delete filteredBody._documentId;
+  }
+
+  if (id) {
+    prevTask = await Task.findById(id);
+    if (!prevTask) return next(new AppError(`Main Task Id not found.`, 404));
+    filteredBody['_previousTaskId'] = id;
+    filteredBody['_mainTaskId'] = prevTask._mainTaskId || id;
   }
 
   const task = await Task.create(filteredBody);
@@ -79,6 +83,8 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
   }
 
   let filteredBody = _.pick(req.body, pickFields);
+
+  // check if required fields are not empty
 
   if (filteredBody._documentId && !ObjectId.isValid(filteredBody._documentId)) {
     return res.status(400).json({
