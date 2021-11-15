@@ -217,6 +217,33 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
+  const pickFields = ['name', 'description', 'dropbox'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { _documentId, id } = req.params;
+  const initialQuery = {
+    _id: id,
+    _documentId: _documentId,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const file = await File.findOne(initialQuery);
+  if (!file) return next(new AppError('File not found', 404));
+
+  const updatedFile = await File.findByIdAndUpdate(id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      file: updatedFile,
+    },
+  });
+});
+
 exports.classifyDocument = catchAsync(async (req, res, next) => {
   const pickFields = [
     'classification',

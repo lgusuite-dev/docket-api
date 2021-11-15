@@ -17,6 +17,10 @@ router
   .delete(documentController.deleteDocument);
 
 router.route('/:id/files').get(documentController.getDocumentFiles);
+router
+  .route('/:_documentId/files/:id')
+  .put(documentController.updateUploadedDocumentFile);
+
 router.route('/upload/:id').put(documentController.uploadDocumentFile);
 router.route('/classify/:id').put(documentController.classifyDocument);
 
