@@ -3,6 +3,7 @@ const _ = require('lodash');
 const Document = require('../../models/GENERAL/document.model');
 const Folder = require('../../models/GENERAL/folder.model');
 const File = require('../../models/GENERAL/file.model');
+const Task = require('../../models/GENERAL/task.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -306,6 +307,137 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   res.status(204).json({
     status: 'success',
   });
+});
+
+exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
+  const { id, action } = req.params;
+  const allowedActions = ['printed', 'signed', 'released'];
+  const documentQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  if (!allowedActions.includes(action))
+    return next(new AppError('Invalid action params', 400));
+
+  const document = Document.findOne(documentQuery);
+
+  if (action === 'printed') document.process.printed = true;
+  else if (action === 'signed') document.process.signed = true;
+  else if (action === 'released') document.process.released = true;
+
+  const updatedDocument = await document.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
+});
+
+exports.patchDocumentfinalStatus = catchAsync(async (req, res, next) => {
+  const { id, action } = req.params;
+  const allowedActions = ['approved', 'onhold', 'destroy'];
+  const documentQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  if (!allowedActions.includes(action))
+    return next(new AppError('Invalid action params', 400));
+
+  const document = Document.findOne(documentQuery);
+
+  if (document.status === 'Approved')
+    return next(new AppError('Document already Approved', 400));
+  else if (document.status === 'On Hold')
+    return next(new AppError('Document already On Hold', 400));
+  else if (document.status === 'Destroy')
+    return next(new AppError('Document already Destroyed', 400));
+
+  if (action === 'approved') document.status = 'Approved';
+  else if (action === 'onhold') document.status = 'On Hold';
+  else if (action === 'destroy') document.status = 'Destroy';
+
+  const updatedDocument = await document.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
+});
+
+exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
+  const { id, action } = req.params;
+  const { prevStatus } = req.query;
+  const allowedActions = [
+    'incoming',
+    'outgoing',
+    'internal',
+    'archived',
+    'personal',
+    'undo',
+  ];
+  const allowedStatus = ['Outgoing', 'Internal', 'Archived'];
+
+  if (!allowedActions.includes(action))
+    return next(new AppError('Invalid action params', 400));
+
+  if (action === 'undo' && !prevStatus)
+    return next(new AppError('Please provide previous status value', 400));
+
+  if (action === 'undo' && !allowedStatus.includes(prevStatus))
+    return next(new AppError('Invalid previous status value', 400));
+
+  if (['outgoing', 'internal', 'archived'].includes(action)) {
+    const documentQuery = {
+      _id: id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
+
+    const document = await Document.findOne(documentQuery);
+
+    if (!document) return next(new AppError('Document not found', 404));
+
+    const taskQuery = {
+      _documentId: id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
+
+    const task = await Task.findOne(taskQuery);
+
+    if (task) {
+      await Task.findByIdAndUpdate(
+        task._id,
+        {
+          status: 'Completed',
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    }
+
+    if (action === 'outgoing') document.status = 'Outgoing';
+    else if (action === 'archiving') document.status = 'Archiving';
+    else if (action === 'internal') document.status = 'Internal';
+    const updatedDocument = await document.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      status: 'success',
+      env: {
+        document: updatedDocument,
+      },
+    });
+  }
 });
 
 ///// DOCUMENTS/FOLDER Controllers //////////////

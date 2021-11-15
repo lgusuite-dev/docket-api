@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const DocumentSchema = new mongoose.Schema(
   {
     subject: {
@@ -41,10 +42,56 @@ const DocumentSchema = new mongoose.Schema(
         'Deleted',
       ],
     },
+    finalStatus: {
+      type: String,
+      enum: ['Approved', 'On Hold', 'Destroy'],
+    },
     fileLength: {
       type: Number,
       default: 0,
     },
+    confidentialityLevel: {
+      type: Number,
+      enum: [1, 2, 3, 4],
+    },
+    process: {
+      printed: {
+        type: Boolean,
+        default: false,
+      },
+      signed: {
+        type: Boolean,
+        default: false,
+      },
+      released: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    recipient: {
+      firstName: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide recipient first name'],
+      },
+      lastName: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide recipient last name'],
+      },
+      mobileNumber: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide recipient mobile number'],
+      },
+      department: String,
+      position: String,
+      email: String,
+      dateReleased: Date,
+      prefix: String,
+      suffix: String,
+    },
+    message: String,
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,
