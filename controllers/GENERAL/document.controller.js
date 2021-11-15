@@ -1,6 +1,7 @@
 const _ = require('lodash');
 
 const Document = require('../../models/GENERAL/document.model');
+const Folder = require('../../models/GENERAL/folder.model');
 const File = require('../../models/GENERAL/file.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
@@ -201,8 +202,13 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   const file = await File.create(filteredBody);
 
   document._files.push(file._id);
+  document.fileLength = document._files.length;
 
-  const updateBody = { _updatedBy: req.user._id, _files: document._files };
+  const updateBody = {
+    _updatedBy: req.user._id,
+    _files: document._files,
+    fileLength: document.fileLength,
+  };
 
   const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
     new: true,
@@ -299,5 +305,140 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
 
   res.status(204).json({
     status: 'success',
+  });
+});
+
+///// DOCUMENTS/FOLDER Controllers //////////////
+
+exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
+  // console.log(req.user._id)
+
+  const initialQuery = {
+    _createdBy: req.user._id,
+    status: { $ne: 'Deleted' },
+    _parentId: { $eq: null },
+  };
+  const folder = await Folder.find(initialQuery);
+  const document = await Document.find(initialQuery);
+  delete initialQuery._parentId;
+
+  initialQuery['_folderId'] = { $eq: null };
+
+  // console.log(document)
+
+  // if (!document) return next(new AppError('Document not found', 404))
+  // if (!document) return next(new AppError('Document not found', 404))
+
+  return res.status(200).json({
+    status: 'success',
+    document,
+    folder,
+  });
+});
+
+exports.createFolder = catchAsync(async (req, res, next) => {
+  const pickFields = ['name', '_parentId'];
+
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._createdBy = req.user._id;
+  const folder = await Folder.create(filteredBody);
+
+  res.status(201).json({
+    status: 'success',
+    env: {
+      folder,
+    },
+  });
+});
+
+exports.updateFolder = catchAsync(async (req, res, next) => {
+  const pickFields = ['name', '_parentId'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { folderId } = req.params;
+
+  const initialQuery = {
+    _id: folderId,
+    status: { $ne: 'Deleted' },
+    _createdBy: req.user._id,
+  };
+
+  const folder = await Folder.findOne(initialQuery);
+  if (!folder) return next(new AppError('Folder not found', 404));
+
+  const updatedFolder = await Folder.findByIdAndUpdate(folderId, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedFolder,
+    },
+  });
+});
+
+exports.deleteFolder = catchAsync(async (req, res, next) => {
+  const { folderId } = req.params;
+  const initialQuery = {
+    _id: folderId,
+    status: { $ne: 'Deleted' },
+    _createdBy: req.user._id,
+  };
+
+  const folder = await Folder.findOneAndUpdate(initialQuery, {
+    status: 'Deleted',
+  });
+
+  if (!folder) return next(new AppError('Folder not found', 404));
+
+  res.status(204).json({
+    status: 'success',
+  });
+});
+
+exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
+  const openedFolders = [];
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _createdBy: req.user._id,
+    _parentId: req.body.id,
+  };
+
+  let currentFolder = await Folder.findById(req.body.id);
+
+  if (!currentFolder) return next(new AppError('Folder not found', 404));
+
+  const folder = await Folder.find(initialQuery);
+
+  delete initialQuery._parentId;
+
+  initialQuery['_folderId'] = req.body.id;
+  const document = await Document.find(initialQuery);
+
+  openedFolders.push({
+    id: currentFolder._id,
+    name: currentFolder.name,
+    folders: [],
+    documents: [],
+  });
+
+  while (currentFolder._parentId) {
+    currentFolder = await Folder.findById(currentFolder._parentId);
+
+    if (currentFolder)
+      openedFolders.unshift({
+        id: currentFolder._id,
+        name: currentFolder.name,
+        folders: [],
+        documents: [],
+      });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    folder,
+    document,
+    opened_folders: openedFolders,
   });
 });

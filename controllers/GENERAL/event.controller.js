@@ -11,6 +11,7 @@ exports.getAllEvents = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
+  // console.log(initialQuery);
   const queryFeatures = new QueryFeatures(Event.find(initialQuery), req.query)
     .sort()
     .limitFields()

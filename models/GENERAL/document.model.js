@@ -41,6 +41,10 @@ const DocumentSchema = new mongoose.Schema(
         'Deleted',
       ],
     },
+    fileLength: {
+      type: Number,
+      default: 0,
+    },
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,
