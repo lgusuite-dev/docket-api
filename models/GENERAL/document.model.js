@@ -81,6 +81,7 @@ const DocumentSchema = new mongoose.Schema(
         trim: true,
         required: [true, 'Please provide recipient mobile number'],
       },
+      middleInitial: String,
       department: String,
       position: String,
       email: String,
@@ -88,7 +89,35 @@ const DocumentSchema = new mongoose.Schema(
       prefix: String,
       suffix: String,
     },
-    message: String,
+    includedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    excludedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    message: {
+      from: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+      like: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+      ],
+      text: String,
+    },
+    _taskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
+    },
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,

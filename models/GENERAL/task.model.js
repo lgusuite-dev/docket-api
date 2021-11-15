@@ -51,10 +51,23 @@ const TaskSchema = new mongoose.Schema(
         'Pending',
         'Completed',
         'Deleted',
-        'Canceled',
+        'Cancelled',
         'Declined',
         'For Approval',
       ],
+    },
+    message: {
+      from: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+      like: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+      ],
+      text: String,
     },
     // tracker
     _mainTaskId: {

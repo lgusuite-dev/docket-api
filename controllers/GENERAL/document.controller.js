@@ -318,6 +318,43 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.forFinalAction = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const pickFields = ['recipient', 'dateReleased'];
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._updatedBy = req.user._id;
+  filteredBody.finalStatus = '';
+});
+
+exports.releaseDocument = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const pickFields = ['recipient', 'dateReleased'];
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._updatedBy = req.user._id;
+  filteredBody.status = 'Outgoing';
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
+});
+
 exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
   const { id, action } = req.params;
   const allowedActions = ['printed', 'signed', 'released'];
