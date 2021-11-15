@@ -378,14 +378,16 @@ exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
     _parentId: req.body.id,
   };
 
+  let currentFolder = await Folder.findById(req.body.id);
+
+  if (!currentFolder) return next(new AppError('Folder not found', 404));
+
   const folder = await Folder.find(initialQuery);
 
   delete initialQuery._parentId;
 
   initialQuery['_folderId'] = req.body.id;
   const document = await Document.find(initialQuery);
-
-  let currentFolder = await Folder.findById(req.body.id);
 
   openedFolders.push({
     id: currentFolder._id,
