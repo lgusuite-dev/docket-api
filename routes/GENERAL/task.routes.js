@@ -11,8 +11,9 @@ router.route('/reply/:id').put(taskController.replyToTask);
 router
   .route('/:id')
   .put(taskController.updateTask)
-  .post(taskController.createTask); // creating subtask
-//   .get(taskController.getTask)
-//   .delete(taskController.deleteTask);
+  .post(taskController.createTask) // creating subtask
+  .patch(taskController.updateTaskStatus) // patch status only
+  .get(taskController.getTasks)
+  .delete(taskController.deleteTask);
 
 module.exports = router;
