@@ -371,6 +371,7 @@ exports.deleteFolder = catchAsync(async (req, res, next) => {
 });
 
 exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
+  const openedFolders = [];
   const initialQuery = {
     status: { $ne: 'Deleted' },
     _createdBy: req.user._id,
@@ -384,9 +385,31 @@ exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
   initialQuery['_folderId'] = req.body.id;
   const document = await Document.find(initialQuery);
 
+  let currentFolder = await Folder.findById(req.body.id);
+
+  openedFolders.push({
+    id: currentFolder._id,
+    name: currentFolder.name,
+    folders: [],
+    documents: [],
+  });
+
+  while (currentFolder._parentId) {
+    currentFolder = await Folder.findById(currentFolder._parentId);
+
+    if (currentFolder)
+      openedFolders.unshift({
+        id: currentFolder._id,
+        name: currentFolder.name,
+        folders: [],
+        documents: [],
+      });
+  }
+
   res.status(200).json({
     status: 'success',
     folder,
     document,
+    opened_folders: openedFolders,
   });
 });
