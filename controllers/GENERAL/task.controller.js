@@ -9,6 +9,8 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 var ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createTask = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
   const pickFields = [
     'name',
     'dueDate',
@@ -33,14 +35,16 @@ exports.createTask = catchAsync(async (req, res, next) => {
     const document = await Document.findById(filteredBody._documentId);
 
     if (!document)
-      return res.status(404).json({
-        status: 'error',
-        error: {
-          message: 'Document reference id not found.',
-        },
-      });
+      return next(new AppError(`Document reference id not found.`, 404));
   } else {
     delete filteredBody._documentId;
+  }
+
+  if (id) {
+    prevTask = await Task.findById(id);
+    if (!prevTask) return next(new AppError(`Main Task Id not found.`, 404));
+    filteredBody['_previousTaskId'] = id;
+    filteredBody['_mainTaskId'] = prevTask._mainTaskId || id;
   }
 
   const task = await Task.create(filteredBody);
@@ -54,9 +58,65 @@ exports.createTask = catchAsync(async (req, res, next) => {
 });
 
 exports.replyToTask = catchAsync(async (req, res, next) => {
-  const pickFields = ['message', 'link', 'status'];
-
   const { id } = req.params;
+
+  let pickFields = ['message', '_documentId', 'status'];
+
+  const task = await Task.findById(id);
+
+  if (task.status != 'Pending')
+    return next(
+      new AppError(
+        `Unable to reply to this task. (Current Status: ${task.status})`,
+        404
+      )
+    );
+
+  if (req.body.status === 'Completed') {
+    pickFields = ['message', '_documentId', 'status'];
+  } else if (req.body.status === 'Declined') {
+    pickFields = ['message', 'status'];
+  } else if (req.body.status === 'For Approval') {
+    pickFields = ['message', '_documentId', 'status'];
+  } else {
+    return next(new AppError('Action is not valid!'));
+  }
+
+  let filteredBody = _.pick(req.body, pickFields);
+
+  // check if required fields are not empty
+
+  if (filteredBody._documentId && !ObjectId.isValid(filteredBody._documentId)) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Document reference id is not valid.',
+    });
+  } else if (filteredBody._documentId) {
+    const document = await Document.findById(filteredBody._documentId);
+
+    if (!document)
+      return res.status(404).json({
+        status: 'error',
+        error: {
+          message: 'Document reference id not found.',
+        },
+      });
+  } else {
+    filteredBody._documentId = '';
+    delete filteredBody._documentId;
+  }
+
+  task._updatedBy = req.user._id;
+  task.status = filteredBody.status;
+  task.reply = {
+    message: filteredBody.message,
+  };
+
+  if (filteredBody._documentId) {
+    task.reply['_documentId'] = filteredBody._documentId;
+  }
+
+  await task.save();
 
   res.status(201).json({
     status: 'success',
@@ -164,7 +224,7 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
-  if (!task) return next(new AppError('Task not found!'));
+  if (!task) return next(new AppError('Task not found!', 404));
 
   res.status(201).json({
     status: 'success',
