@@ -17,7 +17,8 @@ const FolderSchema = new mongoose.Schema(
             type: String,
             enum: ['Active', 'Deleted'],
             default: 'Active'
-        }
+        },
+
     },
     {
         timestamps: true

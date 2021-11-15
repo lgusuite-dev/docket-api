@@ -4,16 +4,29 @@ const createQuery = (fields, searchVal) => {
   const orQuery = [];
 
   const booleanFields = ['isNewUser'];
-  const numberFields = ['access_level'];
+  const numberFields = ['access_level', 'fileLength'];
   const otherTypeFields = [
     '_id',
     '_createdBy',
     '_tenantId',
+    '_files',
+    '_folderId',
+    '_assignedTo',
+    '_parentId',
+    'dueDate',
+    '_mainTaskId',
+    '_previousTaskId',
+    '_updatedBy',
+    '_documentId',
     'createdAt',
     'updatedAt',
     'passwordChangedAt',
     'passwordResetTokenExpires',
     'password',
+    'requestDate',
+    'dateReceived',
+    'others',
+    'guests',
   ];
 
   for (const field of fields) {
@@ -68,8 +81,15 @@ class QueryFeatures {
 
     // manipulate "in" and "nin" operator value to array if available
     for (let key of Object.keys(queryObj)) {
+      if (queryObj[key] === 'true') queryObj[key] = true;
+      if (queryObj[key] === 'false') queryObj[key] = false;
+
       if (typeof queryObj[key] === 'object') {
         for (let objKey of Object.keys(queryObj[key])) {
+          if (queryObj[key][objKey] === 'null') queryObj[key][objKey] = null;
+          if (queryObj[key][objKey] === 'true') queryObj[key][objKey] = true;
+          if (queryObj[key][objKey] === 'false') queryObj[key][objKey] = false;
+
           if (
             (objKey === 'in' || objKey === 'nin') &&
             typeof queryObj[key][objKey] === 'string'
@@ -91,10 +111,12 @@ class QueryFeatures {
 
     // normal query
     let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace('null', null);
     queryStr = queryStr.replace(
       /\b(gte|gt|lte|lt|ne|eq|in|nin)\b/g,
       (match) => `$${match}`
     );
+
     if (orQuery.length)
       this.query.find({ ...JSON.parse(queryStr), $or: orQuery });
     else this.query.find({ ...JSON.parse(queryStr) });

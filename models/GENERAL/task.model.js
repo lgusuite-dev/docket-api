@@ -73,6 +73,15 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    reply: {
+      message: {
+        type: String,
+      },
+      _documentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Document',
+      },
+    },
   },
 
   { timestamps: true }
