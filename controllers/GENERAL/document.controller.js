@@ -27,6 +27,15 @@ exports.createDocument = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
+  if (!filteredBody.senderFirstName)
+    return next(new AppError('Please provide sender first name', 400));
+
+  if (!filteredBody.senderLastName)
+    return next(new AppError('Please provide sender last name', 400));
+
+  if (!filteredBody.mobileNumber)
+    return next(new AppError('Please provide mobile number', 400));
+
   const document = await Document.create(filteredBody);
 
   res.status(201).json({
