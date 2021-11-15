@@ -239,7 +239,7 @@ exports.updateTaskStatus = catchAsync(async (req, res, next) => {
   const allowedStatus = [
     'Pending',
     'Completed',
-    'Deleted',
+    'Canceled',
     'Declined',
     'For Approval',
   ];
