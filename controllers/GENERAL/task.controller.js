@@ -234,6 +234,41 @@ exports.updateTask = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updateTaskStatus = catchAsync(async (req, res, next) => {
+  const pickFields = ['status'];
+  const allowedStatus = [
+    'Pending',
+    'Completed',
+    'Canceled',
+    'Declined',
+    'For Approval',
+  ];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  if (!filteredBody.status || !allowedStatus.includes(filteredBody.status))
+    return next(new AppError('Invalid Status', 401));
+
+  const task = await Task.findOneAndUpdate(initialQuery, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!task) return next(new AppError('Task not found'));
+
+  res.status(201).json({
+    status: 'success',
+    env: {
+      task,
+    },
+  });
+});
+
 exports.deleteTask = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {

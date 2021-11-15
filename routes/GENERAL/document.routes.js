@@ -11,7 +11,11 @@ router
   .get(documentController.getAllDocuments);
 
 router.get('/folders-and-docs', documentController.getMyDocAndFolders);
+<<<<<<< HEAD
 router.post('/subfolders-and-docs', documentController.getSubFolderAndDocs);
+=======
+router.get('/subfolders-and-docs/:id', documentController.getSubFolderAndDocs);
+>>>>>>> 1fb1cb3f4edd711c047f96f682f975cc69f816eb
 
 router
   .route('/:id')

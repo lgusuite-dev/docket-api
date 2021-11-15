@@ -47,7 +47,14 @@ const TaskSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: 'Pending',
-      enum: ['Pending', 'Completed', 'Deleted', 'Declined', 'For Approval'],
+      enum: [
+        'Pending',
+        'Completed',
+        'Deleted',
+        'Canceled',
+        'Declined',
+        'For Approval',
+      ],
     },
     // tracker
     _mainTaskId: {

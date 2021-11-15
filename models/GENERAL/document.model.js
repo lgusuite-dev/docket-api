@@ -14,16 +14,13 @@ const DocumentSchema = new mongoose.Schema(
     senderFirstName: {
       type: String,
       trim: true,
-      required: [true, 'Please provide sender first name'],
     },
     senderLastName: {
       type: String,
       trim: true,
-      required: [true, 'Please provide sender last name'],
     },
     mobileNumber: {
       type: String,
-      required: [true, 'Please provide mobile number'],
     },
     email: String,
     controlNumber: {
