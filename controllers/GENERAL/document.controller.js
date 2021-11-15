@@ -375,10 +375,10 @@ exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
   const initialQuery = {
     status: { $ne: 'Deleted' },
     _createdBy: req.user._id,
-    _parentId: req.body.id,
+    _parentId: req.params.id,
   };
 
-  let currentFolder = await Folder.findById(req.body.id);
+  let currentFolder = await Folder.findById(req.params.id);
 
   if (!currentFolder) return next(new AppError('Folder not found', 404));
 
@@ -386,7 +386,7 @@ exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
 
   delete initialQuery._parentId;
 
-  initialQuery['_folderId'] = req.body.id;
+  initialQuery['_folderId'] = req.params.id;
   const document = await Document.find(initialQuery);
 
   openedFolders.push({
@@ -396,16 +396,18 @@ exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
     documents: [],
   });
 
-  while (currentFolder._parentId) {
-    currentFolder = await Folder.findById(currentFolder._parentId);
+  if (req.query.reload) {
+    while (currentFolder._parentId) {
+      currentFolder = await Folder.findById(currentFolder._parentId);
 
-    if (currentFolder)
-      openedFolders.unshift({
-        id: currentFolder._id,
-        name: currentFolder.name,
-        folders: [],
-        documents: [],
-      });
+      if (currentFolder)
+        openedFolders.unshift({
+          id: currentFolder._id,
+          name: currentFolder.name,
+          folders: [],
+          documents: [],
+        });
+    }
   }
 
   res.status(200).json({
