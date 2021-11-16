@@ -15,3 +15,5 @@ exports.origin = function (origin, callback) {
   }
   return callback(null, true);
 };
+
+exports.whitelist = ['process'];
