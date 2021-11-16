@@ -36,11 +36,16 @@ const DocumentSchema = new mongoose.Schema(
         'Archived',
         'Personal',
         'Deleted',
+        'My Documents',
       ],
     },
     fileLength: {
       type: Number,
       default: 0,
+    },
+    isMyDocuments: {
+      type: Boolean,
+      default: false,
     },
     _files: [
       {
@@ -70,6 +75,8 @@ const DocumentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    _includes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    _excludes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     classification: String,
     subClassification: String,
     department: String,
