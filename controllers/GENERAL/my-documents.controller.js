@@ -7,7 +7,6 @@ const File = require('../../models/GENERAL/file.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
-const QueryFeatures = require('../../utils/query/queryFeatures');
 
 exports.getRoot = catchAsync(async (req, res, next) => {
   const initialQuery = {
@@ -21,7 +20,14 @@ exports.getRoot = catchAsync(async (req, res, next) => {
   delete initialQuery._parentId;
   initialQuery['_folderId'] = { $eq: null };
 
-  const document = await Document.find(initialQuery);
+  const document = await Document.find(initialQuery).populate({
+    path: '_files',
+    select: '-name -dropbox',
+    populate: {
+      path: '_versions _currentVersionId',
+      select: 'name status dropbox description versionNumber createdAt',
+    },
+  });
 
   return res.status(200).json({
     status: 'success',
