@@ -103,7 +103,7 @@ class QueryFeatures {
         }
       }
 
-      if (!queryObj[key]) delete queryObj[key];
+      if (!Object.keys(queryObj[key]).length) delete queryObj[key];
     }
 
     let orQuery = [];
