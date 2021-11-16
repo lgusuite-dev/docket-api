@@ -95,9 +95,15 @@ class QueryFeatures {
             typeof queryObj[key][objKey] === 'string'
           )
             queryObj[key][objKey] = queryObj[key][objKey].split(',');
+          else {
+            queryObj[`${key}.${objKey}`] = queryObj[key][objKey];
+            delete queryObj[key];
+          }
         }
       }
     }
+
+    console.log(queryObj);
 
     let orQuery = [];
 
