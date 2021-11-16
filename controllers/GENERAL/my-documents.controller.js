@@ -301,7 +301,7 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   const newFileVersionData = { ...file._doc, ...filteredBody };
   delete newFileVersionData._id;
 
-  if (!file.versionNumber) newFileVersionData.versionNumber = 'Version 0';
+  if (!file.versionNumber) newFileVersionData.versionNumber = 'Version 1';
   else {
     const parentFile = await file.populate('_currentVersionId');
 
