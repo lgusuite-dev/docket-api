@@ -51,7 +51,14 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
   delete initialQuery._parentId;
   initialQuery['_folderId'] = id;
 
-  const document = await Document.find(initialQuery);
+  const document = await Document.find(initialQuery).populate({
+    path: '_files',
+    select: '-name -dropbox',
+    populate: {
+      path: '_versions _currentVersionId',
+      select: 'name status dropbox description versionNumber createdAt',
+    },
+  });
 
   openedFolders.push({
     id: currentFolder._id,
@@ -240,7 +247,7 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
   filteredBody._documentId = id;
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
-  filteredBody.versionNumber = 'Version 0';
+  filteredBody.versionNumber = 'Version 1';
 
   const query = {
     _id: id,
@@ -288,10 +295,11 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   const file = await File.findOne(query);
   if (!file) return next(new AppError('File not found', 404));
 
+  if (file._id.toString() === file._currentVersionId.toString())
+    file._versions.push(file._id);
+
   const newFileVersionData = { ...file._doc, ...filteredBody };
   delete newFileVersionData._id;
-
-  console.log(file);
 
   if (!file.versionNumber) newFileVersionData.versionNumber = 'Version 0';
   else {
@@ -309,7 +317,7 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   const newFileVersion = await File.create(newFileVersionData);
 
   file._currentVersionId = newFileVersion._id;
-  file._versions.push(newFileVersion._id);
+  file._versions.unshift(newFileVersion._id);
   file.versionsLength = file._versions.length;
 
   await file.save();
