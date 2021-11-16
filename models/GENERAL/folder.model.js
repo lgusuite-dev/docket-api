@@ -20,9 +20,10 @@ const FolderSchema = new mongoose.Schema(
         },
 
     },
+
     {
-        timestamps: true
+        timestamps: true,
     }
-)
+);
 const Folder = mongoose.model('Folder', FolderSchema);
 module.exports = Folder;
