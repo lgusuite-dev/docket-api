@@ -55,8 +55,8 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
     path: '_files',
     select: '-name -dropbox',
     populate: {
-      path: '_currentVersionId',
-      select: 'name status dropbox description',
+      path: '_versions _currentVersionId',
+      select: 'name status dropbox description versionNumber createdAt',
     },
   });
 
