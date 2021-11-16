@@ -337,6 +337,13 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
+  if (!filteredBody.recipient.firstName)
+    return next(new AppError('Please provide recipient first name', 404));
+  if (!filteredBody.recipient.lastName)
+    return next(new AppError('Please provide recipient last name', 404));
+  if (!filteredBody.recipient.mobileNumber)
+    return next(new AppError('Please provide recipient mobile number', 404));
+
   const document = await Document.findOne(initialQuery);
 
   if (!document) return next(new AppError('Document not found', 404));
