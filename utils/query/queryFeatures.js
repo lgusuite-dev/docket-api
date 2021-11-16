@@ -68,6 +68,7 @@ class QueryFeatures {
 
   filter() {
     let queryObj = { ...this.queryString };
+
     const removeField = [
       'page',
       'sort',
@@ -95,15 +96,11 @@ class QueryFeatures {
             typeof queryObj[key][objKey] === 'string'
           )
             queryObj[key][objKey] = queryObj[key][objKey].split(',');
-          else {
-            queryObj[`${key}.${objKey}`] = queryObj[key][objKey];
-            delete queryObj[key];
-          }
+          else queryObj[`${key}.${objKey}`] = queryObj[key][objKey];
         }
       }
+      delete queryObj[key];
     }
-
-    console.log(queryObj);
 
     let orQuery = [];
 
