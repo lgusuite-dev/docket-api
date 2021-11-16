@@ -1,7 +1,6 @@
 const AppError = require('../../utils/errors/AppError');
 
 const handleCastErrorDB = (err) => {
-  console.log(err)
   const message = `Invalid ${err.path} value`;
 
   return new AppError(message, 400);
@@ -10,8 +9,9 @@ const handleCastErrorDB = (err) => {
 const handleDuplicateDataErrorDB = (err) => {
   // search for the value that inside of a quoute ("")
   const value = err.message.match(/(["'])(\\?.)*?\1/);
-  const message = `${Object.keys(err.keyPattern)[0]} ${value[0]
-    } already exist.`;
+  const message = `${Object.keys(err.keyPattern)[0]} ${
+    value[0]
+  } already exist.`;
 
   return new AppError(message, 400);
 };

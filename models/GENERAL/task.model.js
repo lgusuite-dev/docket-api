@@ -47,7 +47,27 @@ const TaskSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: 'Pending',
-      enum: ['Pending', 'Completed', 'Deleted', 'Declined'],
+      enum: [
+        'Pending',
+        'Completed',
+        'Deleted',
+        'Cancelled',
+        'Declined',
+        'For Approval',
+      ],
+    },
+    message: {
+      from: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+      like: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+      ],
+      text: String,
     },
     // tracker
     _mainTaskId: {
@@ -72,6 +92,15 @@ const TaskSchema = new mongoose.Schema(
     _updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+    },
+    reply: {
+      message: {
+        type: String,
+      },
+      _documentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Document',
+      },
     },
   },
 
