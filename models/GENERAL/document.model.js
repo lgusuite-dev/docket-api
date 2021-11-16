@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const DocumentSchema = new mongoose.Schema(
   {
     subject: {
@@ -39,6 +40,10 @@ const DocumentSchema = new mongoose.Schema(
         'My Documents',
       ],
     },
+    finalStatus: {
+      type: String,
+      enum: ['Approved', 'On Hold', 'Destroy'],
+    },
     fileLength: {
       type: Number,
       default: 0,
@@ -46,6 +51,77 @@ const DocumentSchema = new mongoose.Schema(
     isMyDocuments: {
       type: Boolean,
       default: false,
+    },
+    confidentialityLevel: {
+      type: Number,
+      enum: [1, 2, 3, 4],
+    },
+    process: {
+      printed: {
+        type: Boolean,
+        default: false,
+      },
+      signed: {
+        type: Boolean,
+        default: false,
+      },
+      released: {
+        type: Boolean,
+        default: false,
+      },
+    },
+    recipient: {
+      firstName: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide recipient first name'],
+      },
+      lastName: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide recipient last name'],
+      },
+      mobileNumber: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide recipient mobile number'],
+      },
+      middleInitial: String,
+      department: String,
+      position: String,
+      email: String,
+      dateReleased: Date,
+      prefix: String,
+      suffix: String,
+    },
+    includedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    excludedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    message: {
+      from: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+      like: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+      ],
+      text: String,
+    },
+    _taskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
     },
     _files: [
       {
