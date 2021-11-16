@@ -12,7 +12,6 @@ router
 
 router
   .route('/:id')
-  .patch(documentController.updateDocumentStatus)
   .put(documentController.updateDocument)
   .get(documentController.getDocument)
   .delete(documentController.deleteDocument);
