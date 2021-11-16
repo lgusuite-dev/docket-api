@@ -1,7 +1,6 @@
 const _ = require('lodash');
 
 const Document = require('../../models/GENERAL/document.model');
-const Folder = require('../../models/GENERAL/folder.model');
 const File = require('../../models/GENERAL/file.model');
 const Task = require('../../models/GENERAL/task.model');
 
@@ -329,6 +328,13 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
+  if (!filteredBody.recipient.firstName)
+    return next(new AppError('Please provide recipient first name', 404));
+  if (!filteredBody.recipient.lastName)
+    return next(new AppError('Please provide recipient last name', 404));
+  if (!filteredBody.recipient.mobileNumber)
+    return next(new AppError('Please provide recipient mobile number', 404));
+
   const document = await Document.findOne(initialQuery);
 
   if (!document) return next(new AppError('Document not found', 404));
@@ -440,7 +446,7 @@ exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
     updatedDocuments.push(updatedDocument);
   }
 
-  res.status(200).json({
+  res.status(201).json({
     status: 'success',
     env: {
       documents: updatedDocuments,
@@ -457,7 +463,7 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
     'incoming',
     'outgoing',
     'internal',
-    'archiving',
+    'archived',
     'personal',
     'undo',
   ];
@@ -466,13 +472,26 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
 
+  if (!allowedStatus.includes(filteredBody.status))
+    return next(new AppError('Invalid status', 400));
+
   if (action === 'undo' && !prevStatus)
     return next(new AppError('Please provide previous status value', 400));
 
   if (action === 'undo' && !allowedStatus.includes(prevStatus))
     return next(new AppError('Invalid previous status value', 400));
+  const documentQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
 
-  if (['outgoing', 'internal', 'archiving'].includes(action)) {
+  const document = Document.findOne(documentQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  if (action === 'undo' && document.status === 'Deleted')
+    return next(new AppError('Document not deleted', 404));
+
+  if (['outgoing', 'internal', 'archived'].includes(action)) {
     const documentQuery = {
       _id: id,
       status: { $ne: 'Deleted' },
@@ -480,177 +499,36 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
     };
 
     const document = await Document.findOne(documentQuery);
-
     if (!document) return next(new AppError('Document not found', 404));
 
-    const taskQuery = {
-      _documentId: id,
-      status: { $ne: 'Deleted' },
-      _tenantId: req.user._tenantId,
-    };
-
     const task = await Task.findOne(taskQuery);
+    if (!task) return next(new AppError('Task not found', 404));
 
     if (task) {
-      await Task.findByIdAndUpdate(
-        task._id,
-        {
-          status: 'Completed',
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
+      await Task.findByIdAndUpdate(task._id, filteredBody, {
+        new: true,
+        runValidators: true,
+      });
     }
 
-    if (action === 'outgoing') document.status = 'Outgoing';
-    else if (action === 'archiving') document.status = 'Archiving';
-    else if (action === 'internal') document.status = 'Internal';
+    document.status = filteredBody.status;
+    document.message = filteredBody.message;
     const updatedDocument = await document.save({ validateBeforeSave: false });
 
     res.status(200).json({
       status: 'success',
       env: {
-        document: updatedDocument,
+        updatedDocument,
+      },
+    });
+  } else if (action === 'undo') {
+    document.status = prevStatus;
+    const updatedDocument = await document.save({ validateBeforeSave: false });
+    res.status(200).json({
+      status: 'success',
+      env: {
+        updatedDocument,
       },
     });
   }
-});
-
-///// DOCUMENTS/FOLDER Controllers //////////////
-
-exports.getMyDocAndFolders = catchAsync(async (req, res, next) => {
-  // console.log(req.user._id)
-
-  const initialQuery = {
-    _createdBy: req.user._id,
-    status: { $ne: 'Deleted' },
-    _parentId: { $eq: null },
-  };
-  const folder = await Folder.find(initialQuery);
-  const document = await Document.find(initialQuery);
-  delete initialQuery._parentId;
-
-  initialQuery['_folderId'] = { $eq: null };
-
-  // console.log(document)
-
-  // if (!document) return next(new AppError('Document not found', 404))
-  // if (!document) return next(new AppError('Document not found', 404))
-
-  return res.status(200).json({
-    status: 'success',
-    document,
-    folder,
-  });
-});
-
-exports.createFolder = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', '_parentId'];
-
-  const filteredBody = _.pick(req.body, pickFields);
-  filteredBody._createdBy = req.user._id;
-  const folder = await Folder.create(filteredBody);
-
-  res.status(201).json({
-    status: 'success',
-    env: {
-      folder,
-    },
-  });
-});
-
-exports.updateFolder = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', '_parentId'];
-  const filteredBody = _.pick(req.body, pickFields);
-  const { folderId } = req.params;
-
-  const initialQuery = {
-    _id: folderId,
-    status: { $ne: 'Deleted' },
-    _createdBy: req.user._id,
-  };
-
-  const folder = await Folder.findOne(initialQuery);
-  if (!folder) return next(new AppError('Folder not found', 404));
-
-  const updatedFolder = await Folder.findByIdAndUpdate(folderId, filteredBody, {
-    new: true,
-    runValidators: true,
-  });
-
-  res.status(200).json({
-    status: 'success',
-    env: {
-      updatedFolder,
-    },
-  });
-});
-
-exports.deleteFolder = catchAsync(async (req, res, next) => {
-  const { folderId } = req.params;
-  const initialQuery = {
-    _id: folderId,
-    status: { $ne: 'Deleted' },
-    _createdBy: req.user._id,
-  };
-
-  const folder = await Folder.findOneAndUpdate(initialQuery, {
-    status: 'Deleted',
-  });
-
-  if (!folder) return next(new AppError('Folder not found', 404));
-
-  res.status(204).json({
-    status: 'success',
-  });
-});
-
-exports.getSubFolderAndDocs = catchAsync(async (req, res, next) => {
-  const openedFolders = [];
-  const initialQuery = {
-    status: { $ne: 'Deleted' },
-    _createdBy: req.user._id,
-    _parentId: req.params.id,
-  };
-
-  let currentFolder = await Folder.findById(req.params.id);
-
-  if (!currentFolder) return next(new AppError('Folder not found', 404));
-
-  const folder = await Folder.find(initialQuery);
-
-  delete initialQuery._parentId;
-
-  initialQuery['_folderId'] = req.params.id;
-  const document = await Document.find(initialQuery);
-
-  openedFolders.push({
-    id: currentFolder._id,
-    name: currentFolder.name,
-    folders: [],
-    documents: [],
-  });
-
-  if (req.query.reload) {
-    while (currentFolder._parentId) {
-      currentFolder = await Folder.findById(currentFolder._parentId);
-
-      if (currentFolder)
-        openedFolders.unshift({
-          id: currentFolder._id,
-          name: currentFolder.name,
-          folders: [],
-          documents: [],
-        });
-    }
-  }
-
-  res.status(200).json({
-    status: 'success',
-    folder,
-    document,
-    opened_folders: openedFolders,
-  });
 });

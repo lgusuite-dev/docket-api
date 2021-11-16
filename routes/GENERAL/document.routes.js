@@ -10,16 +10,15 @@ router
   .post(documentController.createDocument)
   .get(documentController.getAllDocuments);
 
-router.get('/folders-and-docs', documentController.getMyDocAndFolders);
-router.get('/subfolders-and-docs/:id', documentController.getSubFolderAndDocs);
-
 router
   .route('/:id')
+  .patch(documentController.updateDocumentStatus)
   .put(documentController.updateDocument)
   .get(documentController.getDocument)
   .delete(documentController.deleteDocument);
 
 router.route('/:id/files').get(documentController.getDocumentFiles);
+
 router
   .route('/:_documentId/files/:id')
   .put(documentController.updateUploadedDocumentFile);
@@ -27,7 +26,6 @@ router
 router
   .route('/:id/status/:action')
   .patch(documentController.patchDocumentStatus);
-
 router.route('/process/:action').patch(documentController.patchDocumentProcess);
 router.route('/assignation/:id').put(documentController.documentAssignation);
 router.route('/final-status/:id').put(documentController.forFinalAction);

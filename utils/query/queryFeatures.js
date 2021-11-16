@@ -67,7 +67,8 @@ class QueryFeatures {
   }
 
   filter() {
-    let queryObj = { ...this.queryString };
+    let queryObj = JSON.parse(JSON.stringify(this.queryString));
+    const allowedSecondaryOperator = ['signed', 'printed', 'released'];
     const removeField = [
       'page',
       'sort',
@@ -93,10 +94,16 @@ class QueryFeatures {
           if (
             (objKey === 'in' || objKey === 'nin') &&
             typeof queryObj[key][objKey] === 'string'
-          )
+          ) {
             queryObj[key][objKey] = queryObj[key][objKey].split(',');
+          } else if (allowedSecondaryOperator.includes(objKey)) {
+            queryObj[`${key}.${objKey}`] = queryObj[key][objKey];
+            delete queryObj[key][objKey];
+          }
         }
       }
+
+      if (!Object.keys(queryObj[key]).length) delete queryObj[key];
     }
 
     let orQuery = [];
