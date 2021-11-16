@@ -15,6 +15,24 @@ const FileSchema = new mongoose.Schema(
       type: Object,
       required: [true, 'Please provide the file'],
     },
+    versionsLength: {
+      type: Number,
+      default: 0,
+    },
+    _currentVersionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'File',
+    },
+    _parentVersionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'File',
+    },
+    _versions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'File',
+      },
+    ],
     _documentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Document',
@@ -31,9 +49,18 @@ const FileSchema = new mongoose.Schema(
       required: [true, 'Please provide tenant id'],
     },
     description: String,
+    versionNumber: String,
   },
   { timestamps: true }
 );
+
+FileSchema.pre('save', function (next) {
+  if (!this.isNew) return next();
+
+  this._currentVersionId = this._id;
+
+  return next();
+});
 
 const File = mongoose.model('File', FileSchema);
 

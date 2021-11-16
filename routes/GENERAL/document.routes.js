@@ -10,9 +10,6 @@ router
   .post(documentController.createDocument)
   .get(documentController.getAllDocuments);
 
-router.get('/folders-and-docs', documentController.getMyDocAndFolders);
-router.get('/subfolders-and-docs/:id', documentController.getSubFolderAndDocs);
-
 router
   .route('/:id')
   .patch(documentController.updateDocumentStatus)
