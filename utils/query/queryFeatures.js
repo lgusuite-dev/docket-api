@@ -68,7 +68,7 @@ class QueryFeatures {
 
   filter() {
     let queryObj = JSON.parse(JSON.stringify(this.queryString));
-
+    const allowedSecondaryOperator = ['signed', 'printed', 'released'];
     const removeField = [
       'page',
       'sort',
@@ -90,13 +90,17 @@ class QueryFeatures {
           if (queryObj[key][objKey] === 'null') queryObj[key][objKey] = null;
           if (queryObj[key][objKey] === 'true') queryObj[key][objKey] = true;
           if (queryObj[key][objKey] === 'false') queryObj[key][objKey] = false;
+          console.log(typeof queryObj[key][objKey]);
+          console.log(queryObj[key][objKey]);
+          console.log(objKey);
 
           if (
             (objKey === 'in' || objKey === 'nin') &&
             typeof queryObj[key][objKey] === 'string'
-          )
+          ) {
+            console.log('aoisdjfosid');
             queryObj[key][objKey] = queryObj[key][objKey].split(',');
-          else {
+          } else if (allowedSecondaryOperator.includes(objKey)) {
             queryObj[`${key}.${objKey}`] = queryObj[key][objKey];
             delete queryObj[key][objKey];
           }
@@ -123,6 +127,8 @@ class QueryFeatures {
       /\b(gte|gt|lte|lt|ne|eq|in|nin)\b/g,
       (match) => `$${match}`
     );
+
+    console.log(JSON.parse(queryStr));
 
     if (orQuery.length)
       this.query.find({ ...JSON.parse(queryStr), $or: orQuery });
