@@ -27,13 +27,10 @@ router
 router
   .route('/:id/status/:action')
   .patch(documentController.patchDocumentStatus);
-router
-  .route('/:id/final-status/:action')
-  .patch(documentController.patchDocumentfinalStatus);
-router
-  .route('/:id/process/:action')
-  .patch(documentController.patchDocumentProcess);
 
+router.route('/process/:action').patch(documentController.patchDocumentProcess);
+router.route('/assignation/:id').put(documentController.documentAssignation);
+router.route('/final-status/:id').put(documentController.forFinalAction);
 router.route('/upload/:id').put(documentController.uploadDocumentFile);
 router.route('/classify/:id').put(documentController.classifyDocument);
 router.route('/release/:id').put(documentController.releaseDocument);

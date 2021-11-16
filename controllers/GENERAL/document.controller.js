@@ -323,7 +323,27 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
   const pickFields = ['recipient', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
-  filteredBody.finalStatus = '';
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
 });
 
 exports.releaseDocument = catchAsync(async (req, res, next) => {
@@ -332,6 +352,38 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
   filteredBody.status = 'Outgoing';
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    id,
+    { ...filteredBody, process: { released: true } },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
+});
+
+exports.documentAssignation = catchAsync(async (req, res, next) => {
+  const pickFields = ['includedUsers', 'excludedUsers', 'classificationLevel'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { id } = req.params;
+
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
@@ -356,76 +408,56 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
 });
 
 exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
-  const { id, action } = req.params;
+  const pickFields = ['body'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { action } = req.params;
   const allowedActions = ['printed', 'signed', 'released'];
-  const documentQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
 
-  const document = Document.findOne(documentQuery);
+  const documents = [];
+  for (const row of filteredBody.body) {
+    const documentQuery = {
+      _id: row._id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
 
-  if (action === 'printed') document.process.printed = true;
-  else if (action === 'signed') document.process.signed = true;
-  else if (action === 'released') document.process.released = true;
+    const document = await Document.findOne(documentQuery);
+    if (!document)
+      return next(new AppError('One of the documents does not exist', 404));
+    documents.push(document);
+  }
 
-  const updatedDocument = await document.save({ validateBeforeSave: false });
+  const updatedDocuments = [];
+  for (const document of documents) {
+    if (action === 'printed') document.process.printed = true;
+    else if (action === 'signed') document.process.signed = true;
+    else if (action === 'released') document.process.released = true;
 
-  res.status(200).json({
-    status: 'success',
-    env: {
-      document: updatedDocument,
-    },
-  });
-});
-
-exports.patchDocumentfinalStatus = catchAsync(async (req, res, next) => {
-  const { id, action } = req.params;
-  const allowedActions = ['approved', 'onhold', 'destroy'];
-  const documentQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
-
-  if (!allowedActions.includes(action))
-    return next(new AppError('Invalid action params', 400));
-
-  const document = Document.findOne(documentQuery);
-
-  if (document.status === 'Approved')
-    return next(new AppError('Document already Approved', 400));
-  else if (document.status === 'On Hold')
-    return next(new AppError('Document already On Hold', 400));
-  else if (document.status === 'Destroy')
-    return next(new AppError('Document already Destroyed', 400));
-
-  if (action === 'approved') document.status = 'Approved';
-  else if (action === 'onhold') document.status = 'On Hold';
-  else if (action === 'destroy') document.status = 'Destroy';
-
-  const updatedDocument = await document.save({ validateBeforeSave: false });
+    const updatedDocument = await document.save({ validateBeforeSave: false });
+    updatedDocuments.push(updatedDocument);
+  }
 
   res.status(200).json({
     status: 'success',
     env: {
-      document: updatedDocument,
+      documents: updatedDocuments,
     },
   });
 });
 
 exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
+  const pickFields = ['message'];
+  const filteredBody = _.pick(req.body, pickFields);
   const { id, action } = req.params;
   const { prevStatus } = req.query;
   const allowedActions = [
     'incoming',
     'outgoing',
     'internal',
-    'archived',
+    'archiving',
     'personal',
     'undo',
   ];
@@ -440,7 +472,7 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
   if (action === 'undo' && !allowedStatus.includes(prevStatus))
     return next(new AppError('Invalid previous status value', 400));
 
-  if (['outgoing', 'internal', 'archived'].includes(action)) {
+  if (['outgoing', 'internal', 'archiving'].includes(action)) {
     const documentQuery = {
       _id: id,
       status: { $ne: 'Deleted' },
