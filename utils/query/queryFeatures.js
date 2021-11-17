@@ -68,7 +68,13 @@ class QueryFeatures {
 
   filter() {
     let queryObj = JSON.parse(JSON.stringify(this.queryString));
-    const allowedSecondaryOperator = ['signed', 'printed', 'released'];
+    const allowedSecondaryOperator = [
+      'signed',
+      'printed',
+      'released',
+      'uploaded',
+      'classified',
+    ];
     const removeField = [
       'page',
       'sort',
