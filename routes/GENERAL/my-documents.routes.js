@@ -20,7 +20,10 @@ router
   .put(myDocumentsController.updateDocument)
   .delete(myDocumentsController.deleteDocument);
 
-router.post('/files/:id', myDocumentsController.updateFile);
+router
+  .route('/files/:id')
+  .put(myDocumentsController.updateFile)
+  .delete(myDocumentsController.deleteFile);
 
 router.post('/folders/:id/documents', myDocumentsController.createDocument);
 router.post('/documents/:id/files', myDocumentsController.uploadFile);
