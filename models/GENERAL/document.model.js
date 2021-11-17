@@ -37,6 +37,7 @@ const DocumentSchema = new mongoose.Schema(
         'Archived',
         'Personal',
         'Deleted',
+        'My Documents',
       ],
     },
     finalStatus: {
@@ -46,6 +47,10 @@ const DocumentSchema = new mongoose.Schema(
     fileLength: {
       type: Number,
       default: 0,
+    },
+    isMyDocuments: {
+      type: Boolean,
+      default: false,
     },
     confidentialityLevel: {
       type: Number,
@@ -64,22 +69,27 @@ const DocumentSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
+      uploaded: {
+        type: Boolean,
+        default: false,
+      },
+      classified: {
+        type: Boolean,
+        default: false,
+      },
     },
     recipient: {
       firstName: {
         type: String,
         trim: true,
-        required: [true, 'Please provide recipient first name'],
       },
       lastName: {
         type: String,
         trim: true,
-        required: [true, 'Please provide recipient last name'],
       },
       mobileNumber: {
         type: String,
         trim: true,
-        required: [true, 'Please provide recipient mobile number'],
       },
       middleInitial: String,
       department: String,
@@ -146,6 +156,8 @@ const DocumentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    _includes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    _excludes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     classification: String,
     subClassification: String,
     department: String,

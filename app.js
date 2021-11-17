@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const xss = require('xss-clean');
 const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 
 const userRouter = require('./routes/GENERAL/user.routes');
 const authRouter = require('./routes/GENERAL/auth.routes');
@@ -14,12 +15,12 @@ const eventRouter = require('./routes/GENERAL/event.routes');
 const calendarRouter = require('./routes/GENERAL/calendar.routes');
 const documentRouter = require('./routes/GENERAL/document.routes');
 const zoomRouter = require('./routes/ZOOM/zoom.routes');
-const folderRouter = require('./routes/GENERAL/folder.routes');
+const myDocumentsRouter = require('./routes/GENERAL/my-documents.routes');
 
 const errorController = require('./controllers/GENERAL/error.controller');
 
 const AppError = require('./utils/errors/AppError');
-const { origin } = require('./utils/security');
+const { origin, whitelist } = require('./utils/security');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use(express.json());
 
 app.use(mongoSanitize());
 app.use(xss());
+app.use(hpp({ whitelist }));
 
 app.use('/api/v1/tenants', userRouter);
 app.use('/api/v1/auth', authRouter);
@@ -47,7 +49,7 @@ app.use('/api/v1/events', eventRouter);
 app.use('/api/v1/zoom', zoomRouter);
 app.use('/api/v1/calendar', calendarRouter);
 app.use('/api/v1/documents', documentRouter);
-app.use('/api/v1/folders', folderRouter);
+app.use('/api/v1/my-documents', myDocumentsRouter);
 
 app.get('/api/v1/health', (req, res, next) => {
   res.status(200).json({
