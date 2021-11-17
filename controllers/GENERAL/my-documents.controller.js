@@ -7,6 +7,29 @@ const File = require('../../models/GENERAL/file.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
+const { callbackAsync } = require('../../utils/function');
+
+const referenceIdCleanup = async (ModelAndProps, docId) => {
+  for (let MP of ModelAndProps) {
+    const documents = await MP.model.find(MP.query);
+
+    if (documents.length) {
+      for (let document of documents) {
+        const _arrRefField = [...document[MP._refField]];
+
+        if (Array.isArray(_arrRefField) && _arrRefField.length) {
+          document[MP._refField] = _arrRefField.filter(
+            (id) => id.toString() !== docId.toString()
+          );
+
+          await document.save();
+        }
+      }
+    }
+
+    if (MP.callback) await callbackAsync(MP.callback, ...MP.callbackArgs);
+  }
+};
 
 exports.getRoot = catchAsync(async (req, res, next) => {
   const initialQuery = {
@@ -306,6 +329,8 @@ exports.updateFile = catchAsync(async (req, res, next) => {
 
   const newFileVersionData = { ...file._doc, ...filteredBody };
   delete newFileVersionData._id;
+  delete newFileVersionData.createdAt;
+  delete newFileVersionData.updatedAt;
 
   if (!file.versionNumber) newFileVersionData.versionNumber = 'Version 1';
   else {
@@ -334,5 +359,67 @@ exports.updateFile = catchAsync(async (req, res, next) => {
       file,
       new_version: newFileVersion,
     },
+  });
+});
+
+exports.deleteFile = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const file = await File.findOneAndUpdate(
+    { _id: id, status: { $ne: 'Deleted' } },
+    { status: 'Deleted' },
+    { new: true, runValidators: true }
+  );
+
+  if (!file) return next(new AppError('File not Found', 404));
+
+  const cleanupCallback = async (_id) => {
+    const file = await File.findById(_id);
+
+    if (file._versions.length && file._currentVersionId !== file._versions[0]) {
+      file._currentVersionId = file._versions[0];
+      await file.save();
+    }
+
+    if (file && !file._versions.length) {
+      const modelQueryArgs = [
+        {
+          model: Document,
+          query: { _files: { $in: [_id] } },
+          _refField: '_files',
+          callbackArgs: [file._documentId, file._id],
+          callback: async (docId, fileId) => {
+            const document = await Document.findById(docId);
+            const _documentFiles = [...document._files];
+
+            document._files = _documentFiles.filter(
+              (id) => id.toString() !== fileId.toString()
+            );
+
+            await document.save();
+          },
+        },
+      ];
+
+      await referenceIdCleanup(modelQueryArgs, id);
+    }
+  };
+
+  const _id = file._parentVersionId ? file._parentVersionId : file._id;
+  const cleanupFileQuery = { _versions: { $in: [_id] } };
+  const modelQueryArgs = [
+    {
+      model: File,
+      query: cleanupFileQuery,
+      _refField: '_versions',
+      callback: cleanupCallback,
+      callbackArgs: [_id],
+    },
+  ];
+
+  await referenceIdCleanup(modelQueryArgs, id);
+
+  res.status(204).json({
+    status: 'success',
   });
 });
