@@ -16,4 +16,4 @@ exports.origin = function (origin, callback) {
   return callback(null, true);
 };
 
-exports.whitelist = ['process', 'status'];
+exports.whitelist = ['process', 'status', 'populate', 'popField'];
