@@ -217,12 +217,10 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
     _updatedBy: req.user._id,
     _files: document._files,
     fileLength: document.fileLength,
+    process: {
+      uploaded: true,
+    },
   };
-
-  if (document.status !== 'Inbound') {
-    updateBody['controlNumber'] = null;
-    updateBody['process']['uploaded'] = true;
-  }
 
   const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
     new: true,
