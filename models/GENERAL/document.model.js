@@ -73,10 +73,6 @@ const DocumentSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
-      classified: {
-        type: Boolean,
-        default: false,
-      },
     },
     recipient: {
       firstName: {

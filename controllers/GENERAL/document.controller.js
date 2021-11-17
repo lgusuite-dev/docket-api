@@ -217,9 +217,10 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
     _updatedBy: req.user._id,
     _files: document._files,
     fileLength: document.fileLength,
+    process: {
+      uploaded: true,
+    },
   };
-
-  if (document.status !== 'Inbound') updateBody['process']['uploaded'] = true;
 
   const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
     new: true,
@@ -286,9 +287,6 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
   const document = await Document.findOne(initialQuery);
   if (!document) return next(new AppError('Document not found', 404));
-
-  if (document.status !== 'Inbound')
-    filteredBody['process']['classified'] = true;
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,

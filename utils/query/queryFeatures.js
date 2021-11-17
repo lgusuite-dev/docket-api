@@ -73,7 +73,6 @@ class QueryFeatures {
       'printed',
       'released',
       'uploaded',
-      'classified',
     ];
     const removeField = [
       'page',
