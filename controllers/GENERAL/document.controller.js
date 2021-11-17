@@ -212,11 +212,13 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
 
   document._files.push(file._id);
   document.fileLength = document._files.length;
+  document.process.uploaded = true;
 
   const updateBody = {
     _updatedBy: req.user._id,
     _files: document._files,
     fileLength: document.fileLength,
+    process: document.process,
   };
 
   const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
@@ -368,9 +370,11 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
 
   if (!document) return next(new AppError('Document not found', 404));
 
+  document.process.released = true;
+
   const updatedDocument = await Document.findByIdAndUpdate(
     id,
-    { ...filteredBody, process: { released: true } },
+    { ...filteredBody, process: document.process },
     {
       new: true,
       runValidators: true,
@@ -386,7 +390,12 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
 });
 
 exports.documentAssignation = catchAsync(async (req, res, next) => {
-  const pickFields = ['includedUsers', 'excludedUsers', 'classificationLevel'];
+  const pickFields = [
+    'includedUsers',
+    'excludedUsers',
+    'classificationLevel',
+    '_assignedTo',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
 
@@ -446,7 +455,7 @@ exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
     updatedDocuments.push(updatedDocument);
   }
 
-  res.status(201).json({
+  res.status(200).json({
     status: 'success',
     env: {
       documents: updatedDocuments,
