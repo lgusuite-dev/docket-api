@@ -214,6 +214,34 @@ exports.createDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getDocument = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const query = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _createdBy: req.user._id,
+  };
+
+  const document = await Document.findOne(query).populate({
+    path: '_files',
+    select: '-name -dropbox',
+    populate: {
+      path: '_versions _currentVersionId',
+      select: 'name status dropbox description versionNumber createdAt',
+    },
+  });
+
+  if (!document) return next(new AppError('Document not Found', 404));
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document,
+    },
+  });
+});
+
 exports.updateDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const pickFields = ['subject', '_includes', '_exludes', '_files'];
@@ -248,7 +276,7 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    isMyDocuments: true,
+    // isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
@@ -376,7 +404,10 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
   const cleanupCallback = async (_id) => {
     const file = await File.findById(_id);
 
-    if (file._versions.length && file._currentVersionId !== file._versions[0]) {
+    if (
+      file._versions.length &&
+      file._currentVersionId.toString() !== file._versions[0].toString()
+    ) {
       file._currentVersionId = file._versions[0];
       await file.save();
     }
@@ -406,7 +437,7 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
   };
 
   const _id = file._parentVersionId ? file._parentVersionId : file._id;
-  const cleanupFileQuery = { _versions: { $in: [_id] } };
+  const cleanupFileQuery = { _versions: { $in: [id] } };
   const modelQueryArgs = [
     {
       model: File,

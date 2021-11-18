@@ -392,7 +392,7 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   const pickFields = [
     'includedUsers',
     'excludedUsers',
-    'classificationLevel',
+    'confidentialityLevel',
     '_assignedTo',
   ];
   const filteredBody = _.pick(req.body, pickFields);
