@@ -248,7 +248,7 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    isMyDocuments: true,
+    // isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
