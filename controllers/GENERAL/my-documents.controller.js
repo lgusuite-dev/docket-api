@@ -214,6 +214,30 @@ exports.createDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getDocument = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const query = { _id: id, status: { $ne: 'Deleted' } };
+
+  const document = await Document.findOne(query).populate({
+    path: '_files',
+    select: '-name -dropbox',
+    populate: {
+      path: '_versions _currentVersionId',
+      select: 'name status dropbox description versionNumber createdAt',
+    },
+  });
+
+  if (!document) return next(new AppError('Document not Found', 404));
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document,
+    },
+  });
+});
+
 exports.updateDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const pickFields = ['subject', '_includes', '_exludes', '_files'];
