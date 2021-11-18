@@ -376,7 +376,10 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
   const cleanupCallback = async (_id) => {
     const file = await File.findById(_id);
 
-    if (file._versions.length && file._currentVersionId !== file._versions[0]) {
+    if (
+      file._versions.length &&
+      file._currentVersionId.toString() !== file._versions[0].toString()
+    ) {
       file._currentVersionId = file._versions[0];
       await file.save();
     }
@@ -406,7 +409,7 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
   };
 
   const _id = file._parentVersionId ? file._parentVersionId : file._id;
-  const cleanupFileQuery = { _versions: { $in: [_id] } };
+  const cleanupFileQuery = { _versions: { $in: [id] } };
   const modelQueryArgs = [
     {
       model: File,
