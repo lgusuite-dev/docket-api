@@ -212,7 +212,10 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
 
   document._files.push(file._id);
   document.fileLength = document._files.length;
-  document.process.uploaded = true;
+
+  if (['Outgoing', 'Archived', 'Internal'].includes(document.status)) {
+    document.process.uploaded = true;
+  }
 
   const updateBody = {
     _updatedBy: req.user._id,
@@ -321,7 +324,12 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
 
 exports.forFinalAction = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['recipient', 'dateReleased'];
+  const pickFields = [
+    'finalStatus',
+    'confidentialityLevel',
+    'includedUsers',
+    'excludedUsers',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -330,15 +338,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  if (!filteredBody.recipient.firstName)
-    return next(new AppError('Please provide recipient first name', 404));
-  if (!filteredBody.recipient.lastName)
-    return next(new AppError('Please provide recipient last name', 404));
-  if (!filteredBody.recipient.mobileNumber)
-    return next(new AppError('Please provide recipient mobile number', 404));
-
   const document = await Document.findOne(initialQuery);
-
   if (!document) return next(new AppError('Document not found', 404));
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
@@ -359,7 +359,6 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   const pickFields = ['recipient', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
-  filteredBody.status = 'Outgoing';
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
@@ -464,7 +463,7 @@ exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
 });
 
 exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
-  const pickFields = ['message'];
+  const pickFields = ['_taskId', 'message'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id, action } = req.params;
   const { prevStatus } = req.query;
@@ -481,9 +480,6 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
 
-  if (!allowedStatus.includes(filteredBody.status))
-    return next(new AppError('Invalid status', 400));
-
   if (action === 'undo' && !prevStatus)
     return next(new AppError('Please provide previous status value', 400));
 
@@ -494,33 +490,32 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  const document = Document.findOne(documentQuery);
+  const document = await Document.findOne(documentQuery);
   if (!document) return next(new AppError('Document not found', 404));
 
-  if (action === 'undo' && document.status === 'Deleted')
+  if (action === 'undo' && document.status !== 'Deleted')
     return next(new AppError('Document not deleted', 404));
 
   if (['outgoing', 'internal', 'archived'].includes(action)) {
-    const documentQuery = {
-      _id: id,
+    if (document.status === 'Deleted')
+      return next(new AppError('Document not found', 404));
+
+    const taskQuery = {
+      _id: filteredBody._taskId,
       status: { $ne: 'Deleted' },
       _tenantId: req.user._tenantId,
     };
 
-    const document = await Document.findOne(documentQuery);
-    if (!document) return next(new AppError('Document not found', 404));
-
     const task = await Task.findOne(taskQuery);
     if (!task) return next(new AppError('Task not found', 404));
 
-    if (task) {
-      await Task.findByIdAndUpdate(task._id, filteredBody, {
-        new: true,
-        runValidators: true,
-      });
-    }
+    task.status = 'Completed';
+    task.message = filteredBody.message;
+    const updatedTask = await task.save({ validateBeforeSave: false });
 
-    document.status = filteredBody.status;
+    if (action === 'outgoing') document.status = 'Outgoing';
+    else if (action === 'internal') document.status = 'Internal';
+    else if (action === 'archived') document.status = 'Archived';
     document.message = filteredBody.message;
     const updatedDocument = await document.save({ validateBeforeSave: false });
 
