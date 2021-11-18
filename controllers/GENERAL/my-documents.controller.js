@@ -217,7 +217,11 @@ exports.createDocument = catchAsync(async (req, res, next) => {
 exports.getDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  const query = { _id: id, status: { $ne: 'Deleted' } };
+  const query = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _createdBy: req.user._id,
+  };
 
   const document = await Document.findOne(query).populate({
     path: '_files',
