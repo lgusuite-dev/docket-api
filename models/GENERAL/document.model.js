@@ -7,26 +7,38 @@ const DocumentSchema = new mongoose.Schema(
       trim: true,
       required: [true, 'Please provide the Subject'],
     },
+    sender: {
+      firstName: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide the sender first name'],
+      },
+      lastName: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide the sender last name'],
+      },
+      mobileNumber: {
+        type: String,
+        trim: true,
+        required: [true, 'Please provide the sender mobile number'],
+      },
+      middleInitial: String,
+      department: String,
+      position: String,
+      email: String,
+      prefix: String,
+      suffix: String,
+    },
     senderType: {
       type: String,
+      required: [true, 'Please provide the sender type'],
       enum: ['Private', 'Other Government Agencies', 'Courts'],
     },
-    senderFirstName: {
-      type: String,
-      trim: true,
-    },
-    senderLastName: {
-      type: String,
-      trim: true,
-    },
-    mobileNumber: {
-      type: String,
-    },
-    email: String,
-    controlNumber: {
-      type: String,
-      unique: [true, 'Control number already exist'],
-    },
+    requestDate: Date,
+    dateReceived: Date,
+    receivedThru: String,
+
     status: {
       type: String,
       default: 'Incoming',
@@ -39,6 +51,10 @@ const DocumentSchema = new mongoose.Schema(
         'Deleted',
         'My Documents',
       ],
+    },
+    controlNumber: {
+      type: String,
+      unique: [true, 'Control number already exist'],
     },
     finalStatus: {
       type: String,
@@ -156,14 +172,7 @@ const DocumentSchema = new mongoose.Schema(
     _excludes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     classification: String,
     subClassification: String,
-    department: String,
-    position: String,
     remarks: String,
-    others: Object,
-    requestDate: Date,
-    dateReceived: Date,
-    receivedThru: String,
-
   },
   { timestamps: true }
 );

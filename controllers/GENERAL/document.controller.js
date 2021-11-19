@@ -11,30 +11,16 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 exports.createDocument = catchAsync(async (req, res, next) => {
   const pickFields = [
     'subject',
+    'sender',
     'senderType',
-    'senderFirstName',
-    'senderLastName',
-    'department',
-    'position',
-    'mobileNumber',
-    'email',
     'requestDate',
     'dateReceived',
     'receivedThru',
-    'others',
   ];
+
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
-
-  if (!filteredBody.senderFirstName)
-    return next(new AppError('Please provide sender first name', 400));
-
-  if (!filteredBody.senderLastName)
-    return next(new AppError('Please provide sender last name', 400));
-
-  if (!filteredBody.mobileNumber)
-    return next(new AppError('Please provide mobile number', 400));
 
   const document = await Document.create(filteredBody);
 
@@ -154,17 +140,11 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
 exports.updateDocument = catchAsync(async (req, res, next) => {
   const pickFields = [
     'subject',
+    'sender',
     'senderType',
-    'senderFirstName',
-    'senderLastName',
-    'department',
-    'position',
-    'mobileNumber',
-    'email',
     'requestDate',
     'dateReceived',
     'receivedThru',
-    'others',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
