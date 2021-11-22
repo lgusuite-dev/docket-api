@@ -254,11 +254,6 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   filteredBody._updatedBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
-  //control number generator
-  filteredBody.controlNumber = Math.floor(
-    Math.random() * 1000000000
-  ).toString();
-
   const { id } = req.params;
   const initialQuery = {
     _id: id,
@@ -268,6 +263,13 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
   const document = await Document.findOne(initialQuery);
   if (!document) return next(new AppError('Document not found', 404));
+
+  if (!document.controlNumber) {
+    //control number generator
+    filteredBody.controlNumber = Math.floor(
+      Math.random() * 1000000000
+    ).toString();
+  }
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,

@@ -104,7 +104,11 @@ exports.updateBook = catchAsync(async (req, res, next) => {
   const book = await Book.findOne(initialQuery);
   if (!book) return next(new AppError('Book not found', 404));
 
+  if (book.status === 'Empty') filteredBody.status = 'Open';
+
   if (filteredBody._documentId) {
+    if (book.status === 'Closed')
+      return next(new AppError('Cannot add documents to closed book', 404));
     const bookDocuments = book._documentId;
     filteredBody._documentId = filteredBody._documentId
       .concat(bookDocuments)
@@ -125,7 +129,8 @@ exports.updateBook = catchAsync(async (req, res, next) => {
       };
 
       const document = await Document.findOne(documentQuery);
-      document.storage['_bookId'] = id;
+      document['storage']['_bookId'] = id;
+      await document.save({ validateBeforeSave: false });
     }
   }
 
@@ -157,6 +162,50 @@ exports.patchBook = catchAsync(async (req, res, next) => {
     status: 'success',
     env: {
       book: updatedBook,
+    },
+  });
+});
+
+exports.getBookDocuments = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const book = await Book.findOne(initialQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+
+  const documentQuery = {
+    'storage._bookId': id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const queryFeatures = new QueryFeatures(
+    Document.find(documentQuery),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeatures = new QueryFeatures(
+    Document.find(documentQuery),
+    req.query
+  )
+    .filter()
+    .count();
+
+  const documents = await queryFeatures.query;
+  const nDocument = await nQueryFeatures.query;
+
+  res.status(200).json({
+    status: 'Success',
+    total_docs: nDocument,
+    env: {
+      documents,
     },
   });
 });

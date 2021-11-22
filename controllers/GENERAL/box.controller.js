@@ -1,6 +1,7 @@
 const _ = require('lodash');
 
 const Box = require('../../models/GENERAL/box.model');
+const Book = require('../../models/GENERAL/book.model');
 const Document = require('../../models/GENERAL/document.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
@@ -92,7 +93,9 @@ exports.updateBox = catchAsync(async (req, res, next) => {
 
   if (filteredBody._bookId) {
     const boxBooks = box._bookId;
-    filteredBody._bookId = [...filteredBody._bookId, ...boxBooks];
+    filteredBody._bookId = filteredBody._bookId
+      .concat(boxBooks)
+      .filter((item, pos) => filteredBody._bookId.indexOf(item) === pos);
   }
 
   const updatedBox = await Box.findByIdAndUpdate(id, filteredBody, {
@@ -101,22 +104,73 @@ exports.updateBox = catchAsync(async (req, res, next) => {
   });
 
   if (filteredBody._bookId) {
-    for (const documentId of filteredBody._bookId) {
-      const documentQuery = {
-        _id: documentId,
-        status: { $ne: 'Deleted' },
+    for (const bookId of filteredBody._bookId) {
+      const bookQuery = {
+        _id: bookId,
         _tenantId: req.user._tenantId,
       };
 
-      const document = await Document.findOne(documentQuery);
-      document.storage['_boxId'] = id;
+      const book = await Book.findOne(bookQuery);
+      const bookDocuments = book._documentId;
+      book.status = 'Boxed';
+      book._boxId = id;
+      await book.save({ validateBeforeSave: false });
+      for (const documentId of bookDocuments) {
+        const documentQuery = {
+          _id: documentId,
+          status: { $ne: 'Deleted' },
+          _tenantId: req.user._tenantId,
+        };
+
+        const document = await Document.findOne(documentQuery);
+        document['storage']['_boxId'] = id;
+        await document.save({ validateBeforeSave: false });
+      }
     }
   }
 
   res.status(200).json({
     status: 'success',
     env: {
-      updatedBox,
+      box: updatedBox,
+    },
+  });
+});
+
+exports.getBoxBooks = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const box = await Box.findOne(initialQuery);
+  if (!box) return next(new AppError('Box not found', 404));
+
+  const bookQuery = {
+    _boxId: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const queryFeatures = new QueryFeatures(Book.find(bookQuery), req.query)
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeatures = new QueryFeatures(Book.find(bookQuery), req.query)
+    .filter()
+    .count();
+
+  const books = await queryFeatures.query;
+  const nBooks = await nQueryFeatures.query;
+
+  res.status(200).json({
+    status: 'Success',
+    total_docs: nBooks,
+    env: {
+      books,
     },
   });
 });
