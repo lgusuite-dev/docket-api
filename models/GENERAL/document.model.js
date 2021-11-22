@@ -136,6 +136,20 @@ const DocumentSchema = new mongoose.Schema(
       ],
       text: String,
     },
+    storage: {
+      status: {
+        type: String,
+        enum: ['Active', 'Inactive'],
+      },
+      _bookId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Book',
+      },
+      _boxId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Box',
+      },
+    },
     _taskId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',
