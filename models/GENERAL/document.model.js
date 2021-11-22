@@ -90,6 +90,10 @@ const DocumentSchema = new mongoose.Schema(
         default: false,
       },
     },
+    isOCRScanned: {
+      type: Boolean,
+      default: false,
+    },
     recipient: {
       firstName: {
         type: String,
