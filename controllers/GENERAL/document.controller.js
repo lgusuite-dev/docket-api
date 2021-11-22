@@ -531,7 +531,7 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
 
   if (!document) return next(new AppError('Document not found', 404));
 
-  document.storage = filteredBody;
+  document['storage']['status'] = filteredBody.storage.status;
   const updatedDocument = await document.save({ validateBeforeSave: false });
 
   res.status(200).json({

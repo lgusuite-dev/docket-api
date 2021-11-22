@@ -1,6 +1,7 @@
 const _ = require('lodash');
 
 const Book = require('../../models/GENERAL/book.model');
+const Document = require('../../models/GENERAL/document.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -105,7 +106,9 @@ exports.updateBook = catchAsync(async (req, res, next) => {
 
   if (filteredBody._documentId) {
     const bookDocuments = book._documentId;
-    filteredBody._documentId = [...filteredBody._documentId, ...bookDocuments];
+    filteredBody._documentId = filteredBody._documentId
+      .concat(bookDocuments)
+      .filter((item, pos) => filteredBody._documentId.indexOf(item) === pos);
   }
 
   const updatedBook = await Book.findByIdAndUpdate(id, filteredBody, {
@@ -129,7 +132,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     env: {
-      updatedBook,
+      book: updatedBook,
     },
   });
 });
