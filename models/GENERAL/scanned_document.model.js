@@ -6,6 +6,10 @@ const ScannedDocumentSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide scanned text'],
     },
+    controlNumber: {
+      type: String,
+      required: [true, 'Please provide document control number'],
+    },
     page: {
       type: Number,
       required: [true, 'Please provide page number'],
@@ -38,5 +42,7 @@ const ScannedDocumentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+ScannedDocumentSchema.index({ text: 'text', controlNumber: 'text' });
 
 module.exports = mongoose.model('Scanned Document', ScannedDocumentSchema);
