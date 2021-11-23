@@ -90,9 +90,10 @@ const DocumentSchema = new mongoose.Schema(
         default: false,
       },
     },
-    isOCRScanned: {
-      type: Boolean,
-      default: false,
+    ocrStatus: {
+      type: String,
+      default: 'No',
+      enum: ['No', 'Scanning', 'Done'],
     },
     recipient: {
       firstName: {
