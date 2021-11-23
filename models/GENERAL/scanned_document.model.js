@@ -18,6 +18,11 @@ const ScannedDocumentSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide file type'],
     },
+    confidentialityLevel: {
+      type: Number,
+      required: [true, 'Please provide confidentiality level'],
+      enum: [1, 2, 3, 4],
+    },
     status: {
       type: String,
       default: 'Active',
