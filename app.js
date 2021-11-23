@@ -101,68 +101,60 @@ const extractTesseract = async (imagePath) => {
 };
 
 schedule.scheduleJob('*/10 * * * * *', async () => {
-  const documents = await Document.find({
-    ocrStatus: 'No',
-  })
-    .populate('_files')
-    .limit(10);
-
-  if (documents.length) {
-    for (let document of documents) {
-      if (document._files.length) {
-        console.log('FILESSSSS', document._files);
-
-        document.ocrStatus = 'Scanning';
-        await document.save();
-
-        for (let file of document._files) {
-          if (file.ocrStatus === 'No') {
-            const foundFile = await File.findByIdAndUpdate(
-              file._id,
-              { ocrStatus: 'Scanning' },
-              { new: true }
-            );
-
-            const { data: fileData } = await axios.post(
-              'https://api.dropboxapi.com/2/files/get_temporary_link',
-              { path: file.dropbox.path_display },
-              {
-                headers: {
-                  Authorization: `Bearer ${process.env.DROPBOX_ACCESS_TOKEN}`,
-                },
-              }
-            );
-
-            const fileExtract = fileData.metadata.name.split('.');
-            const fileExtension = fileExtract[fileExtract.length - 1];
-            const extractedText = await pdfConvertAPI(fileData.link);
-
-            if (extractedText.length) {
-              for (let [index, text] of extractedText.entries()) {
-                const scannedDocument = {
-                  text: text.trim(),
-                  page: ++index,
-                  fileType: fileExtension,
-                  _fileId: file._id,
-                  _documentId: file._documentId,
-                  _tenantId: file._tenantId,
-                };
-                await ScannedDocument.create(scannedDocument);
-              }
-            }
-
-            if (foundFile) {
-              foundFile.ocrStatus = 'Done';
-              await foundFile.save();
-            }
-          }
-        }
-
-        document.ocrStatus = 'Done';
-        await document.save();
-      }
-    }
-  }
+  // const documents = await Document.find({
+  //   ocrStatus: 'No',
+  // })
+  //   .populate('_files')
+  //   .limit(10);
+  // if (documents.length) {
+  //   for (let document of documents) {
+  //     if (document._files.length) {
+  //       console.log('FILESSSSS', document._files);
+  //       document.ocrStatus = 'Scanning';
+  //       await document.save();
+  //       for (let file of document._files) {
+  //         if (file.ocrStatus === 'No') {
+  //           const foundFile = await File.findByIdAndUpdate(
+  //             file._id,
+  //             { ocrStatus: 'Scanning' },
+  //             { new: true }
+  //           );
+  //           const { data: fileData } = await axios.post(
+  //             'https://api.dropboxapi.com/2/files/get_temporary_link',
+  //             { path: file.dropbox.path_display },
+  //             {
+  //               headers: {
+  //                 Authorization: `Bearer ${process.env.DROPBOX_ACCESS_TOKEN}`,
+  //               },
+  //             }
+  //           );
+  //           const fileExtract = fileData.metadata.name.split('.');
+  //           const fileExtension = fileExtract[fileExtract.length - 1];
+  //           const extractedText = await pdfConvertAPI(fileData.link);
+  //           if (extractedText.length) {
+  //             for (let [index, text] of extractedText.entries()) {
+  //               const scannedDocument = {
+  //                 text: text.trim(),
+  //                 page: ++index,
+  //                 fileType: fileExtension,
+  //                 _fileId: file._id,
+  //                 _documentId: file._documentId,
+  //                 _tenantId: file._tenantId,
+  //               };
+  //               await ScannedDocument.create(scannedDocument);
+  //             }
+  //           }
+  //           if (foundFile) {
+  //             foundFile.ocrStatus = 'Done';
+  //             await foundFile.save();
+  //           }
+  //         }
+  //       }
+  //       document.ocrStatus = 'Done';
+  //       await document.save();
+  //     }
+  //   }
+  // }
 });
 
 app.use(errorController);
