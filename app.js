@@ -23,6 +23,7 @@ const zoomRouter = require('./routes/ZOOM/zoom.routes');
 const myDocumentsRouter = require('./routes/GENERAL/my-documents.routes');
 const bookRouter = require('./routes/GENERAL/book.routes');
 const boxRouter = require('./routes/GENERAL/box.routes');
+const scannedDocumentRouter = require('./routes/GENERAL/scanned_document.routes');
 
 const errorController = require('./controllers/GENERAL/error.controller');
 
@@ -63,6 +64,7 @@ app.use('/api/v1/documents', documentRouter);
 app.use('/api/v1/my-documents', myDocumentsRouter);
 app.use('/api/v1/books', bookRouter);
 app.use('/api/v1/box', boxRouter);
+app.use('/api/v1/scanned-documents', scannedDocumentRouter);
 
 app.get('/api/v1/health', (req, res, next) => {
   res.status(200).json({
@@ -103,9 +105,15 @@ const extractTesseract = async (imagePath) => {
 schedule.scheduleJob('*/10 * * * * *', async () => {
   const documents = await Document.find({
     ocrStatus: 'No',
+    confidentialityLevel: { $ne: null },
+    controlNumber: { $ne: null },
+    isMyDocuments: false,
   })
     .populate('_files')
     .limit(10);
+
+  console.log(documents);
+
   if (documents.length) {
     for (let document of documents) {
       if (document._files.length) {
@@ -137,6 +145,7 @@ schedule.scheduleJob('*/10 * * * * *', async () => {
                   text: text.trim(),
                   page: ++index,
                   fileType: fileExtension,
+                  controlNumber: document.controlNumber,
                   _fileId: file._id,
                   _documentId: file._documentId,
                   _tenantId: file._tenantId,
