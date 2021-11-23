@@ -11,6 +11,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     {
       $text: { $search: `${search}` },
       confidentialityLevel: { $lte: req.user.access_level },
+      _tenantId: req.user._tenantId,
     },
     { score: { $meta: 'textScore' } },
     { lean: true }
