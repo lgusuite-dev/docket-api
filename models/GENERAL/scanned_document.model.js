@@ -6,6 +6,10 @@ const ScannedDocumentSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide scanned text'],
     },
+    page: {
+      type: Number,
+      required: [true, 'Please provide page number'],
+    },
     fileType: {
       type: String,
       required: [true, 'Please provide file type'],
