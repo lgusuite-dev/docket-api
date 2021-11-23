@@ -21,6 +21,8 @@ const calendarRouter = require('./routes/GENERAL/calendar.routes');
 const documentRouter = require('./routes/GENERAL/document.routes');
 const zoomRouter = require('./routes/ZOOM/zoom.routes');
 const myDocumentsRouter = require('./routes/GENERAL/my-documents.routes');
+const bookRouter = require('./routes/GENERAL/book.routes');
+const boxRouter = require('./routes/GENERAL/box.routes');
 
 const errorController = require('./controllers/GENERAL/error.controller');
 
@@ -59,6 +61,8 @@ app.use('/api/v1/zoom', zoomRouter);
 app.use('/api/v1/calendar', calendarRouter);
 app.use('/api/v1/documents', documentRouter);
 app.use('/api/v1/my-documents', myDocumentsRouter);
+app.use('/api/v1/books', bookRouter);
+app.use('/api/v1/box', boxRouter);
 
 app.get('/api/v1/health', (req, res, next) => {
   res.status(200).json({

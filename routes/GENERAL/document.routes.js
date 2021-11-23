@@ -32,4 +32,6 @@ router.route('/upload/:id').put(documentController.uploadDocumentFile);
 router.route('/classify/:id').put(documentController.classifyDocument);
 router.route('/release/:id').put(documentController.releaseDocument);
 
+router.route('/storage/:id').put(documentController.updateDocumentStorage);
+
 module.exports = router;

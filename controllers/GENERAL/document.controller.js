@@ -149,7 +149,6 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   filteredBody._updatedBy = req.user._id;
-  filteredBody._tenantId = req.user._tenantId;
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
@@ -255,11 +254,6 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   filteredBody._updatedBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
-  //control number generator
-  filteredBody.controlNumber = Math.floor(
-    Math.random() * 1000000000
-  ).toString();
-
   const { id } = req.params;
   const initialQuery = {
     _id: id,
@@ -269,6 +263,13 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
   const document = await Document.findOne(initialQuery);
   if (!document) return next(new AppError('Document not found', 404));
+
+  if (!document.controlNumber) {
+    //control number generator
+    filteredBody.controlNumber = Math.floor(
+      Math.random() * 1000000000
+    ).toString();
+  }
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,
@@ -515,4 +516,30 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
       },
     });
   }
+});
+
+exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
+  const pickFields = ['storage'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  document['storage']['status'] = filteredBody.storage.status;
+  const updatedDocument = await document.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
 });
