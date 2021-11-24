@@ -6,6 +6,7 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 
 exports.searchDocument = catchAsync(async (req, res, next) => {
   const { search } = req.query;
+  console.log(req.query)
 
   const searchedDocuments = await ScannedDocument.find(
     {
