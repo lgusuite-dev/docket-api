@@ -8,6 +8,16 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const filterTeamUsersID = (inputUsers) => [...new Set(inputUsers)];
 
+const userStatusValidation = async (teamUsers) => {
+  const userQuery = {
+    _id: { $in: teamUsers },
+    status: { $nin: ['Deleted', 'Suspended'] },
+  };
+  const users = await User.find(userQuery);
+
+  return users.length !== filteredBody.users.length;
+};
+
 const addOrRemoveTeamIdToUsers = async (users, teamID, action) => {
   for (const id of users) {
     const user = await User.findById(id);
@@ -87,8 +97,15 @@ exports.createTeam = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
-  if (filteredBody.users && filteredBody.users.length)
+  if (filteredBody.users && filteredBody.users.length) {
     filteredBody.users = filterTeamUsersID(filteredBody.users);
+
+    if (userStatusValidation(filteredBody.users)) {
+      return next(
+        new AppError('Cannot add deleted or suspended user in a team', 404)
+      );
+    }
+  }
 
   if (filteredBody.name) {
     const foundTeam = await Team.findOne({
@@ -180,8 +197,15 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
 
   if (!team) return next(new AppError('Team not found', 404));
 
-  if (filteredBody.users && filteredBody.users.length)
+  if (filteredBody.users && filteredBody.users.length) {
     filteredBody.users = filterTeamUsersID(filteredBody.users);
+
+    if (userStatusValidation(filteredBody.users)) {
+      return next(
+        new AppError('Cannot add deleted or suspended user in a team', 404)
+      );
+    }
+  }
 
   if (filteredBody.name) {
     const foundTeam = await Team.findOne({

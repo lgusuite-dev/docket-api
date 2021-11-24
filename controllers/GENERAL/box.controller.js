@@ -93,9 +93,7 @@ exports.updateBox = catchAsync(async (req, res, next) => {
 
   if (filteredBody._bookId) {
     const boxBooks = box._bookId;
-    filteredBody._bookId = filteredBody._bookId
-      .concat(boxBooks)
-      .filter((item, pos) => filteredBody._bookId.indexOf(item) === pos);
+    filteredBody._bookId = filteredBody._bookId.concat(boxBooks);
   }
 
   const updatedBox = await Box.findByIdAndUpdate(id, filteredBody, {
