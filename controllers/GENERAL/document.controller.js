@@ -21,7 +21,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
-  filteredBody.type = 'Inbound';
+  filteredBody.type = 'Incoming';
 
   const document = await Document.create(filteredBody);
 
@@ -586,7 +586,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   if (!task) return next(new AppError('Task not found', 404));
 
   task.status = 'Completed';
-  task.message = [...task.message, ...filteredBody.message];
+  task.message = filteredBody.message;
 
   const updatedDocument = await document.save({ validateBeforeSave: false });
   await task.save({ validateBeforeSave: false });
@@ -620,8 +620,14 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
   if (action === 'undo' && document.status !== 'Deleted')
     return next(new AppError('Document not deleted', 404));
 
-  document.status = prevStatus;
+  if (action === 'undo') {
+    document.status = prevStatus;
+  } else {
+    document.status = action;
+  }
+
   const updatedDocument = await document.save({ validateBeforeSave: false });
+
   res.status(200).json({
     status: 'success',
     env: {

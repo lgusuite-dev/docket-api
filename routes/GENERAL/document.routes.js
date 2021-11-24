@@ -16,15 +16,14 @@ router
   .get(documentController.getDocument)
   .delete(documentController.deleteDocument);
 
+router.route('/:id/:action').patch(documentController.patchDocumentStatus);
+
 router.route('/:id/files').get(documentController.getDocumentFiles);
 
 router
   .route('/:_documentId/files/:id')
   .put(documentController.updateUploadedDocumentFile);
 
-router
-  .route('/:id/status/:action')
-  .patch(documentController.patchDocumentStatus);
 router.route('/:id/type').patch(documentController.patchDocumentType);
 
 router.route('/process/:action').patch(documentController.patchDocumentProcess);
