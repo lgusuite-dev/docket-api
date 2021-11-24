@@ -15,9 +15,10 @@ const FileSchema = new mongoose.Schema(
       type: Object,
       required: [true, 'Please provide the file'],
     },
-    isOCRScanned: {
-      type: Boolean,
-      default: false,
+    ocrStatus: {
+      type: String,
+      default: 'No',
+      enum: ['No', 'Scanning', 'Done'],
     },
     versionsLength: {
       type: Number,
