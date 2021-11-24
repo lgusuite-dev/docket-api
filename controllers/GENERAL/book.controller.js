@@ -107,12 +107,12 @@ exports.updateBook = catchAsync(async (req, res, next) => {
   if (book.status === 'Empty') filteredBody.status = 'Open';
 
   if (filteredBody._documentId) {
-    if (book.status === 'Closed')
-      return next(new AppError('Cannot add documents to closed book', 404));
+    if (book.status === 'Closed' || book.status === 'Boxed')
+      return next(
+        new AppError(`Cannot add documents on ${box.status} book`, 404)
+      );
     const bookDocuments = book._documentId;
-    filteredBody._documentId = filteredBody._documentId
-      .concat(bookDocuments)
-      .filter((item, pos) => filteredBody._documentId.indexOf(item) === pos);
+    filteredBody._documentId = filteredBody._documentId.concat(bookDocuments);
   }
 
   const updatedBook = await Book.findByIdAndUpdate(id, filteredBody, {
@@ -206,6 +206,66 @@ exports.getBookDocuments = catchAsync(async (req, res, next) => {
     total_docs: nDocument,
     env: {
       documents,
+    },
+  });
+});
+
+exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
+  const pickFields = ['_documentId'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const book = await Book.findOne(initialQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+
+  if (book.status === 'Boxed' || book.status === 'Closed')
+    return next(
+      new AppError(`Cannot remove document on ${box.status} book`, 404)
+    );
+
+  const documentQuery = {
+    _id: filteredBody._documentId,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(documentQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updateDocumentStorage = { ...document.storage };
+  delete updateDocumentStorage._bookId;
+
+  await Document.findByIdAndUpdate(
+    document._id,
+    {
+      storage: updateDocumentStorage,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  book._documentId.splice(book._documentId.indexOf(document._id), 1);
+  const updateBookBody = {
+    _documentId: book._documentId,
+  };
+
+  if (book._documentId.length === 0) updateBookBody['status'] = 'Empty';
+
+  const updatedBook = await Book.findByIdAndUpdate(id, updateBookBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      book: updatedBook,
     },
   });
 });
