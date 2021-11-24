@@ -2,6 +2,7 @@ const _ = require('lodash');
 const mongoose = require('mongoose');
 
 const User = require('../../models/GENERAL/user.model');
+const Team = require('../../models/GENERAL/team.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -125,6 +126,14 @@ const updateChildBasedOnAction = async (type, action, user, req) => {
     undoQuery.status = { $eq: 'Deleted' };
 
     await User.updateMany(undoQuery, { status: prevStatus });
+    const userTeams = user._teams;
+    const { id } = req.params;
+    for (teamId of userTeams) {
+      const team = Team.findById(teamId);
+      const teamUsers = [...team.users];
+      team.users = teamUsers.push(id);
+      await team.save();
+    }
   } else {
     const activeQuery = { ...query };
     activeQuery.status = { $eq: 'Suspended' };
@@ -285,6 +294,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteUser = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
   const endpoint = req.originalUrl;
   const validTypes = ['admins', 'users'];
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
@@ -304,6 +314,16 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
       _tenantId: user._tenantId,
     };
     await User.updateMany(query, { status: 'Deleted' });
+  }
+
+  const deletedUser = await User.findById(id);
+  const userTeams = deletedUser._teams;
+  if (userTeams) {
+    for (const teamId of userTeams) {
+      const team = await Team.findById(teamId);
+      team.users.splice(team.users.indexOf(id), 1);
+      await team.save();
+    }
   }
 
   res.status(204).json({
