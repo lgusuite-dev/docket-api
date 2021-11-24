@@ -558,13 +558,8 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
       _documentId: file._documentId
     })
     if (tasks)
-      route.push({ file_name: file.dropbox, task: tasks })
+      route.push({ file, task: tasks })
   }
-
-
-
-
-
   res.status(200).json({
     status: 'success',
     env: {
