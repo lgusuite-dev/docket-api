@@ -590,6 +590,21 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   const updatedDocument = await document.save({ validateBeforeSave: false });
   await task.save({ validateBeforeSave: false });
 
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: { type: document.type },
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
   res.status(200).json({
     status: 'success',
     env: {
