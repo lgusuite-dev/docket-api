@@ -3,7 +3,9 @@ const _ = require('lodash');
 const Document = require('../../models/GENERAL/document.model');
 const File = require('../../models/GENERAL/file.model');
 const Task = require('../../models/GENERAL/task.model');
+const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
+const { updateSideEffects } = require('../../utils/cleanup');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -137,9 +139,6 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
     },
   });
 });
-
-const { updateSideEffects } = require('../../utils/cleanup');
-const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
 // UPDATE DATE RECEIVED - OCR
 exports.updateDocument = catchAsync(async (req, res, next) => {
@@ -590,6 +589,21 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
 
   const updatedDocument = await document.save({ validateBeforeSave: false });
   await task.save({ validateBeforeSave: false });
+
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: { type: document.type },
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
 
   res.status(200).json({
     status: 'success',
