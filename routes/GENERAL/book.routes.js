@@ -16,6 +16,9 @@ router
   .put(bookController.updateBook)
   .patch(bookController.patchBook);
 
-router.route('/:id/documents').get(bookController.getBookDocuments);
+router
+  .route('/:id/documents')
+  .get(bookController.getBookDocuments)
+  .put(bookController.removeDocumentFromBook);
 
 module.exports = router;

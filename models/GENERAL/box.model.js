@@ -13,7 +13,13 @@ const BoxSchema = new mongoose.Schema(
     },
     location: {
       type: String,
-      enum: ['On-Premise', 'Warehouse A', 'Warehouse B', 'Warehouse C'],
+      enum: [
+        'On-Premise',
+        'Warehouse A',
+        'Warehouse B',
+        'Warehouse C',
+        'Warehouse D',
+      ],
     },
     remarks: String,
     serialNumber: String,
