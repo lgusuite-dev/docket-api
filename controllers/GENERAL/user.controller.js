@@ -11,6 +11,29 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const createID = () => new mongoose.Types.ObjectId();
 
+const userPatchOrDeleteCascade = async (userId) => {
+  const user = await User.findById(userId);
+  const { status, _teams } = user;
+
+  if (status === 'Deleted' || status === 'Suspended') {
+    if (_teams) {
+      for (const teamId of _teams) {
+        const team = await Team.findById(teamId);
+        team.users.splice(team.users.indexOf(userId), 1);
+        await team.save();
+      }
+    }
+  } else {
+    if (_teams) {
+      for (const teamId of _teams) {
+        const team = await Team.findById(teamId);
+        team.users = [...team.users, userId];
+        await team.save();
+      }
+    }
+  }
+};
+
 const generateGetUsersQuery = (type, req) => {
   if (type === 'admins') return { status: { $ne: 'Deleted' }, type: 'Admin' };
 
@@ -104,13 +127,6 @@ const validateAction = async (action, user, req) => {
     }
     user.status = prevStatus;
     await user.save({ validateBeforeSave: false });
-
-    const { id } = req.params;
-    for (const teamId of user._teams) {
-      const team = await Team.findById(teamId);
-      team.users = [...team.users, id];
-      await team.save();
-    }
 
     return { haveError: false };
   }
@@ -307,6 +323,8 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 
   if (!user) return next(new AppError('User not found', 404));
 
+  await userPatchOrDeleteCascade(id);
+
   if (type === 'admins') {
     const query = {
       type: 'User',
@@ -316,23 +334,13 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
     await User.updateMany(query, { status: 'Deleted' });
   }
 
-  const deletedUser = await User.findById(id);
-  const userTeams = deletedUser._teams;
-  if (userTeams) {
-    for (const teamId of userTeams) {
-      const team = await Team.findById(teamId);
-      team.users.splice(team.users.indexOf(id), 1);
-      await team.save();
-    }
-  }
-
   res.status(204).json({
     status: 'success',
   });
 });
 
 exports.patchUser = catchAsync(async (req, res, next) => {
-  const { action } = req.params;
+  const { action, id } = req.params;
   const { prevStatus } = req.query;
   const endpoint = req.originalUrl;
   const allowedActions = ['suspend', 'active', 'access-level', 'undo'];
@@ -365,6 +373,8 @@ exports.patchUser = catchAsync(async (req, res, next) => {
     return next(new AppError(result.message, result.status));
 
   await updateChildBasedOnAction(type, action, user, req);
+
+  await userPatchOrDeleteCascade(id);
 
   res.status(200).json({
     status: 'success',
