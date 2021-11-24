@@ -556,7 +556,7 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
     console.log(file)
     let tasks = await Task.findOne({
       _documentId: file._documentId
-    }).populate('_createdBy', '_assigneeId')
+    }).populate('_createdBy', 'firstName lastName').populate('_assigneeId', 'firstName lastName')
     if (tasks)
       route.push({ file, task: tasks })
   }
