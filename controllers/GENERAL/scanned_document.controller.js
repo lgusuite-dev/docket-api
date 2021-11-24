@@ -102,6 +102,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   // const documentIds = searchedDocuments.map((document) =>
   //   document._documentId.toString()
   // );
+  // console.log('shee')
 
   // const queryFeature = new QueryFeatures(
   //   Document.find({ _id: { $in: documentIds } }).populate('_files'),
