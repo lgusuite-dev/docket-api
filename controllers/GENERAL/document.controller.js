@@ -554,10 +554,10 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
   })
   for (let file of files) {
     console.log(file)
-    let tasks = await Task.find({
+    let tasks = await Task.findOne({
       _documentId: file._documentId
     })
-    if (tasks.length)
+    if (tasks)
       route.push({ file_name: file.dropbox.name, task: tasks })
   }
 
