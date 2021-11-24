@@ -137,6 +137,10 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
   });
 });
 
+const { updateSideEffects } = require('../../utils/cleanup');
+const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
+
+// UPDATE DATE RECEIVED - OCR
 exports.updateDocument = catchAsync(async (req, res, next) => {
   const pickFields = [
     'subject',
@@ -163,6 +167,21 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: id,
+        _tenantId: req.user._tenantId,
+        status: { $ne: 'Deleted' },
+      },
+      data: { dateReceived: filteredBody.dateReceived },
+    },
+  ];
+
+  if (filteredBody.dateReceived) await updateSideEffects(updateArgs);
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -171,6 +190,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+// UPDATE DOCUMENT OCR STATUS TO NO
 exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'dropbox'];
   const filteredBody = _.pick(req.body, pickFields);
@@ -188,38 +208,32 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   if (!document) return next(new AppError('Document not found', 404));
 
   const file = await File.create(filteredBody);
+  console.log(file);
 
   document._files.push(file._id);
   document.fileLength = document._files.length;
+  document._updatedBy = req.user._id;
+  document.ocrStatus = 'No';
 
-  if (['Outgoing', 'Archived', 'Internal'].includes(document.status)) {
+  if (['Outgoing', 'Archived', 'Internal'].includes(document.type))
     document.process.uploaded = true;
-  }
 
-  const updateBody = {
-    _updatedBy: req.user._id,
-    _files: document._files,
-    fileLength: document.fileLength,
-    process: document.process,
-  };
-
-  const updatedDocument = await Document.findByIdAndUpdate(id, updateBody, {
-    new: true,
-    runValidators: true,
-  });
+  await document.save();
 
   res.status(200).json({
     status: 'success',
     env: {
-      document: updatedDocument,
+      document,
     },
   });
 });
 
+// UPDATE OCR
 exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
+  const { _documentId, id } = req.params;
   const pickFields = ['name', 'description', 'dropbox'];
   const filteredBody = _.pick(req.body, pickFields);
-  const { _documentId, id } = req.params;
+
   const initialQuery = {
     _id: id,
     _documentId: _documentId,
@@ -230,10 +244,46 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
   const file = await File.findOne(initialQuery);
   if (!file) return next(new AppError('File not found', 404));
 
+  // FAST OBJ COMPARE XD
+  if (
+    filteredBody.dropbox &&
+    JSON.stringify(filteredBody.dropbox) !== JSON.stringify(file.dropbox)
+  )
+    filteredBody.ocrStatus = 'No';
+
   const updatedFile = await File.findByIdAndUpdate(id, filteredBody, {
     new: true,
     runValidators: true,
   });
+
+  // UPDATE SIDE EFFECTS
+  if (
+    filteredBody.dropbox &&
+    JSON.stringify(filteredBody.dropbox) !== JSON.stringify(file.dropbox)
+  ) {
+    const updateArgs = [
+      {
+        Model: Document,
+        query: {
+          _id: _documentId,
+          status: { $ne: 'Deleted' },
+          _tenantId: req.user._tenantId,
+        },
+        data: { ocrStatus: 'No' },
+      },
+      {
+        Model: ScannedDocument,
+        query: {
+          _fileId: file._id,
+          status: { $ne: 'Deleted' },
+          _tenantId: req.user._tenantId,
+        },
+        data: { status: 'Deleted' },
+      },
+    ];
+
+    await updateSideEffects(updateArgs);
+  }
 
   res.status(200).json({
     status: 'success',
@@ -243,6 +293,7 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
   });
 });
 
+// UPDATE OCR DOCUMENT
 exports.classifyDocument = catchAsync(async (req, res, next) => {
   const pickFields = [
     'classification',
@@ -276,6 +327,21 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -284,6 +350,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+// - CLEANUP
 exports.deleteDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {
@@ -297,6 +364,23 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   });
 
   if (!document) return next(new AppError('Document not found', 404));
+
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: { status: 'Deleted' },
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
+  // DO SOME DOCUMENT ID CLEANUP HERE using referenceIdCleanup util
 
   res.status(204).json({
     status: 'success',
@@ -335,6 +419,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
   });
 });
 
+// UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const pickFields = ['recipient', 'dateReleased'];
@@ -361,6 +446,21 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
     }
   );
 
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -369,6 +469,7 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+// UPDATE OCR DOCUMENT
 exports.documentAssignation = catchAsync(async (req, res, next) => {
   const pickFields = [
     '_includes',
@@ -393,6 +494,21 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
     new: true,
     runValidators: true,
   });
+
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
 
   res.status(200).json({
     status: 'success',
@@ -443,6 +559,7 @@ exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
   });
 });
 
+// REFACTOR
 exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
   const pickFields = ['_taskId', 'message'];
   const filteredBody = _.pick(req.body, pickFields);
@@ -466,6 +583,7 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 
   if (action === 'undo' && !allowedStatus.includes(prevStatus))
     return next(new AppError('Invalid previous status value', 400));
+
   const documentQuery = {
     _id: id,
     _tenantId: req.user._tenantId,
@@ -481,24 +599,40 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
     if (document.status === 'Deleted')
       return next(new AppError('Document not found', 404));
 
-    const taskQuery = {
-      _id: filteredBody._taskId,
-      status: { $ne: 'Deleted' },
-      _tenantId: req.user._tenantId,
-    };
+    // const taskQuery = {
+    //   _id: filteredBody._taskId,
+    //   status: { $ne: 'Deleted' },
+    //   _tenantId: req.user._tenantId,
+    // };
 
-    const task = await Task.findOne(taskQuery);
-    if (!task) return next(new AppError('Task not found', 404));
+    // const task = await Task.findOne(taskQuery);
+    // if (!task) return next(new AppError('Task not found', 404));
 
-    task.status = 'Completed';
-    task.message = filteredBody.message;
-    const updatedTask = await task.save({ validateBeforeSave: false });
+    // task.status = 'Completed';
+    // task.message = filteredBody.message;
+    // await task.save({ validateBeforeSave: false });
 
-    if (action === 'outgoing') document.status = 'Outgoing';
-    else if (action === 'internal') document.status = 'Internal';
-    else if (action === 'archived') document.status = 'Archived';
+    if (action === 'outgoing') document.type = 'Outgoing';
+    else if (action === 'internal') document.type = 'Internal';
+    else if (action === 'archived') document.type = 'Archived';
     document.message = filteredBody.message;
+
     const updatedDocument = await document.save({ validateBeforeSave: false });
+
+    // UPDATE SIDE EFFECTS
+    const updateArgs = [
+      {
+        Model: ScannedDocument,
+        query: {
+          _documentId: document._id,
+          status: { $ne: 'Deleted' },
+          _tenantId: req.user._tenantId,
+        },
+        data: { type: document.type },
+      },
+    ];
+
+    await updateSideEffects(updateArgs);
 
     res.status(200).json({
       status: 'success',
