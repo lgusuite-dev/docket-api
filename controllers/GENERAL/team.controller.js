@@ -15,7 +15,7 @@ const userStatusValidation = async (teamUsers) => {
   };
   const users = await User.find(userQuery);
 
-  return users.length !== filteredBody.users.length;
+  return users.length !== teamUsers.length;
 };
 
 const addOrRemoveTeamIdToUsers = async (users, teamID, action) => {
@@ -100,7 +100,7 @@ exports.createTeam = catchAsync(async (req, res, next) => {
   if (filteredBody.users && filteredBody.users.length) {
     filteredBody.users = filterTeamUsersID(filteredBody.users);
 
-    if (userStatusValidation(filteredBody.users)) {
+    if (await userStatusValidation(filteredBody.users)) {
       return next(
         new AppError('Cannot add deleted or suspended user in a team', 404)
       );
@@ -200,7 +200,7 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
   if (filteredBody.users && filteredBody.users.length) {
     filteredBody.users = filterTeamUsersID(filteredBody.users);
 
-    if (userStatusValidation(filteredBody.users)) {
+    if (await userStatusValidation(filteredBody.users)) {
       return next(
         new AppError('Cannot add deleted or suspended user in a team', 404)
       );
