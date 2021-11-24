@@ -20,8 +20,7 @@ router.route('/:id/files').get(documentController.getDocumentFiles);
 
 router
   .route('/:_documentId/files/:id')
-  .put(documentController.updateUploadedDocumentFile)
-
+  .put(documentController.updateUploadedDocumentFile);
 
 router
   .route('/:id/status/:action')
@@ -35,6 +34,6 @@ router.route('/release/:id').put(documentController.releaseDocument);
 
 router.route('/storage/:id').put(documentController.updateDocumentStorage);
 
-router.route('/file-task/:ids').get(documentController.getFileTask)
+router.route('/file-task/:ids').get(documentController.getFileTask);
 
 module.exports = router;
