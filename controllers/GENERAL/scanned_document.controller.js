@@ -4,6 +4,61 @@ const Document = require('../../models/GENERAL/document.model');
 const catchAsync = require('../../utils/errors/catchAsync');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
+const createPreview = (text) => {
+  const splitDocText = text.split(' ');
+  let preview = '';
+
+  for (let [index, text] of splitDocText.entries()) {
+    let nextValue = splitDocText[index + 1]
+      ? // if truthy, get right side value
+        splitDocText[index + 1]
+      : // if falsy, get left side value
+        splitDocText[index - 2];
+
+    if (
+      text.includes('<strong>') &&
+      !nextValue.includes('<strong>') &&
+      !preview
+    ) {
+      // number of text from keyword to left
+      let start = index - 13;
+      // number of text from keyword to right
+      let end = index + 13;
+
+      if (start <= 0) {
+        for (let i = index; i >= 0; i--) {
+          preview = splitDocText[i] + ' ' + preview;
+        }
+      } else {
+        for (let i = index; i >= start; i--) {
+          const word =
+            i === start
+              ? splitDocText[i][0].toUpperCase() + splitDocText[i].slice(1)
+              : splitDocText[i];
+
+          if (splitDocText[i].includes('.')) break;
+
+          preview = word + ' ' + preview;
+        }
+      }
+
+      if (end >= splitDocText.length - 1) {
+        for (let i = index + 1; i <= splitDocText.length - 1; i++) {
+          const word = i === end ? splitDocText[i] + '...' : splitDocText[i];
+          preview += word + ' ';
+        }
+      } else {
+        for (let i = index + 1; i <= end; i++) {
+          const word = i === end ? splitDocText[i] + '...' : splitDocText[i];
+          preview += word + ' ';
+        }
+      }
+    }
+  }
+
+  return preview ? preview : 'No preview available.';
+};
+
 exports.searchDocument = catchAsync(async (req, res, next) => {
   const { search } = req.query;
   const extractWords = search ? search.split(' ') : [];
@@ -34,56 +89,12 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
       document.text = document.text.replace(regex, `<strong>${word}</strong>`);
     }
 
-    const splitDocText = document.text.split(' ');
-    let prev = [];
+    const preview = createPreview(document.text);
 
-    for (let [index, text] of splitDocText.entries()) {
-      const substr = [];
-      const nextValue = splitDocText[index + 1]
-        ? splitDocText[index + 1]
-        : splitDocText[index];
-
-      if (
-        text.includes('<strong>') &&
-        !nextValue.includes('<strong>') &&
-        index !== splitDocText - 1
-      ) {
-        const start = index - 6;
-        const end = index + 6;
-        if (start <= 0) {
-          for (let i = index; i >= 0; i--) {
-            substr.unshift(splitDocText[i]);
-          }
-        } else {
-          for (let i = index; i >= start; i--) {
-            substr.unshift(
-              i === start ? '...' + splitDocText[i] : splitDocText[i]
-            );
-          }
-        }
-
-        if (end >= splitDocText.length - 1) {
-          for (let i = index + 1; i <= splitDocText.length - 1; i++) {
-            substr.push(i === end ? splitDocText[i] + '...' : splitDocText[i]);
-          }
-        } else {
-          for (let i = index + 1; i <= end; i++) {
-            substr.push(i === end ? splitDocText[i] + '...' : splitDocText[i]);
-          }
-        }
-      }
-
-      if (substr.length) prev.push(substr.join(' '));
-    }
-
-    console.log('PREV', prev.join(' '));
-
-    // console.log(splitDocText);
-
-    document.preview = prev.length
-      ? `Page ${document.page} - ${prev.join(' ')}`
-      : 'No preview available!';
-    // document.preview = `Page ${document.page} - ${document.text}`;
+    document.preview =
+      preview !== 'No preview available.'
+        ? `Page ${document.page} - ${preview}`
+        : preview;
     document.text = origText;
   }
 
@@ -102,8 +113,6 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   //   .paginate();
 
   // const documents = await queryFeature.query;
-
-  // console.log(documentIds);
 
   res.status(200).json({
     status: 'success',
