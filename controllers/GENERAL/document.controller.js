@@ -542,4 +542,33 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
       document: updatedDocument,
     },
   });
+
+
 });
+exports.getFileTask = catchAsync(async (req, res, next) => {
+  let route = []
+  const ids = (req.params.ids.split(','))
+
+  const files = await File.find({
+    _id: { $in: ids }
+  })
+  for (let file of files) {
+    console.log(file)
+    let tasks = await Task.findOne({
+      _documentId: file._documentId
+    })
+    if (tasks)
+      route.push({ file_name: dropbox, task: tasks })
+  }
+
+
+
+
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      history: route
+    }
+  })
+})
