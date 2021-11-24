@@ -38,8 +38,7 @@ const DocumentSchema = new mongoose.Schema(
     requestDate: Date,
     dateReceived: Date,
     receivedThru: String,
-
-    status: {
+    type: {
       type: String,
       default: 'Incoming',
       enum: [
@@ -48,9 +47,13 @@ const DocumentSchema = new mongoose.Schema(
         'Internal',
         'Archived',
         'Personal',
-        'Deleted',
-        'My Documents',
+        'Not Defined',
       ],
+    },
+    status: {
+      type: String,
+      default: 'Active',
+      enum: ['Active', 'Deleted', 'Suspended'],
     },
     controlNumber: {
       type: String,
@@ -63,10 +66,6 @@ const DocumentSchema = new mongoose.Schema(
     fileLength: {
       type: Number,
       default: 0,
-    },
-    isMyDocuments: {
-      type: Boolean,
-      default: false,
     },
     confidentialityLevel: {
       type: Number,
