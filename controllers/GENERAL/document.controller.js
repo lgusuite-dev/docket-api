@@ -21,6 +21,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
+  filteredBody.type = 'Inbound';
 
   const document = await Document.create(filteredBody);
 
@@ -192,7 +193,7 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   document._files.push(file._id);
   document.fileLength = document._files.length;
 
-  if (['Outgoing', 'Archived', 'Internal'].includes(document.status)) {
+  if (['Outgoing', 'Archived', 'Internal'].includes(document.type)) {
     document.process.uploaded = true;
   }
 
@@ -443,20 +444,50 @@ exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
-  const pickFields = ['_taskId', 'message'];
+exports.patchDocumentType = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const pickFields = ['_taskId', 'message', 'type'];
   const filteredBody = _.pick(req.body, pickFields);
+
+  const documentQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(documentQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  document.type = filteredBody.type;
+
+  const taskQuery = {
+    _id: filteredBody._taskId,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const task = await Task.findOne(taskQuery);
+  if (!task) return next(new AppError('Task not found', 404));
+
+  task.status = 'Completed';
+  task.message = [...task.message, ...filteredBody.message];
+
+  const updatedDocument = await document.save({ validateBeforeSave: false });
+  await task.save({ validateBeforeSave: false });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
+});
+
+exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
   const { id, action } = req.params;
   const { prevStatus } = req.query;
-  const allowedActions = [
-    'incoming',
-    'outgoing',
-    'internal',
-    'archived',
-    'personal',
-    'undo',
-  ];
-  const allowedStatus = ['Outgoing', 'Internal', 'Archived'];
+  const allowedActions = ['undo'];
+  const allowedStatus = ['Active'];
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
@@ -466,56 +497,21 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 
   if (action === 'undo' && !allowedStatus.includes(prevStatus))
     return next(new AppError('Invalid previous status value', 400));
-  const documentQuery = {
-    _id: id,
-    _tenantId: req.user._tenantId,
-  };
 
-  const document = await Document.findOne(documentQuery);
+  const document = await Document.findById(id);
   if (!document) return next(new AppError('Document not found', 404));
 
   if (action === 'undo' && document.status !== 'Deleted')
     return next(new AppError('Document not deleted', 404));
 
-  if (['outgoing', 'internal', 'archived'].includes(action)) {
-    if (document.status === 'Deleted')
-      return next(new AppError('Document not found', 404));
-
-    const taskQuery = {
-      _id: filteredBody._taskId,
-      status: { $ne: 'Deleted' },
-      _tenantId: req.user._tenantId,
-    };
-
-    const task = await Task.findOne(taskQuery);
-    if (!task) return next(new AppError('Task not found', 404));
-
-    task.status = 'Completed';
-    task.message = filteredBody.message;
-    const updatedTask = await task.save({ validateBeforeSave: false });
-
-    if (action === 'outgoing') document.status = 'Outgoing';
-    else if (action === 'internal') document.status = 'Internal';
-    else if (action === 'archived') document.status = 'Archived';
-    document.message = filteredBody.message;
-    const updatedDocument = await document.save({ validateBeforeSave: false });
-
-    res.status(200).json({
-      status: 'success',
-      env: {
-        updatedDocument,
-      },
-    });
-  } else if (action === 'undo') {
-    document.status = prevStatus;
-    const updatedDocument = await document.save({ validateBeforeSave: false });
-    res.status(200).json({
-      status: 'success',
-      env: {
-        updatedDocument,
-      },
-    });
-  }
+  document.status = prevStatus;
+  const updatedDocument = await document.save({ validateBeforeSave: false });
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
 });
 
 exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
