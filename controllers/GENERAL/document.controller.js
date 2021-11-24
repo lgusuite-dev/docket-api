@@ -3,7 +3,9 @@ const _ = require('lodash');
 const Document = require('../../models/GENERAL/document.model');
 const File = require('../../models/GENERAL/file.model');
 const Task = require('../../models/GENERAL/task.model');
+const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
+const { updateSideEffects } = require('../../utils/cleanup');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -137,9 +139,6 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
     },
   });
 });
-
-const { updateSideEffects } = require('../../utils/cleanup');
-const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
 // UPDATE DATE RECEIVED - OCR
 exports.updateDocument = catchAsync(async (req, res, next) => {
