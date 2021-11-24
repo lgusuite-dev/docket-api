@@ -23,11 +23,50 @@ const ScannedDocumentSchema = new mongoose.Schema(
       required: [true, 'Please provide confidentiality level'],
       enum: [1, 2, 3, 4],
     },
+    classification: {
+      type: String,
+      required: [true, 'Please provide classification'],
+    },
+    subClassification: {
+      type: String,
+      required: [true, 'Please provide classification'],
+    },
+    senderType: {
+      type: String,
+      required: [true, 'Please provide the sender type'],
+      enum: ['Private', 'Other Government Agencies', 'Courts'],
+    },
+    dateReceived: {
+      type: Date,
+      required: [true, 'Please provide date received'],
+    },
+    dateReleased: {
+      type: Date,
+      required: [true, 'Please provide date released  '],
+    },
+    type: {
+      type: String,
+      required: [true, 'Please provide document type'],
+      enum: [
+        'Incoming',
+        'Outgoing',
+        'Internal',
+        'Archived',
+        'Personal',
+        'Not Defined',
+      ],
+    },
     status: {
       type: String,
       default: 'Active',
       enum: ['Active', 'Deleted'],
     },
+    _assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    _includes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    _excludes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     _fileId: {
       type: mongoose.Schema.Types.ObjectId,
       required: [true, 'Please provide file id'],
