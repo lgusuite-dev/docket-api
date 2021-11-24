@@ -308,8 +308,8 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
   const pickFields = [
     'finalStatus',
     'confidentialityLevel',
-    'includedUsers',
-    'excludedUsers',
+    '_includes',
+    '_excludes',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
@@ -371,8 +371,8 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
 
 exports.documentAssignation = catchAsync(async (req, res, next) => {
   const pickFields = [
-    'includedUsers',
-    'excludedUsers',
+    '_includes',
+    '_excludes',
     'confidentialityLevel',
     '_assignedTo',
   ];
@@ -542,28 +542,27 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
       document: updatedDocument,
     },
   });
-
-
 });
 exports.getFileTask = catchAsync(async (req, res, next) => {
-  let route = []
-  const ids = (req.params.ids.split(','))
+  let route = [];
+  const ids = req.params.ids.split(',');
 
   const files = await File.find({
-    _id: { $in: ids }
-  })
+    _id: { $in: ids },
+  });
   for (let file of files) {
-    console.log(file)
+    console.log(file);
     let tasks = await Task.findOne({
-      _documentId: file._documentId
-    }).populate('_createdBy', 'firstName lastName').populate('_assigneeId', 'firstName lastName')
-    if (tasks)
-      route.push({ file, task: tasks })
+      _documentId: file._documentId,
+    })
+      .populate('_createdBy', 'firstName lastName')
+      .populate('_assigneeId', 'firstName lastName');
+    if (tasks) route.push({ file, task: tasks });
   }
   res.status(200).json({
     status: 'success',
     env: {
-      history: route
-    }
-  })
-})
+      history: route,
+    },
+  });
+});

@@ -116,18 +116,6 @@ const DocumentSchema = new mongoose.Schema(
       prefix: String,
       suffix: String,
     },
-    includedUsers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    excludedUsers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
     message: {
       from: {
         type: mongoose.Schema.Types.ObjectId,
