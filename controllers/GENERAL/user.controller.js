@@ -104,6 +104,14 @@ const validateAction = async (action, user, req) => {
     }
     user.status = prevStatus;
     await user.save({ validateBeforeSave: false });
+
+    const { id } = req.params;
+    for (const teamId of user._teams) {
+      const team = await Team.findById(teamId);
+      team.users = [...team.users, id];
+      await team.save();
+    }
+
     return { haveError: false };
   }
 
@@ -126,14 +134,6 @@ const updateChildBasedOnAction = async (type, action, user, req) => {
     undoQuery.status = { $eq: 'Deleted' };
 
     await User.updateMany(undoQuery, { status: prevStatus });
-    const userTeams = user._teams;
-    const { id } = req.params;
-    for (teamId of userTeams) {
-      const team = Team.findById(teamId);
-      const teamUsers = [...team.users];
-      team.users = teamUsers.push(id);
-      await team.save();
-    }
   } else {
     const activeQuery = { ...query };
     activeQuery.status = { $eq: 'Suspended' };
