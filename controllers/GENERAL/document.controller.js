@@ -518,7 +518,7 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.patchDocumentProcess = catchAsync(async (req, res, next) => {
+exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
   const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
   const { action } = req.params;

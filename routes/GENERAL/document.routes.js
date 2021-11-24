@@ -24,9 +24,9 @@ router
   .route('/:_documentId/files/:id')
   .put(documentController.updateUploadedDocumentFile);
 
-router.route('/:id/type').patch(documentController.patchDocumentType);
+router.route('/:id/type').put(documentController.patchDocumentType);
+router.route('/process/:action').put(documentController.updateDocumentProcess);
 
-router.route('/process/:action').patch(documentController.patchDocumentProcess);
 router.route('/assignation/:id').put(documentController.documentAssignation);
 router.route('/final-status/:id').put(documentController.forFinalAction);
 router.route('/upload/:id').put(documentController.uploadDocumentFile);
