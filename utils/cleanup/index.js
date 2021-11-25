@@ -1,3 +1,5 @@
+const { callbackAsync } = require('../../utils/function');
+
 // PARAMS NEEDED [{Model, query, data}]
 exports.updateSideEffects = async (updateObjectArgs) => {
   try {
