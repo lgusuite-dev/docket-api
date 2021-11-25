@@ -189,7 +189,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
 
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
-  filteredBody.type = 'Not Define';
+  filteredBody.type = 'Not Defined';
 
   if (id === 'root') newDocument = await Document.create(filteredBody);
   else {
