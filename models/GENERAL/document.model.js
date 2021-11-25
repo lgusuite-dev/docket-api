@@ -138,6 +138,9 @@ const DocumentSchema = new mongoose.Schema(
         ref: 'Box',
       },
     },
+    isAssigned: {
+      type: Boolean,
+    },
     _taskId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',

@@ -322,6 +322,8 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
     ).toString();
   }
 
+  if (document.type === 'Inbound') filteredBody.isAssigned = false;
+
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,
     runValidators: true,
@@ -489,6 +491,8 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   const document = await Document.findOne(initialQuery);
 
   if (!document) return next(new AppError('Document not found', 404));
+
+  if (filteredBody._assignedTo) filteredBody.isAssigned = true;
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,
