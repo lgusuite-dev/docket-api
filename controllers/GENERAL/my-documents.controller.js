@@ -96,18 +96,16 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
     documents: [],
   });
 
-  if (req.query.reload) {
-    while (currentFolder._parentId) {
-      currentFolder = await Folder.findById(currentFolder._parentId);
+  while (currentFolder._parentId) {
+    currentFolder = await Folder.findById(currentFolder._parentId);
 
-      if (currentFolder)
-        openedFolders.unshift({
-          id: currentFolder._id,
-          name: currentFolder.name,
-          folders: [],
-          documents: [],
-        });
-    }
+    if (currentFolder)
+      openedFolders.unshift({
+        id: currentFolder._id,
+        name: currentFolder.name,
+        folders: [],
+        documents: [],
+      });
   }
 
   res.status(200).json({
