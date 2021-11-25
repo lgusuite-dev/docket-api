@@ -189,8 +189,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
 
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
-  filteredBody.status = 'My Documents';
-  filteredBody.isMyDocuments = true;
+  filteredBody.type = 'Not Define';
 
   if (id === 'root') newDocument = await Document.create(filteredBody);
   else {
@@ -276,7 +275,6 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    // isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
@@ -309,7 +307,6 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
@@ -345,7 +342,6 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
@@ -454,5 +450,3 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
     status: 'success',
   });
 });
-
-
