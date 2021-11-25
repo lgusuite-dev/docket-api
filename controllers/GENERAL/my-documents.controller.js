@@ -96,18 +96,16 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
     documents: [],
   });
 
-  if (req.query.reload) {
-    while (currentFolder._parentId) {
-      currentFolder = await Folder.findById(currentFolder._parentId);
+  while (currentFolder._parentId) {
+    currentFolder = await Folder.findById(currentFolder._parentId);
 
-      if (currentFolder)
-        openedFolders.unshift({
-          id: currentFolder._id,
-          name: currentFolder.name,
-          folders: [],
-          documents: [],
-        });
-    }
+    if (currentFolder)
+      openedFolders.unshift({
+        id: currentFolder._id,
+        name: currentFolder.name,
+        folders: [],
+        documents: [],
+      });
   }
 
   res.status(200).json({
@@ -189,8 +187,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
 
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
-  filteredBody.status = 'My Documents';
-  filteredBody.isMyDocuments = true;
+  filteredBody.type = 'Not Defined';
 
   if (id === 'root') newDocument = await Document.create(filteredBody);
   else {
@@ -276,7 +273,6 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    // isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
@@ -309,7 +305,6 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
@@ -345,7 +340,6 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    isMyDocuments: true,
     _createdBy: req.user._id,
   };
 
@@ -454,5 +448,3 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
     status: 'success',
   });
 });
-
-
