@@ -68,23 +68,51 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   // access level
   // status [inbound, outbound, archived]
 
-  const searchedDocuments = await ScannedDocument.find(
-    {
-      $text: { $search: `${search}` },
-      confidentialityLevel: { $lte: req.user.access_level },
-      _tenantId: req.user._tenantId,
-      status: { $ne: 'Deleted' },
-    },
-    { score: { $meta: 'textScore' } },
-    { lean: true }
-  )
-    .sort({ score: { $meta: 'textScore' } })
-    .populate({
-      path: '_documentId',
-      populate: {
-        path: '_files',
+  const searchedDocumentsQuery = new QueryFeatures(
+    ScannedDocument.find(
+      {
+        $text: { $search: `${search}` },
+        confidentialityLevel: { $lte: req.user.access_level },
+        _tenantId: req.user._tenantId,
+        status: { $ne: 'Deleted' },
       },
-    });
+      { score: { $meta: 'textScore' } },
+      { lean: true }
+    )
+      .sort({ score: { $meta: 'textScore' } })
+      .populate({
+        path: '_documentId',
+        populate: {
+          path: '_files',
+        },
+      }),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const searchedDocuments = await searchedDocumentsQuery.query;
+
+  // const searchedDocuments = await ScannedDocument.find(
+  //   {
+  //     $text: { $search: `${search}` },
+  //     confidentialityLevel: { $lte: req.user.access_level },
+  //     _tenantId: req.user._tenantId,
+  //     status: { $ne: 'Deleted' },
+  //   },
+  //   { score: { $meta: 'textScore' } },
+  //   { lean: true }
+  // )
+  //   .sort({ score: { $meta: 'textScore' } })
+  //   .populate({
+  //     path: '_documentId',
+  //     populate: {
+  //       path: '_files',
+  //     },
+  //   })
 
   for (let document of searchedDocuments) {
     const origText = document.text;
