@@ -10,6 +10,8 @@ router
   .post(documentController.createDocument)
   .get(documentController.getAllDocuments);
 
+router.get('/assigned', documentController.getAssigned);
+
 router
   .route('/:id')
   .put(documentController.updateDocument)

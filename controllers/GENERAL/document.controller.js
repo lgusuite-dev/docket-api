@@ -702,3 +702,5 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.getAssigned = catchAsync(async (req, res, next) => {});
