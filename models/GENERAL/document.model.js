@@ -11,17 +11,14 @@ const DocumentSchema = new mongoose.Schema(
       firstName: {
         type: String,
         trim: true,
-        required: [true, 'Please provide the sender first name'],
       },
       lastName: {
         type: String,
         trim: true,
-        required: [true, 'Please provide the sender last name'],
       },
       mobileNumber: {
         type: String,
         trim: true,
-        required: [true, 'Please provide the sender mobile number'],
       },
       middleInitial: String,
       department: String,
@@ -32,7 +29,6 @@ const DocumentSchema = new mongoose.Schema(
     },
     senderType: {
       type: String,
-      required: [true, 'Please provide the sender type'],
       enum: ['Private', 'Other Government Agencies', 'Courts'],
     },
     requestDate: Date,
