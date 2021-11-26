@@ -51,10 +51,8 @@ const DocumentSchema = new mongoose.Schema(
       default: 'Active',
       enum: ['Active', 'Deleted', 'Suspended'],
     },
-    controlNumber: {
-      type: String,
-      unique: [true, 'Control number already exist'],
-    },
+    controlNumber: String,
+
     finalStatus: {
       type: String,
       enum: ['Approved', 'On Hold', 'Destroy'],
