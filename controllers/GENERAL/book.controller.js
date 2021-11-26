@@ -124,7 +124,6 @@ exports.updateBook = catchAsync(async (req, res, next) => {
 
       const document = await Document.findOne(documentQuery);
 
-      console.log(documentQuery);
       document['storage']['_bookId'] = id;
       await document.save({ validateBeforeSave: false });
     }
@@ -212,7 +211,7 @@ exports.getBookDocuments = catchAsync(async (req, res, next) => {
 });
 
 exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
-  const pickFields = ['_documents'];
+  const pickFields = ['_documentId'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   const initialQuery = {
@@ -229,7 +228,7 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     );
 
   const documentQuery = {
-    _id: filteredBody._documents,
+    _id: filteredBody._documentId,
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
