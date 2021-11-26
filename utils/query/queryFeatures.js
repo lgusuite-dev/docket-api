@@ -73,6 +73,9 @@ class QueryFeatures {
       'printed',
       'released',
       'uploaded',
+      'status',
+      '_bookId',
+      '_boxId',
     ];
     const removeField = [
       'page',

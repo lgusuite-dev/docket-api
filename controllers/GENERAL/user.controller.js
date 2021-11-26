@@ -2,6 +2,8 @@ const _ = require('lodash');
 const mongoose = require('mongoose');
 
 const User = require('../../models/GENERAL/user.model');
+const Team = require('../../models/GENERAL/team.model');
+const Role = require('../../models/GENERAL/role.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -9,6 +11,29 @@ const { _generateRandomPassword } = require('../../utils/tokens');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const createID = () => new mongoose.Types.ObjectId();
+
+const userPatchOrDeleteCascade = async (userId) => {
+  const user = await User.findById(userId);
+  const { status, _teams } = user;
+
+  if (status === 'Deleted' || status === 'Suspended') {
+    if (_teams) {
+      for (const teamId of _teams) {
+        const team = await Team.findById(teamId);
+        team.users.splice(team.users.indexOf(userId), 1);
+        await team.save();
+      }
+    }
+  } else {
+    if (_teams) {
+      for (const teamId of _teams) {
+        const team = await Team.findById(teamId);
+        team.users = [...team.users, userId];
+        await team.save();
+      }
+    }
+  }
+};
 
 const generateGetUsersQuery = (type, req) => {
   if (type === 'admins') return { status: { $ne: 'Deleted' }, type: 'Admin' };
@@ -103,6 +128,7 @@ const validateAction = async (action, user, req) => {
     }
     user.status = prevStatus;
     await user.save({ validateBeforeSave: false });
+
     return { haveError: false };
   }
 
@@ -285,6 +311,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteUser = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
   const endpoint = req.originalUrl;
   const validTypes = ['admins', 'users'];
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
@@ -296,6 +323,8 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   const user = await User.findOneAndUpdate(initialQuery, { status: 'Deleted' });
 
   if (!user) return next(new AppError('User not found', 404));
+
+  await userPatchOrDeleteCascade(id);
 
   if (type === 'admins') {
     const query = {
@@ -312,7 +341,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 });
 
 exports.patchUser = catchAsync(async (req, res, next) => {
-  const { action } = req.params;
+  const { action, id } = req.params;
   const { prevStatus } = req.query;
   const endpoint = req.originalUrl;
   const allowedActions = ['suspend', 'active', 'access-level', 'undo'];
@@ -345,6 +374,8 @@ exports.patchUser = catchAsync(async (req, res, next) => {
     return next(new AppError(result.message, result.status));
 
   await updateChildBasedOnAction(type, action, user, req);
+
+  await userPatchOrDeleteCascade(id);
 
   res.status(200).json({
     status: 'success',

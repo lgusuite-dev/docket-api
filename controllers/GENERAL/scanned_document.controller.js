@@ -1,0 +1,159 @@
+const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
+const Document = require('../../models/GENERAL/document.model');
+
+const catchAsync = require('../../utils/errors/catchAsync');
+const QueryFeatures = require('../../utils/query/queryFeatures');
+
+const createPreview = (text) => {
+  const splitDocText = text.split(' ');
+  let preview = '';
+
+  for (let [index, text] of splitDocText.entries()) {
+    let nextValue = splitDocText[index + 1]
+      ? // if truthy, get right side value
+        splitDocText[index + 1]
+      : // if falsy, get left side value
+        splitDocText[index - 2];
+
+    if (
+      text.includes('<strong>') &&
+      !nextValue.includes('<strong>') &&
+      !preview
+    ) {
+      // number of text from keyword to left
+      let start = index - 13;
+      // number of text from keyword to right
+      let end = index + 13;
+
+      if (start <= 0) {
+        for (let i = index; i >= 0; i--) {
+          preview = splitDocText[i] + ' ' + preview;
+        }
+      } else {
+        for (let i = index; i >= start; i--) {
+          const word =
+            i === start
+              ? splitDocText[i][0].toUpperCase() + splitDocText[i].slice(1)
+              : splitDocText[i];
+
+          if (splitDocText[i].includes('.')) break;
+
+          preview = word + ' ' + preview;
+        }
+      }
+
+      if (end >= splitDocText.length - 1) {
+        for (let i = index + 1; i <= splitDocText.length - 1; i++) {
+          const word = i === end ? splitDocText[i] + '...' : splitDocText[i];
+          preview += word + ' ';
+        }
+      } else {
+        for (let i = index + 1; i <= end; i++) {
+          const word = i === end ? splitDocText[i] + '...' : splitDocText[i];
+          preview += word + ' ';
+        }
+      }
+    }
+  }
+
+  return preview ? preview : 'No preview available.';
+};
+
+exports.searchDocument = catchAsync(async (req, res, next) => {
+  const { search } = req.query;
+  const extractWords = search ? search.split(' ') : [];
+
+  // priority of searching
+  // inclusion and exclusion
+  // access level
+  // status [inbound, outbound, archived]
+
+  const searchedDocumentsQuery = new QueryFeatures(
+    ScannedDocument.find(
+      {
+        $text: { $search: `${search}` },
+        confidentialityLevel: { $lte: req.user.access_level },
+        _tenantId: req.user._tenantId,
+        status: { $ne: 'Deleted' },
+      },
+      { score: { $meta: 'textScore' } },
+      { lean: true }
+    )
+      .sort({ score: { $meta: 'textScore' } })
+      .populate({
+        path: '_documentId',
+        populate: {
+          path: '_files',
+        },
+      }),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const searchedDocuments = await searchedDocumentsQuery.query;
+
+  // const searchedDocuments = await ScannedDocument.find(
+  //   {
+  //     $text: { $search: `${search}` },
+  //     confidentialityLevel: { $lte: req.user.access_level },
+  //     _tenantId: req.user._tenantId,
+  //     status: { $ne: 'Deleted' },
+  //   },
+  //   { score: { $meta: 'textScore' } },
+  //   { lean: true }
+  // )
+  //   .sort({ score: { $meta: 'textScore' } })
+  //   .populate({
+  //     path: '_documentId',
+  //     populate: {
+  //       path: '_files',
+  //     },
+  //   })
+
+  for (let document of searchedDocuments) {
+    const origText = document.text;
+
+    for (let word of extractWords) {
+      const regex = new RegExp(word, 'ig');
+
+      document.text = document.text.replace(regex, `<strong>${word}</strong>`);
+    }
+
+    const preview = createPreview(document.text);
+
+    document.preview =
+      preview !== 'No preview available.'
+        ? `Page ${document.page} - ${preview}`
+        : preview;
+    document.text = origText;
+  }
+
+  // // get unique document ids
+  // const documentIds = searchedDocuments.map((document) =>
+  //   document._documentId.toString()
+  // );
+  // console.log('shee')
+
+  // const queryFeature = new QueryFeatures(
+  //   Document.find({ _id: { $in: documentIds } }).populate('_files'),
+  //   req.query
+  // )
+  //   .limitFields()
+  //   .populate()
+  //   .sort()
+  //   .paginate();
+
+  // const documents = await queryFeature.query;
+
+  res.status(200).json({
+    status: 'success',
+    results: searchedDocuments.length,
+    env: {
+      documents: searchedDocuments,
+    },
+  });
+});

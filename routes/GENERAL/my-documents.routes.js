@@ -17,10 +17,14 @@ router
 
 router
   .route('/documents/:id')
+  .get(myDocumentsController.getDocument)
   .put(myDocumentsController.updateDocument)
   .delete(myDocumentsController.deleteDocument);
 
-router.put('/files/:id', myDocumentsController.updateFile);
+router
+  .route('/files/:id')
+  .put(myDocumentsController.updateFile)
+  .delete(myDocumentsController.deleteFile);
 
 router.post('/folders/:id/documents', myDocumentsController.createDocument);
 router.post('/documents/:id/files', myDocumentsController.uploadFile);

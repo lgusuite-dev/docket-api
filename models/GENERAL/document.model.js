@@ -7,27 +7,34 @@ const DocumentSchema = new mongoose.Schema(
       trim: true,
       required: [true, 'Please provide the Subject'],
     },
+    sender: {
+      firstName: {
+        type: String,
+        trim: true,
+      },
+      lastName: {
+        type: String,
+        trim: true,
+      },
+      mobileNumber: {
+        type: String,
+        trim: true,
+      },
+      middleInitial: String,
+      department: String,
+      position: String,
+      email: String,
+      prefix: String,
+      suffix: String,
+    },
     senderType: {
       type: String,
       enum: ['Private', 'Other Government Agencies', 'Courts'],
     },
-    senderFirstName: {
-      type: String,
-      trim: true,
-    },
-    senderLastName: {
-      type: String,
-      trim: true,
-    },
-    mobileNumber: {
-      type: String,
-    },
-    email: String,
-    controlNumber: {
-      type: String,
-      unique: [true, 'Control number already exist'],
-    },
-    status: {
+    requestDate: Date,
+    dateReceived: Date,
+    receivedThru: String,
+    type: {
       type: String,
       default: 'Incoming',
       enum: [
@@ -36,10 +43,16 @@ const DocumentSchema = new mongoose.Schema(
         'Internal',
         'Archived',
         'Personal',
-        'Deleted',
-        'My Documents',
+        'Not Defined',
       ],
     },
+    status: {
+      type: String,
+      default: 'Active',
+      enum: ['Active', 'Deleted', 'Suspended'],
+    },
+    controlNumber: String,
+
     finalStatus: {
       type: String,
       enum: ['Approved', 'On Hold', 'Destroy'],
@@ -47,10 +60,6 @@ const DocumentSchema = new mongoose.Schema(
     fileLength: {
       type: Number,
       default: 0,
-    },
-    isMyDocuments: {
-      type: Boolean,
-      default: false,
     },
     confidentialityLevel: {
       type: Number,
@@ -74,6 +83,11 @@ const DocumentSchema = new mongoose.Schema(
         default: false,
       },
     },
+    ocrStatus: {
+      type: String,
+      default: 'No',
+      enum: ['No', 'Scanning', 'Done'],
+    },
     recipient: {
       firstName: {
         type: String,
@@ -95,18 +109,6 @@ const DocumentSchema = new mongoose.Schema(
       prefix: String,
       suffix: String,
     },
-    includedUsers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    excludedUsers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
     message: {
       from: {
         type: mongoose.Schema.Types.ObjectId,
@@ -120,6 +122,24 @@ const DocumentSchema = new mongoose.Schema(
       ],
       text: String,
     },
+    storage: {
+      status: {
+        type: String,
+        enum: ['Active', 'Inactive'],
+      },
+      _bookId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Book',
+      },
+      _boxId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Box',
+      },
+    },
+    isAssigned: {
+      type: Boolean,
+    },
+    dateApproved: Date,
     _taskId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',
@@ -156,13 +176,7 @@ const DocumentSchema = new mongoose.Schema(
     _excludes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     classification: String,
     subClassification: String,
-    department: String,
-    position: String,
     remarks: String,
-    others: Object,
-    requestDate: Date,
-    dateReceived: Date,
-    receivedThru: String,
   },
   { timestamps: true }
 );
