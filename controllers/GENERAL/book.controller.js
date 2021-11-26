@@ -94,6 +94,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
     '_boxId',
   ];
   const filteredBody = _.pick(req.body, pickFields);
+  const documentIds = [...filteredBody._documentId];
   const { id } = req.params;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -106,22 +107,15 @@ exports.updateBook = catchAsync(async (req, res, next) => {
 
   if (book.status === 'Empty') filteredBody.status = 'Open';
 
-  if (filteredBody._documentId) {
+  if (documentIds) {
     if (book.status === 'Closed' || book.status === 'Boxed')
       return next(
         new AppError(`Cannot add documents on ${box.status} book`, 404)
       );
     const bookDocuments = book._documentId;
     filteredBody._documentId = filteredBody._documentId.concat(bookDocuments);
-  }
 
-  const updatedBook = await Book.findByIdAndUpdate(id, filteredBody, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (filteredBody._documentId) {
-    for (const documentId of filteredBody._documentId) {
+    for (const documentId of documentIds) {
       const documentQuery = {
         _id: documentId,
         status: { $ne: 'Deleted' },
@@ -129,10 +123,17 @@ exports.updateBook = catchAsync(async (req, res, next) => {
       };
 
       const document = await Document.findOne(documentQuery);
+
+      console.log(documentQuery);
       document['storage']['_bookId'] = id;
       await document.save({ validateBeforeSave: false });
     }
   }
+
+  const updatedBook = await Book.findByIdAndUpdate(id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
 
   res.status(200).json({
     status: 'success',

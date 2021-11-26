@@ -189,7 +189,7 @@ exports.patchRole = catchAsync(async (req, res, next) => {
 exports.checkRoleInUsers = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Suspended'] },
     _role: id,
   };
 

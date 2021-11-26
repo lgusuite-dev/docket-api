@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 
 const User = require('../../models/GENERAL/user.model');
 const Team = require('../../models/GENERAL/team.model');
+const Role = require('../../models/GENERAL/role.model');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
