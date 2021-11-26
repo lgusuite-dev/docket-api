@@ -79,8 +79,9 @@ exports.getBox = catchAsync(async (req, res, next) => {
 });
 
 exports.updateBox = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', 'description', 'location', 'remarks', '_bookId'];
+  const pickFields = ['name', 'description', 'location', 'remarks', '_books'];
   const filteredBody = _.pick(req.body, pickFields);
+  const bookIds = [...filteredBody._books];
   const { id } = req.params;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -91,18 +92,11 @@ exports.updateBox = catchAsync(async (req, res, next) => {
   const box = await Box.findOne(initialQuery);
   if (!box) return next(new AppError('Box not found', 404));
 
-  if (filteredBody._bookId) {
-    const boxBooks = box._bookId;
-    filteredBody._bookId = filteredBody._bookId.concat(boxBooks);
-  }
+  if (filteredBody._books) {
+    const boxBooks = box._books;
+    filteredBody._books = filteredBody._books.concat(boxBooks);
 
-  const updatedBox = await Box.findByIdAndUpdate(id, filteredBody, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (filteredBody._bookId) {
-    for (const bookId of filteredBody._bookId) {
+    for (const bookId of bookIds) {
       const bookQuery = {
         _id: bookId,
         _tenantId: req.user._tenantId,
@@ -126,6 +120,11 @@ exports.updateBox = catchAsync(async (req, res, next) => {
       }
     }
   }
+
+  const updatedBox = await Box.findByIdAndUpdate(id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
 
   res.status(200).json({
     status: 'success',

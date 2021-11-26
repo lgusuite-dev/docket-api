@@ -23,7 +23,7 @@ const BoxSchema = new mongoose.Schema(
     },
     remarks: String,
     serialNumber: String,
-    _bookId: [
+    _books: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Book',

@@ -567,6 +567,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const pickFields = ['_taskId', 'message', 'type'];
   const filteredBody = _.pick(req.body, pickFields);
+  filteredBody.dateApproved = new Date();
 
   const documentQuery = {
     _id: id,

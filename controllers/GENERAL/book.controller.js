@@ -90,11 +90,11 @@ exports.updateBook = catchAsync(async (req, res, next) => {
     'coverageFrom',
     'coverageTo',
     'retensionPeriod',
-    '_documentId',
+    '_documents',
     '_boxId',
   ];
   const filteredBody = _.pick(req.body, pickFields);
-  const documentIds = [...filteredBody._documentId];
+  const documentIds = [...filteredBody._documents];
   const { id } = req.params;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -112,8 +112,8 @@ exports.updateBook = catchAsync(async (req, res, next) => {
       return next(
         new AppError(`Cannot add documents on ${box.status} book`, 404)
       );
-    const bookDocuments = book._documentId;
-    filteredBody._documentId = filteredBody._documentId.concat(bookDocuments);
+    const bookDocuments = book._documents;
+    filteredBody._documents = filteredBody._documents.concat(bookDocuments);
 
     for (const documentId of documentIds) {
       const documentQuery = {
@@ -212,7 +212,7 @@ exports.getBookDocuments = catchAsync(async (req, res, next) => {
 });
 
 exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
-  const pickFields = ['_documentId'];
+  const pickFields = ['_documents'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   const initialQuery = {
@@ -229,7 +229,7 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     );
 
   const documentQuery = {
-    _id: filteredBody._documentId,
+    _id: filteredBody._documents,
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
@@ -251,12 +251,12 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     }
   );
 
-  book._documentId.splice(book._documentId.indexOf(document._id), 1);
+  book._documents.splice(book._documents.indexOf(document._id), 1);
   const updateBookBody = {
-    _documentId: book._documentId,
+    _documents: book._documents,
   };
 
-  if (book._documentId.length === 0) updateBookBody['status'] = 'Empty';
+  if (book._documents.length === 0) updateBookBody['status'] = 'Empty';
 
   const updatedBook = await Book.findByIdAndUpdate(id, updateBookBody, {
     new: true,
