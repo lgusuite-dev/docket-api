@@ -9,6 +9,11 @@ router.route('/').get(boxController.getAllBoxes).post(boxController.createBox);
 
 router.route('/:id').get(boxController.getBox).put(boxController.updateBox);
 
-router.route('/:id/books').get(boxController.getBoxBooks);
+router
+  .route('/:id/books')
+  .get(boxController.getBoxBooks)
+  .put(boxController.removeBookFromBox);
+
+router.route('/:id/book/:bookId').put(boxController.transferBookToBox);
 
 module.exports = router;
