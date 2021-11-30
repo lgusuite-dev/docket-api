@@ -81,7 +81,7 @@ exports.getBox = catchAsync(async (req, res, next) => {
 exports.updateBox = catchAsync(async (req, res, next) => {
   const pickFields = ['name', 'description', 'location', 'remarks', '_books'];
   const filteredBody = _.pick(req.body, pickFields);
-  const bookIds = [...filteredBody._books];
+  const bookIds = [filteredBody._books];
   const { id } = req.params;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -103,10 +103,11 @@ exports.updateBox = catchAsync(async (req, res, next) => {
       };
 
       const book = await Book.findOne(bookQuery);
-      const bookDocuments = book._documentId;
+      const bookDocuments = book._documents;
       book.status = 'Boxed';
       book._boxId = id;
       await book.save({ validateBeforeSave: false });
+      console.log(bookDocuments);
       for (const documentId of bookDocuments) {
         const documentQuery = {
           _id: documentId,
@@ -115,7 +116,8 @@ exports.updateBox = catchAsync(async (req, res, next) => {
         };
 
         const document = await Document.findOne(documentQuery);
-        document['storage']['_boxId'] = id;
+
+        document.storage['_boxId'] = id;
         await document.save({ validateBeforeSave: false });
       }
     }
@@ -168,6 +170,153 @@ exports.getBoxBooks = catchAsync(async (req, res, next) => {
     total_docs: nBooks,
     env: {
       books,
+    },
+  });
+});
+
+exports.removeBookFromBox = catchAsync(async (req, res, next) => {
+  const pickFields = ['_books'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const box = await Box.findOne(initialQuery);
+  if (!box) return next(new AppError('Box not found', 404));
+
+  const bookQuery = {
+    _id: filteredBody._books,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const book = await Book.findOne(bookQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+  await Book.findByIdAndUpdate(
+    book._id,
+    {
+      status: 'Closed',
+      _boxId: null,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+  const bookDocuments = book._documents;
+  await book.save({ validateBeforeSave: false });
+  for (const documentId of bookDocuments) {
+    const documentQuery = {
+      _id: documentId,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
+    const document = await Document.findOne(documentQuery);
+
+    document.storage['_boxId'] = null;
+    await document.save({ validateBeforeSave: false });
+  }
+  box._books.splice(box._books.indexOf(book._id), 1);
+
+  const updatedBoxBody = {
+    _books: box._books,
+  };
+
+  const updatedBox = await Box.findByIdAndUpdate(id, updatedBoxBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      book: updatedBox,
+    },
+  });
+});
+
+exports.transferBookToBox = catchAsync(async (req, res, next) => {
+  const { id, bookId } = req.params;
+
+  const bookQuery = {
+    _id: bookId,
+    _tenantId: req.user._tenantId,
+  };
+
+  const book = await Book.findOne(bookQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+
+  const bookDocuments = book._documents;
+  await book.save({ validateBeforeSave: false });
+  for (const documentId of bookDocuments) {
+    const documentQuery = {
+      _id: documentId,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
+    const document = await Document.findOne(documentQuery);
+
+    document.storage['_boxId'] = id;
+    await document.save({ validateBeforeSave: false });
+  }
+
+  const initialQuery = {
+    _id: book._boxId,
+    _tenantId: req.user._tenantId,
+  };
+
+  const box = await Box.findOne(initialQuery);
+  if (!box) return next(new AppError('Box not found', 404));
+
+  box._books.splice(box._books.indexOf(bookId), 1);
+
+  const updateBoxBody = {
+    _book: box._books,
+  };
+
+  const updatedBox = await Box.findByIdAndUpdate(
+    initialQuery._id,
+    updateBoxBody,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  initialQuery._id = id;
+
+  const transferedBox = await Box.findOne(initialQuery);
+  if (!box) return next(new AppError('Box not found', 404));
+
+  console.log(book);
+
+  const updatedBookId = {
+    _boxId: id,
+  };
+
+  const updatedBook = await Book.findByIdAndUpdate(bookId, updatedBookId);
+
+  const updateTransferedBoxBody = {
+    _books: [transferedBox._book, updatedBook],
+  };
+
+  const updatedTransferedBox = await Box.findByIdAndUpdate(
+    id,
+    updateTransferedBoxBody,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      initialBox: updatedBox,
+      transferedbox: updatedTransferedBox,
+      book: updatedBook,
     },
   });
 });

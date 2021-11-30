@@ -21,4 +21,8 @@ router
   .get(bookController.getBookDocuments)
   .put(bookController.removeDocumentFromBook);
 
+router
+  .route('/:id/document/:documentId')
+  .put(bookController.transferDocumentToBook);
+
 module.exports = router;

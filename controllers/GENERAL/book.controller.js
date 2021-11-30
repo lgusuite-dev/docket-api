@@ -211,14 +211,14 @@ exports.getBookDocuments = catchAsync(async (req, res, next) => {
 });
 
 exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
-  const pickFields = ['_documentId'];
+  const pickFields = ['_documents'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   const initialQuery = {
     _id: id,
     _tenantId: req.user._tenantId,
   };
-
+  console.log(filteredBody);
   const book = await Book.findOne(initialQuery);
   if (!book) return next(new AppError('Book not found', 404));
 
@@ -228,11 +228,11 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     );
 
   const documentQuery = {
-    _id: filteredBody._documentId,
+    _id: filteredBody._documents,
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
-
+  console.log(filteredBody._documents);
   const document = await Document.findOne(documentQuery);
   if (!document) return next(new AppError('Document not found', 404));
 
@@ -266,6 +266,84 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     status: 'success',
     env: {
       book: updatedBook,
+    },
+  });
+});
+
+exports.transferDocumentToBook = catchAsync(async (req, res, next) => {
+  const { id, documentId } = req.params;
+
+  const documentQuery = {
+    _id: documentId,
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(documentQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const initialQuery = {
+    _id: document.storage._bookId,
+    _tenantId: req.user._tenantId,
+  };
+
+  const book = await Book.findOne(initialQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+
+  book._documents.splice(book._documents.indexOf(documentId), 1);
+
+  const updateBookBody = {
+    _documents: book._documents,
+  };
+
+  if (book._documents.length === 0) {
+    updateBookBody['status'] = 'Empty';
+  }
+
+  const updatedBook = await Book.findByIdAndUpdate(
+    initialQuery._id,
+    updateBookBody,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  initialQuery._id = id;
+  const transferedBook = await Book.findOne(initialQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+
+  const updatedDocumentBody = {
+    storage: { _bookId: id },
+  };
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    documentId,
+    updatedDocumentBody
+  );
+
+  const updateTransferedBookBody = {
+    _documents: [...transferedBook._documents, updatedDocument],
+  };
+
+  if (transferedBook.status === 'Empty') {
+    updateTransferedBookBody['status'] = 'Open';
+  }
+
+  const updatedTransferedBook = await Book.findByIdAndUpdate(
+    id,
+    updateTransferedBookBody,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      book: updatedBook,
+      transferedBook: updatedTransferedBook,
+      document: updatedDocument,
     },
   });
 });
