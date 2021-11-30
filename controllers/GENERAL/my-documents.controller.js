@@ -73,7 +73,10 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
     _parentId: id,
   };
 
-  let currentFolder = await Folder.findById(id);
+  let currentFolder = await Folder.findOne({
+    _id: id,
+    status: { $ne: 'Deleted' },
+  });
 
   if (!currentFolder) return next(new AppError('Folder not found', 404));
 
