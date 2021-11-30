@@ -53,7 +53,6 @@ const TaskSchema = new mongoose.Schema(
         'Deleted',
         'Cancelled',
         'Declined',
-        'Approved',
         'For Approval',
       ],
     },

@@ -579,6 +579,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   if (!document) return next(new AppError('Document not found', 404));
 
   document.type = filteredBody.type;
+  document.dateApproved = new Date();
 
   const taskQuery = {
     _id: filteredBody._taskId,

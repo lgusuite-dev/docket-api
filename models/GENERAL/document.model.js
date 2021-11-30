@@ -105,10 +105,10 @@ const DocumentSchema = new mongoose.Schema(
       department: String,
       position: String,
       email: String,
-      dateReleased: Date,
       prefix: String,
       suffix: String,
     },
+    dateReleased: Date,
     message: {
       from: {
         type: mongoose.Schema.Types.ObjectId,

@@ -33,6 +33,7 @@ const referenceIdCleanup = async (ModelAndProps, docId) => {
 
 exports.getRoot = catchAsync(async (req, res, next) => {
   const initialQuery = {
+    type: { $ne: 'Incoming' },
     _createdBy: req.user._id,
     status: { $ne: 'Deleted' },
     _parentId: { $eq: null },
@@ -66,6 +67,7 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
 
   const openedFolders = [];
   const initialQuery = {
+    type: { $ne: 'Incoming' },
     status: { $ne: 'Deleted' },
     _createdBy: req.user._id,
     _parentId: id,
