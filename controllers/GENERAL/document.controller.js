@@ -322,7 +322,9 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
     ).toString();
   }
 
-  if (document.type === 'Inbound') filteredBody.isAssigned = false;
+  if (document.type === 'Incoming' && document.isAssigned !== true) {
+    filteredBody.isAssigned = false;
+  }
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,
