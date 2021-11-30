@@ -20,6 +20,7 @@ exports.createTask = catchAsync(async (req, res, next) => {
     'remarks',
     '_assigneeId',
     '_documentId',
+    '_referenceId',
   ];
   let filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
@@ -191,6 +192,7 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     'remarks',
     '_assigneeId',
     '_documentId',
+    '_referenceId',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
