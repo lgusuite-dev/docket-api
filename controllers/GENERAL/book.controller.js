@@ -211,14 +211,14 @@ exports.getBookDocuments = catchAsync(async (req, res, next) => {
 });
 
 exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
-  const pickFields = ['_documentId'];
+  const pickFields = ['_documents'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   const initialQuery = {
     _id: id,
     _tenantId: req.user._tenantId,
   };
-
+  console.log(filteredBody);
   const book = await Book.findOne(initialQuery);
   if (!book) return next(new AppError('Book not found', 404));
 
@@ -228,11 +228,11 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     );
 
   const documentQuery = {
-    _id: filteredBody._documentId,
+    _id: filteredBody._documents,
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
-
+  console.log(filteredBody._documents);
   const document = await Document.findOne(documentQuery);
   if (!document) return next(new AppError('Document not found', 404));
 
