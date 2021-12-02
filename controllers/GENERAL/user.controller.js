@@ -12,8 +12,9 @@ const QueryFeatures = require('../../utils/query/queryFeatures');
 
 const createID = () => new mongoose.Types.ObjectId();
 
-const userPatchOrDeleteCascade = async (userId) => {
+const userPatchOrDeleteCascade = async (userId, req) => {
   const user = await User.findById(userId);
+  const { prevStatus } = req.query;
   const { status, _teams } = user;
 
   if (status === 'Deleted' || status === 'Suspended') {
@@ -25,7 +26,7 @@ const userPatchOrDeleteCascade = async (userId) => {
       }
     }
   } else {
-    if (_teams) {
+    if (_teams && prevStatus === 'Active') {
       for (const teamId of _teams) {
         const team = await Team.findById(teamId);
         team.users = [...team.users, userId];
@@ -375,7 +376,7 @@ exports.patchUser = catchAsync(async (req, res, next) => {
 
   await updateChildBasedOnAction(type, action, user, req);
 
-  await userPatchOrDeleteCascade(id);
+  await userPatchOrDeleteCascade(id, req);
 
   res.status(200).json({
     status: 'success',

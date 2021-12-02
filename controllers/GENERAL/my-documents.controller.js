@@ -158,7 +158,7 @@ exports.createFolder = catchAsync(async (req, res, next) => {
 });
 
 exports.updateFolder = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', '_parentId'];
+  const pickFields = ['name', '_parentId', '_sharedTo'];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
 
@@ -246,7 +246,13 @@ exports.getDocument = catchAsync(async (req, res, next) => {
 
 exports.updateDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['subject', '_includes', '_exludes', '_files'];
+  const pickFields = [
+    'subject',
+    '_includes',
+    '_exludes',
+    '_files',
+    '_sharedTo',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
 
