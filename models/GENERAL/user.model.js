@@ -65,7 +65,7 @@ const UserSchema = new mongoose.Schema(
     },
     access_level: {
       type: Number,
-      enum: [1, 2, 3, 4],
+      enum: [0, 1, 2, 3, 4],
     },
     type: {
       type: String,

@@ -76,6 +76,7 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
     pickFields = ['message', '_documentId', 'status'];
   } else if (req.body.status === 'Declined') {
     pickFields = ['message', 'status'];
+    _;
   } else if (req.body.status === 'For Approval') {
     pickFields = ['message', '_documentId', 'status'];
   } else {
