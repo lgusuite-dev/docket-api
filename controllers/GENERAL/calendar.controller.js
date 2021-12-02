@@ -44,7 +44,6 @@ exports.getAllByTeam = catchAsync(async (req, res, next) => {
   let events = [];
   let _tasks = [];
   let _events = [];
-  console.log(req.params.id);
 
   const team = await Team.findById(req.params.id).populate('users', 'email');
 
