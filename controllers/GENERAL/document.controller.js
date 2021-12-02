@@ -5,6 +5,10 @@ const File = require('../../models/GENERAL/file.model');
 const Task = require('../../models/GENERAL/task.model');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
+const ControlNumber = require('../../utils/control-number/controlNumber');
+
+const settings = require('../../mock/settings');
+
 const { updateSideEffects } = require('../../utils/cleanup');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -708,3 +712,34 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
 });
 
 exports.getAssigned = catchAsync(async (req, res, next) => {});
+
+exports.generateControlNumber = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: '619f5c8c123f3ec5f10862a9',
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const configs = settings.ALGORITHM;
+  let controlNumber = await new ControlNumber(document, configs)
+    .fieldBased('type')
+    .sequence('monthly')
+    .month()
+    .year()
+    .sequence('yearly')
+    .fieldBased('classification')
+    .generate();
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      controlNumber: controlNumber,
+    },
+  });
+});
