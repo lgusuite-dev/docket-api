@@ -20,7 +20,6 @@ exports.createTask = catchAsync(async (req, res, next) => {
     'remarks',
     '_assigneeId',
     '_documentId',
-    '_referenceId',
   ];
   let filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
@@ -77,6 +76,7 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
     pickFields = ['message', '_documentId', 'status'];
   } else if (req.body.status === 'Declined') {
     pickFields = ['message', 'status'];
+    _;
   } else if (req.body.status === 'For Approval') {
     pickFields = ['message', '_documentId', 'status'];
   } else {
@@ -192,7 +192,6 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     'remarks',
     '_assigneeId',
     '_documentId',
-    '_referenceId',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;

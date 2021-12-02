@@ -43,12 +43,6 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Document',
     },
-    _referenceId: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Document',
-      },
-    ],
     status: {
       type: String,
       trim: true,
