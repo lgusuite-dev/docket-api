@@ -174,6 +174,7 @@ const DocumentSchema = new mongoose.Schema(
     },
     _includes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     _excludes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    _sharedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     classification: String,
     subClassification: String,
     remarks: String,
