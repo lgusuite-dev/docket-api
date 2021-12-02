@@ -32,7 +32,7 @@ const TaskSchema = new mongoose.Schema(
     remarks: {
       type: String,
       trim: true,
-      required: [true, 'Please provide remarks'],
+      // required: [true, 'Please provide remarks'], //remarks is required only when instruction == "Others"
     },
     _assigneeId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -43,12 +43,6 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Document',
     },
-    _referenceId: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Document',
-      },
-    ],
     status: {
       type: String,
       trim: true,
