@@ -320,10 +320,25 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   if (!document) return next(new AppError('Document not found', 404));
 
   if (!document.controlNumber) {
-    //control number generator
-    filteredBody.controlNumber = Math.floor(
-      Math.random() * 1000000000
-    ).toString();
+    const data = {
+      type: document.type,
+      ...filteredBody,
+    };
+    const configs = settings.ALGORITHM;
+    const controlNumber = await new ControlNumber(
+      data,
+      configs,
+      req.user._tenantId
+    )
+      .fieldBased('type')
+      .sequence('monthly')
+      .month()
+      .year()
+      .sequence('yearly')
+      .fieldBased('classification')
+      .generate();
+
+    filteredBody.controlNumber = controlNumber;
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
@@ -719,7 +734,7 @@ exports.generateControlNumber = catchAsync(async (req, res, next) => {
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
-    _tenantId: '619f5c8c123f3ec5f10862a9',
+    _tenantId: '61a9bc9d56618e3208f8607f',
   };
 
   const document = await Document.findOne(initialQuery);
@@ -727,7 +742,11 @@ exports.generateControlNumber = catchAsync(async (req, res, next) => {
   if (!document) return next(new AppError('Document not found', 404));
 
   const configs = settings.ALGORITHM;
-  let controlNumber = await new ControlNumber(document, configs)
+  let controlNumber = await new ControlNumber(
+    document,
+    configs,
+    '61a9bc9d56618e3208f8607f'
+  )
     .fieldBased('type')
     .sequence('monthly')
     .month()

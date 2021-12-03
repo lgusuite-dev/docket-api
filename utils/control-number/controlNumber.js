@@ -1,7 +1,8 @@
 const Document = require('../../models/GENERAL/document.model');
 
 class ControlNumber {
-  constructor(document, configs) {
+  constructor(document, configs, _tenantId) {
+    this._tenantId = _tenantId;
     this.now = new Date();
     this.document = document;
     this.configs = configs;
@@ -29,9 +30,15 @@ class ControlNumber {
   sequence(reset) {
     let config = this.configs.sequence;
     let data = this.document[config.path];
-    let times;
+    let times, from, to;
 
+    //Needs to refactor this part
     if (reset == 'monthly') {
+      from = new Date(this.now.getFullYear(), this.now.getMonth(), 2);
+      from.setHours(0, 0, 0, 0);
+      to = new Date(this.now.getFullYear(), this.now.getMonth() + 1, 0);
+      to.setHours(23, 59, 59, 999);
+
       let start = new Date(this.now.getFullYear(), this.now.getMonth(), 1);
       start.setHours(0, 0, 0, 0);
       let end = new Date(this.now.getFullYear(), this.now.getMonth(), 1);
@@ -42,6 +49,11 @@ class ControlNumber {
         end: end,
       };
     } else if (reset === 'yearly') {
+      from = new Date(this.now.getFullYear(), 0, 2);
+
+      to = new Date(this.now.getFullYear(), 11, 31);
+      to.setHours(23, 59, 59, 999);
+
       let start = new Date(this.now.getFullYear(), 0, 1);
       start.setHours(0, 0, 0, 0);
       let end = new Date(this.now.getFullYear(), 0, 1);
@@ -57,10 +69,25 @@ class ControlNumber {
 
     let queryConfig = config.queries[config.path];
 
-    let { _tenantId } = this.document;
+    let findConfig = eval(JSON.parse(queryConfig.find));
+    for (let [key, val] of Object.entries(findConfig)) {
+      if (typeof val === 'object') {
+        for (let [key1, val1] of Object.entries(val)) {
+          val[key1] = eval(val1.replace(/\//g, ''));
+          findConfig[key] = {
+            ...findConfig[key],
+            ...val,
+          };
+        }
+      } else {
+        findConfig[key] = eval(val.replace(/\//g, ''));
+      }
+    }
+
     let findQuery = {
-      ...eval(queryConfig.find),
-      _tenantId: _tenantId,
+      ...findConfig,
+      _tenantId: this._tenantId,
+      controlNumber: { $regex: '.*(R|I|O).*' },
       status: { $ne: 'Deleted' },
     };
 
@@ -71,7 +98,8 @@ class ControlNumber {
       separate: config.separate,
       query: query,
       callBack: (result, index) => {
-        let currentSequence = config.default;
+        let currentSequence = parseInt(config.default);
+        //Checker if controlNumber will reset or not
         if (result.length !== 0) {
           let previousControlNumber = result[0][this.configs.path].split(
             this.configs.separator
@@ -82,8 +110,8 @@ class ControlNumber {
                 previousControlNumber[index] !== currentSequence) ||
               !willResetSeq
             ) {
-              currentSequence = previousControlNumber[index];
-              currentSequence += config.increment;
+              currentSequence = parseInt(previousControlNumber[index]);
+              currentSequence += parseInt(config.increment);
             }
           }
         }
@@ -99,6 +127,7 @@ class ControlNumber {
   }
 
   month() {
+    //Needs moment JS for the format
     let config = this.configs.month;
     this.controlNumberArray.push({
       value: this.now.getMonth() + 1,
@@ -108,6 +137,7 @@ class ControlNumber {
   }
 
   year() {
+    //Needs moment JS for the format
     let config = this.configs.year;
     let year = this.now.getFullYear().toString();
     this.controlNumberArray.push({
@@ -118,20 +148,23 @@ class ControlNumber {
   }
 
   async generate() {
+    //Refactor for separator
     let controlNumberArray = [];
     let oldVal = '';
     for (let [key, row] of Object.entries(this.controlNumberArray)) {
-      let value = oldVal + row.value;
+      let value = row.value;
       if (!row.value && row.query) {
         value = row.callBack(await row.query, key);
       }
 
-      if (row.separate) {
-        oldVal = '';
-        controlNumberArray.push(value);
-      } else {
-        oldVal = value;
-      }
+      controlNumberArray.push(value);
+
+      // if (row.separate) {
+      //   oldVal = '';
+      //   controlNumberArray.push(value);
+      // } else {
+      //   oldVal = value;
+      // }
     }
     return controlNumberArray.join(this.configs.separator);
   }
