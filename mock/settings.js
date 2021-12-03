@@ -1,9 +1,11 @@
 // R-100-1121-100-A
 
 exports.ALGORITHM = {
+  separator: '-',
+  path: 'controlNumber',
   fieldBased: {
-    separator: '-',
     default: 'QCLD',
+    separate: true,
     logics: [
       {
         if: '/data/ == "Incoming"',
@@ -17,16 +19,23 @@ exports.ALGORITHM = {
   },
   sequence: {
     path: 'type',
-    separator: '-',
+    default: 100,
     increment: 1,
-    query: {
-      collection: 'Document',
-      find: '{type: type}',
+    padding: '3, "0"',
+    separate: true,
+    queries: {
+      type: {
+        collection: 'Document',
+        find: '{type: data}',
+        sort: '-_createdBy',
+      },
     },
   },
-  month: {},
+  month: {
+    separate: false,
+  },
   year: {
     format: 'YY',
-    separator: '-',
+    separate: true,
   },
 };

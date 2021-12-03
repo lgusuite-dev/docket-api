@@ -17,8 +17,8 @@ class ControlNumber {
       let condition = logic.if.replace(/\//g, '');
       if (eval(condition)) {
         this.controlNumberArray.push({
+          separate: config.separate,
           value: logic.then,
-          separator: config.separator,
         });
         break;
       }
@@ -28,53 +28,72 @@ class ControlNumber {
 
   sequence(reset) {
     let config = this.configs.sequence;
-    let dates;
+    let data = this.document[config.path];
+    let times;
+
     if (reset == 'monthly') {
-      dates = {
-        start: new Date(this.now.getFullYear(), this.now.getMonth() + 1, 0),
-        end: new Date(this.now.getFullYear(), this.now.getMonth(), 0),
+      let start = new Date(this.now.getFullYear(), this.now.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
+      let end = new Date(this.now.getFullYear(), this.now.getMonth(), 1);
+      end.setHours(23, 59, 59, 999);
+
+      times = {
+        start: start,
+        end: end,
       };
     } else if (reset === 'yearly') {
-      dates = {
-        start: new Date(this.now.getFullYear(), 0, 1),
-        end: new Date(this.now.getFullYear(), 12, 0),
+      let start = new Date(this.now.getFullYear(), 0, 1);
+      start.setHours(0, 0, 0, 0);
+      let end = new Date(this.now.getFullYear(), 0, 1);
+      end.setHours(23, 59, 59, 999);
+
+      times = {
+        start: start,
+        end: end,
       };
     }
 
-    let willResetSeq = !dates.start >= this.now && dates.end <= this.now;
+    let willResetSeq = times.start <= this.now && times >= this.now;
 
-    let { type, _tenantId } = this.document;
+    let queryConfig = config.queries[config.path];
+
+    let { _tenantId } = this.document;
     let findQuery = {
-      ...eval(config.query.find),
+      ...eval(queryConfig.find),
       _tenantId: _tenantId,
       status: { $ne: 'Deleted' },
     };
 
-    let model = eval(config.query.collection);
+    let model = eval(queryConfig.collection);
 
-    let currentSequence = 100;
+    let query = model.find(findQuery).sort(queryConfig.sort);
+    this.controlNumberArray.push({
+      separate: config.separate,
+      query: query,
+      callBack: (result, index) => {
+        let currentSequence = config.default;
+        if (result.length !== 0) {
+          let previousControlNumber = result[0][this.configs.path].split(
+            this.configs.separator
+          );
+          if (previousControlNumber[index]) {
+            if (
+              (willResetSeq &&
+                previousControlNumber[index] !== currentSequence) ||
+              !willResetSeq
+            ) {
+              currentSequence = previousControlNumber[index];
+              currentSequence += config.increment;
+            }
+          }
+        }
 
-    let obj = {
-      separator: config.separator,
-    };
-
-    if (!willResetSeq) {
-      let query = model.count(findQuery);
-      this.controlNumberArray.push({
-        ...obj,
-        query: query,
-        callBack: (currentSequence) => {
-          currentSequence += config.increment;
-          currentSequence = currentSequence.toString().padStart(3, '0');
-          return currentSequence;
-        },
-      });
-    } else {
-      this.controlNumberArray.push({
-        ...obj,
-        value: currentSequence,
-      });
-    }
+        currentSequence = currentSequence
+          .toString()
+          .padStart(eval(config.padding));
+        return currentSequence;
+      },
+    });
 
     return this;
   }
@@ -83,7 +102,7 @@ class ControlNumber {
     let config = this.configs.month;
     this.controlNumberArray.push({
       value: this.now.getMonth() + 1,
-      separator: config.separator,
+      separate: config.separate,
     });
     return this;
   }
@@ -93,21 +112,28 @@ class ControlNumber {
     let year = this.now.getFullYear().toString();
     this.controlNumberArray.push({
       value: year.substr(-2),
-      separator: config.separator,
+      separate: config.separate,
     });
     return this;
   }
 
   async generate() {
-    let controlNumber = '';
-    for (let row of this.controlNumberArray) {
-      let value = row.value;
-      if (!value && row.query) {
-        value = row.callBack(await row.query);
+    let controlNumberArray = [];
+    let oldVal = '';
+    for (let [key, row] of Object.entries(this.controlNumberArray)) {
+      let value = oldVal + row.value;
+      if (!row.value && row.query) {
+        value = row.callBack(await row.query, key);
       }
-      controlNumber = controlNumber.concat(value, row.separator || '');
+
+      if (row.separate) {
+        oldVal = '';
+        controlNumberArray.push(value);
+      } else {
+        oldVal = value;
+      }
     }
-    return controlNumber;
+    return controlNumberArray.join(this.configs.separator);
   }
 }
 
