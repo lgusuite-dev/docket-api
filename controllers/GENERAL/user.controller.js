@@ -325,7 +325,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
 
   if (!user) return next(new AppError('User not found', 404));
 
-  await userPatchOrDeleteCascade(id);
+  await userPatchOrDeleteCascade(id, req);
 
   if (type === 'admins') {
     const query = {
