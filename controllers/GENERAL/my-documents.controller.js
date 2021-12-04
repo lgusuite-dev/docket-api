@@ -39,19 +39,26 @@ exports.getRoot = catchAsync(async (req, res, next) => {
     _parentId: { $eq: null },
   };
 
-  const folder = await Folder.find(initialQuery);
+  const folder = await Folder.find(initialQuery).populate({
+    path: '_sharedTo',
+  });
 
   delete initialQuery._parentId;
   initialQuery['_folderId'] = { $eq: null };
 
-  const document = await Document.find(initialQuery).populate({
-    path: '_files',
-    select: '-name -dropbox',
-    populate: {
-      path: '_versions _currentVersionId',
-      select: 'name status dropbox description versionNumber createdAt',
+  const document = await Document.find(initialQuery).populate([
+    {
+      path: '_files',
+      select: '-name -dropbox',
+      populate: {
+        path: '_versions _currentVersionId',
+        select: 'name status dropbox description versionNumber createdAt',
+      },
     },
-  });
+    {
+      path: '_sharedTo',
+    },
+  ]);
 
   return res.status(200).json({
     status: 'success',
@@ -80,19 +87,26 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
 
   if (!currentFolder) return next(new AppError('Folder not found', 404));
 
-  const folder = await Folder.find(initialQuery);
+  const folder = await Folder.find(initialQuery).popilate({
+    path: '_sharedTo',
+  });
 
   delete initialQuery._parentId;
   initialQuery['_folderId'] = id;
 
-  const document = await Document.find(initialQuery).populate({
-    path: '_files',
-    select: '-name -dropbox',
-    populate: {
-      path: '_versions _currentVersionId',
-      select: 'name status dropbox description versionNumber createdAt',
+  const document = await Document.find(initialQuery).populate([
+    {
+      path: '_files',
+      select: '-name -dropbox',
+      populate: {
+        path: '_versions _currentVersionId',
+        select: 'name status dropbox description versionNumber createdAt',
+      },
     },
-  });
+    {
+      path: '_sharedTo',
+    },
+  ]);
 
   openedFolders.push({
     id: currentFolder._id,
