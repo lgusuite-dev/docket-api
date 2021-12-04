@@ -5,6 +5,10 @@ const File = require('../../models/GENERAL/file.model');
 const Task = require('../../models/GENERAL/task.model');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
+const ControlNumber = require('../../utils/control-number/controlNumber');
+
+const settings = require('../../mock/settings');
+
 const { updateSideEffects } = require('../../utils/cleanup');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -316,10 +320,25 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   if (!document) return next(new AppError('Document not found', 404));
 
   if (!document.controlNumber) {
-    //control number generator
-    filteredBody.controlNumber = Math.floor(
-      Math.random() * 1000000000
-    ).toString();
+    const data = {
+      type: document.type,
+      ...filteredBody,
+    };
+    const configs = settings.ALGORITHM;
+    const controlNumber = await new ControlNumber(
+      data,
+      configs,
+      req.user._tenantId
+    )
+      .fieldBased('type')
+      .sequence('monthly')
+      .month()
+      .year()
+      .sequence('yearly')
+      .fieldBased('classification')
+      .generate();
+
+    filteredBody.controlNumber = controlNumber;
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
@@ -708,3 +727,38 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
 });
 
 exports.getAssigned = catchAsync(async (req, res, next) => {});
+
+exports.generateControlNumber = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: '61a9bc9d56618e3208f8607f',
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const configs = settings.ALGORITHM;
+  let controlNumber = await new ControlNumber(
+    document,
+    configs,
+    '61a9bc9d56618e3208f8607f'
+  )
+    .fieldBased('type')
+    .sequence('monthly')
+    .month()
+    .year()
+    .sequence('yearly')
+    .fieldBased('classification')
+    .generate();
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      controlNumber: controlNumber,
+    },
+  });
+});
