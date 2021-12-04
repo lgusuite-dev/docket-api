@@ -36,6 +36,7 @@ const BookSchema = new mongoose.Schema(
       enum: ['Boxed', 'Open', 'Closed', 'Empty'],
     },
     serialNumber: String,
+    controlNumber: String,
     _documents: [
       {
         type: mongoose.Schema.Types.ObjectId,
