@@ -1,35 +1,49 @@
 const Document = require('../../models/GENERAL/document.model');
+const Book = require('../../models/GENERAL/book.model');
+const Box = require('../../models/GENERAL/box.model');
 
 class ControlNumber {
-  constructor(document, configs, _tenantId) {
+  constructor(dataRow, configs, _tenantId) {
     this._tenantId = _tenantId;
     this.now = new Date();
-    this.document = document;
+    this.dataRow = dataRow;
     this.configs = configs;
     this.controlNumberArray = [];
   }
 
   fieldBased(path) {
-    let data = this.document[path];
     let config = this.configs.fieldBased;
-    let logics = config.logics;
 
-    for (let logic of logics) {
-      let condition = logic.if.replace(/\//g, '');
-      if (eval(condition)) {
-        this.controlNumberArray.push({
-          separate: config.separate,
-          value: logic.then,
-        });
-        break;
+    let found = false;
+    if (this.dataRow[path] && config.logics) {
+      let data = this.dataRow[path];
+      let logics = config.logics;
+      for (let logic of logics) {
+        let condition = logic.if.replace(/\//g, '');
+        if (eval(condition)) {
+          this.controlNumberArray.push({
+            separate: config.separate,
+            value: logic.then,
+          });
+          found = true;
+          break;
+        }
       }
     }
+
+    if (!found) {
+      this.controlNumberArray.push({
+        separate: config.separate,
+        value: config.default,
+      });
+    }
+
     return this;
   }
 
-  sequence(reset) {
+  sequence(reset, queryKey) {
     let config = this.configs.sequence;
-    let data = this.document[config.path];
+    let data = this.dataRow[queryKey];
     let times, from, to;
 
     //Needs to refactor this part
@@ -67,32 +81,53 @@ class ControlNumber {
 
     let willResetSeq = times.start <= this.now && times >= this.now;
 
-    let queryConfig = config.queries[config.path];
-
-    let findConfig = eval(JSON.parse(queryConfig.find));
-    for (let [key, val] of Object.entries(findConfig)) {
-      if (typeof val === 'object') {
-        for (let [key1, val1] of Object.entries(val)) {
-          val[key1] = eval(val1.replace(/\//g, ''));
-          findConfig[key] = {
-            ...findConfig[key],
-            ...val,
-          };
-        }
-      } else {
-        findConfig[key] = eval(val.replace(/\//g, ''));
-      }
-    }
+    let queryConfig = config.queries[queryKey];
 
     let findQuery = {
-      ...findConfig,
       _tenantId: this._tenantId,
-      controlNumber: { $regex: '.*(R|I|O).*' },
       status: { $ne: 'Deleted' },
     };
 
-    let model = eval(queryConfig.collection);
+    let dataRegex = '';
+    if (queryConfig.find) {
+      if (queryConfig.dataRegex) {
+        for (let logic of queryConfig.dataRegex) {
+          let condition = logic.if.replace(/\//g, '');
+          if (eval(condition)) {
+            dataRegex = logic.then;
+            break;
+          }
+        }
+      }
 
+      let findConfig = eval(JSON.parse(queryConfig.find));
+      for (let [key, val] of Object.entries(findConfig)) {
+        if (typeof val === 'object') {
+          for (let [key1, val1] of Object.entries(val)) {
+            let regex = /\//g;
+            let isVariable = val1.match(regex);
+            if (isVariable) {
+              val[key1] = eval(val1.replace(/\//g, ''));
+              if (key1 === '$regex') val[key1] = eval(val[key1]).toString();
+            } else {
+              val[key1] = val1;
+            }
+            findConfig[key] = {
+              ...findConfig[key],
+              ...val,
+            };
+          }
+        } else {
+          findConfig[key] = eval(val.replace(/\//g, ''));
+        }
+      }
+      findQuery = {
+        ...findConfig,
+        ...findQuery,
+      };
+    }
+
+    let model = eval(queryConfig.collection);
     let query = model.find(findQuery).sort(queryConfig.sort);
     this.controlNumberArray.push({
       separate: config.separate,
