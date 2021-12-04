@@ -56,7 +56,7 @@ const DocumentSchema = new mongoose.Schema(
 
     finalStatus: {
       type: String,
-      enum: ['Approved', 'On Hold', 'Destroy'],
+      enum: ['Approved', 'On Hold', 'Destroy', 'Library'],
     },
     fileLength: {
       type: Number,
