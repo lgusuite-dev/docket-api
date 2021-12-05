@@ -11,9 +11,9 @@ const createPreview = (text) => {
   for (let [index, text] of splitDocText.entries()) {
     let nextValue = splitDocText[index + 1]
       ? // if truthy, get right side value
-        splitDocText[index + 1]
+      splitDocText[index + 1]
       : // if falsy, get left side value
-        splitDocText[index - 2];
+      splitDocText[index - 2];
 
     if (
       text.includes('<strong>') &&
@@ -94,7 +94,29 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     .paginate()
     .populate();
 
+
+  const nQueryFeatures = new QueryFeatures(
+    ScannedDocument.find({
+      $text: { $search: `${search}` },
+      confidentialityLevel: { $lte: req.user.access_level },
+      _tenantId: req.user._tenantId,
+      status: { $ne: 'Deleted' },
+    },
+      { score: { $meta: 'textScore' } },
+      { lean: true }
+    )
+      .sort({ score: { $meta: 'textScore' } })
+      .populate({
+        path: '_documentId',
+        populate: {
+          path: '_files',
+        },
+      }),
+    req.query)
+    .filter()
+    .count();
   const searchedDocuments = await searchedDocumentsQuery.query;
+  const scannedDocCounts = await nQueryFeatures.query
 
   // const searchedDocuments = await ScannedDocument.find(
   //   {
@@ -152,6 +174,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     results: searchedDocuments.length,
+    'total-docs': scannedDocCounts,
     env: {
       documents: searchedDocuments,
     },
