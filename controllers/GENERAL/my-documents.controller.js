@@ -35,7 +35,7 @@ exports.getSharedToMe = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
     status: { $ne: 'Deleted' },
-    _sharedTo: { $in: req.user._id },
+    _sharedTo: req.user._id,
   };
   // console.log(req.user._id);
   const sharedFolders = await Folder.find(initialQuery).populate({
