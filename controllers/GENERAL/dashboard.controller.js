@@ -165,11 +165,9 @@ exports.uploaderModule = catchAsync(async (req, res, next) => {
   ]);
 
   const uploadedCount = uploaded[0] ? uploaded[0].count : 0;
-  console.log(uploadedCount);
   const approvedUploaded = approved_uploaded[0]
     ? approved_uploaded[0].count
     : 0;
-  console.log(approvedUploaded);
 
   const total_documents_uploaded = uploadedCount + approvedUploaded;
 
