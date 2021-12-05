@@ -31,6 +31,40 @@ const referenceIdCleanup = async (ModelAndProps, docId) => {
   }
 };
 
+exports.getSharedToMe = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    type: { $ne: 'Incoming' },
+    status: { $ne: 'Deleted' },
+    _sharedTo: { $in: req.user._id },
+  };
+  // console.log(req.user._id);
+  const sharedFolders = await Folder.find(initialQuery).populate({
+    path: '_sharedTo',
+  });
+
+  const sharedDocuments = await Document.find(initialQuery).populate([
+    {
+      path: '_files',
+      select: '-name -dropbox',
+      populate: {
+        path: '_versions _currentVersionId',
+        select: 'name status dropbox description versionNumber createdAt',
+      },
+    },
+    {
+      path: '_sharedTo',
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      sharedFolders,
+      sharedDocuments,
+    },
+  });
+});
+
 exports.getRoot = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
