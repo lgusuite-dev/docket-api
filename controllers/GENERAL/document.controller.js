@@ -6,7 +6,6 @@ const Task = require('../../models/GENERAL/task.model');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
 const ControlNumber = require('../../utils/control-number/controlNumber');
-
 const settings = require('../../mock/settings');
 
 const { updateSideEffects } = require('../../utils/cleanup');
@@ -331,14 +330,15 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
       req.user._tenantId
     )
       .fieldBased('type')
-      .sequence('monthly')
+      .sequence('monthly', 'type')
       .month()
       .year()
-      .sequence('yearly')
+      .sequence('yearly', 'type')
       .fieldBased('classification')
       .generate();
 
     filteredBody.controlNumber = controlNumber;
+    filteredBody.dateClassified = new Date();
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
@@ -734,25 +734,37 @@ exports.generateControlNumber = catchAsync(async (req, res, next) => {
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
-    _tenantId: '61a9bc9d56618e3208f8607f',
+    _tenantId: '619f5c8c123f3ec5f10862a9',
   };
 
-  const document = await Document.findOne(initialQuery);
+  // const document = await Document.findOne(initialQuery);
 
-  if (!document) return next(new AppError('Document not found', 404));
+  // if (!document) return next(new AppError('Document not found', 404));
 
   const configs = settings.ALGORITHM;
+  // let controlNumber = await new ControlNumber(
+  //   document,
+  //   configs,
+  //   '619f5c8c123f3ec5f10862a9'
+  // )
+  //   .fieldBased('type')
+  //   .sequence('monthly', 'type')
+  //   .month()
+  //   .year()
+  //   .sequence('yearly', 'type')
+  //   .fieldBased('classification')
+  //   .generate();
+
   let controlNumber = await new ControlNumber(
-    document,
+    {},
     configs,
-    '61a9bc9d56618e3208f8607f'
+    '619f5c8c123f3ec5f10862a9'
   )
     .fieldBased('type')
-    .sequence('monthly')
+    .sequence('monthly', 'book')
     .month()
     .year()
-    .sequence('yearly')
-    .fieldBased('classification')
+    .sequence('yearly', 'book')
     .generate();
 
   res.status(200).json({

@@ -1,0 +1,18 @@
+const router = require('express').Router();
+
+const authController = require('../../controllers/GENERAL/auth.controller');
+const dashboardController = require('../../controllers/GENERAL/dashboard.controller');
+
+router.use(authController.authenticate);
+
+router.get('/receiver', dashboardController.receiverModule);
+router.get('/uploader', dashboardController.uploaderModule);
+router.get('/classifier', dashboardController.classifierModule);
+router.get('/printing', dashboardController.printingModule);
+router.get('/signature', dashboardController.signatureModule);
+router.get('/warehousing', dashboardController.warehousingModule);
+router.get('/task', dashboardController.taskModule);
+router.get('/approver', dashboardController.approverModule);
+router.get('/user', dashboardController.userModule);
+
+module.exports = router;

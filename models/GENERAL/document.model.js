@@ -52,10 +52,11 @@ const DocumentSchema = new mongoose.Schema(
       enum: ['Active', 'Deleted', 'Suspended'],
     },
     controlNumber: String,
+    dateClassified: Date,
 
     finalStatus: {
       type: String,
-      enum: ['Approved', 'On Hold', 'Destroy'],
+      enum: ['Approved', 'On Hold', 'Destroy', 'Library'],
     },
     fileLength: {
       type: Number,
@@ -140,10 +141,6 @@ const DocumentSchema = new mongoose.Schema(
       type: Boolean,
     },
     dateApproved: Date,
-    _taskId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Task',
-    },
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,
