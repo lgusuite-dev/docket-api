@@ -66,7 +66,6 @@ exports.ALGORITHM = {
     ],
   },
   sequence: {
-    path: 'type',
     default: 100,
     increment: 1,
     padding: '3, "0"',
@@ -74,7 +73,35 @@ exports.ALGORITHM = {
     queries: {
       type: {
         collection: 'Document',
-        find: '{ "type": "/data/", "createdAt": { "$gte": "/from/", "$lte": "/to/" } }',
+        find: '{ "type": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`^${dataRegex}.*`" } }',
+        dataRegex: [
+          {
+            if: '/data/ == "Incoming"',
+            then: 'R',
+          },
+          {
+            if: '/data/ == "Outgoing"',
+            then: 'O',
+          },
+          {
+            if: '/data/ == "Internal"',
+            then: 'I',
+          },
+          {
+            if: '/data/ == "Archived"',
+            then: 'A',
+          },
+        ],
+        sort: '-dateClassified',
+      },
+      book: {
+        collection: 'Book',
+        find: '{ "createdAt": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "^QCLD.*" } }',
+        sort: '-createdAt',
+      },
+      box: {
+        collection: 'Box',
+        find: '{ "createdAt": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "^QCLD.*" } }',
         sort: '-createdAt',
       },
     },

@@ -6,6 +6,7 @@ const taskController = require('../../controllers/GENERAL/task.controller');
 router.use(authController.authenticate);
 
 router.route('/').post(taskController.createTask).get(taskController.getTasks);
+router.route('/for-approval').get(taskController.getForApprovalTasks);
 router.route('/mine').get(taskController.getTasksAssignedToMe);
 router.route('/reply/:id').put(taskController.replyToTask);
 router

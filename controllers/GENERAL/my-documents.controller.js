@@ -87,7 +87,7 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
 
   if (!currentFolder) return next(new AppError('Folder not found', 404));
 
-  const folder = await Folder.find(initialQuery).popilate({
+  const folder = await Folder.find(initialQuery).populate({
     path: '_sharedTo',
   });
 
