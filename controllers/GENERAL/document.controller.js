@@ -195,7 +195,12 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 
 // UPDATE DOCUMENT OCR STATUS TO NO
 exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', 'description', 'dropbox'];
+  const pickFields = [
+    'name',
+    'description',
+    'dropbox',
+    'acknowledgementReceipt',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   filteredBody._documentId = id;
@@ -703,6 +708,7 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
     },
   });
 });
+
 exports.getFileTask = catchAsync(async (req, res, next) => {
   let route = [];
   const ids = req.params.ids.split(',');
@@ -727,7 +733,44 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getAssigned = catchAsync(async (req, res, next) => {});
+exports.getDocumentClassification = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+    $or: [
+      { $and: [{ type: 'Incoming' }, { fileLength: { $gte: 0 } }] },
+      { $and: [{ type: 'Outgoing' }, { 'process.uploaded': true }] },
+    ],
+  };
+
+  const queryFeatures = new QueryFeatures(
+    Document.find(initialQuery),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeatures = new QueryFeatures(
+    Document.find(initialQuery),
+    req.query
+  )
+    .filter()
+    .count();
+
+  const documents = await queryFeatures.query;
+  const nDocuments = await nQueryFeatures.query;
+
+  res.status(200).json({
+    status: 'Success',
+    total_docs: nDocuments,
+    env: {
+      documents,
+    },
+  });
+});
 
 exports.generateControlNumber = catchAsync(async (req, res, next) => {
   const { id } = req.params;

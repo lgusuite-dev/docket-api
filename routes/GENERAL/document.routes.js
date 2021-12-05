@@ -14,7 +14,9 @@ router
   .post(documentController.createDocument)
   .get(documentController.getAllDocuments);
 
-router.get('/assigned', documentController.getAssigned);
+router
+  .route('/classification')
+  .get(documentController.getDocumentClassification);
 
 router
   .route('/:id')
