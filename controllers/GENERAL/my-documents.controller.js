@@ -218,7 +218,7 @@ exports.updateFolder = catchAsync(async (req, res, next) => {
 
   const folder = await Folder.findOne(initialQuery);
   if (!folder) return next(new AppError('Folder not found', 404));
-  if (folder._createdBy.equals(req.user._id))
+  if (folder._createdBy.toString() != req.user._id.toString())
     return next(new AppError('You do not have access', 400));
 
   const updatedFolder = await Folder.findByIdAndUpdate(id, filteredBody, {
