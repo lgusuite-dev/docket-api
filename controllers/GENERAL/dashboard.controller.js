@@ -169,7 +169,7 @@ exports.uploaderModule = catchAsync(async (req, res, next) => {
     ? approved_uploaded[0].count
     : 0;
 
-  const total_documents_uploaded = uploadedCount + approvedUploaded;
+  const total_documents_uploaded = { count: uploadedCount + approvedUploaded };
 
   res.status(200).json({
     status: 'success',
