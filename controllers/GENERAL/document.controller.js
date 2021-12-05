@@ -739,7 +739,15 @@ exports.getDocumentClassification = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
     $or: [
       { $and: [{ type: 'Incoming' }, { fileLength: { $gte: 0 } }] },
-      { $and: [{ type: 'Outgoing' }, { 'process.uploaded': true }] },
+      {
+        $and: [{ type: 'Outgoing' }, { 'process.uploaded': true }],
+      },
+      {
+        $and: [{ type: 'Internal' }, { 'process.uploaded': true }],
+      },
+      {
+        $and: [{ type: 'Archived' }, { 'process.uploaded': true }],
+      },
     ],
   };
 
