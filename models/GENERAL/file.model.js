@@ -53,7 +53,7 @@ const FileSchema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'Please provide tenant id'],
     },
-    isAcknowledgementReceipt: {
+    acknowledgementReceipt: {
       type: Boolean,
       default: false,
     },
