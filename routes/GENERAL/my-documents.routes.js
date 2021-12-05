@@ -26,6 +26,8 @@ router
   .put(myDocumentsController.updateFile)
   .delete(myDocumentsController.deleteFile);
 
+router.route('/shared').get(myDocumentsController.getSharedToMe);
+
 router.post('/folders/:id/documents', myDocumentsController.createDocument);
 router.post('/documents/:id/files', myDocumentsController.uploadFile);
 
