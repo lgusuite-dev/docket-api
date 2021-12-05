@@ -20,7 +20,6 @@ exports.createTask = catchAsync(async (req, res, next) => {
     'remarks',
     '_assigneeId',
     '_documentId',
-    '_referenceId',
   ];
   let filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
@@ -77,6 +76,7 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
     pickFields = ['message', '_documentId', 'status'];
   } else if (req.body.status === 'Declined') {
     pickFields = ['message', 'status'];
+    _;
   } else if (req.body.status === 'For Approval') {
     pickFields = ['message', '_documentId', 'status'];
   } else {
@@ -153,6 +153,48 @@ exports.getTasks = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getForApprovalTasks = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const queryFeatures = new QueryFeatures(
+    Task.find(initialQuery).populate({
+      path: 'reply._documentId',
+      populate: [{ path: '_files', model: 'File' }],
+    }),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeature = new QueryFeatures(
+    Task.find(initialQuery).populate({
+      path: 'reply._documentId',
+      populate: [{ path: '_files', model: 'File' }],
+    }),
+    req.query
+  )
+    .filter()
+    .count();
+
+  const tasks = await queryFeatures.query;
+
+  const ntasks = await nQueryFeature.query;
+
+  res.status(200).json({
+    status: 'success',
+    total_docs: ntasks,
+    env: {
+      tasks,
+    },
+  });
+});
+
 exports.getTasksAssignedToMe = catchAsync(async (req, res, next) => {
   const initialQuery = {
     status: { $ne: 'Deleted' },
@@ -192,7 +234,6 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     'remarks',
     '_assigneeId',
     '_documentId',
-    '_referenceId',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;

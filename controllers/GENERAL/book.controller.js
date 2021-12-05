@@ -3,6 +3,9 @@ const _ = require('lodash');
 const Book = require('../../models/GENERAL/book.model');
 const Document = require('../../models/GENERAL/document.model');
 
+const ControlNumber = require('../../utils/control-number/controlNumber');
+const settings = require('../../mock/settings');
+
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -22,6 +25,20 @@ exports.createBook = catchAsync(async (req, res, next) => {
 
   //serial number generator
   filteredBody.serialNumber = Math.floor(Math.random() * 1000000000).toString();
+
+  //Control Number Generator
+  const configs = settings.ALGORITHM;
+  filteredBody.controlNumber = await new ControlNumber(
+    {},
+    configs,
+    req.user._tenantId
+  )
+    .fieldBased('type')
+    .sequence('monthly', 'book')
+    .month()
+    .year()
+    .sequence('yearly', 'book')
+    .generate();
 
   const book = await Book.create(filteredBody);
 
