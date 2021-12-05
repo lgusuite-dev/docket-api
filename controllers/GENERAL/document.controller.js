@@ -195,7 +195,12 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 
 // UPDATE DOCUMENT OCR STATUS TO NO
 exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', 'description', 'dropbox'];
+  const pickFields = [
+    'name',
+    'description',
+    'dropbox',
+    'acknowledgementReceipt',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   filteredBody._documentId = id;

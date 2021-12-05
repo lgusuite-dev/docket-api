@@ -19,6 +19,7 @@ const myDocumentsRouter = require('./routes/GENERAL/my-documents.routes');
 const bookRouter = require('./routes/GENERAL/book.routes');
 const boxRouter = require('./routes/GENERAL/box.routes');
 const scannedDocumentRouter = require('./routes/GENERAL/scanned_document.routes');
+const dashboardRouter = require('./routes/GENERAL/dashboard.routes');
 
 const errorController = require('./controllers/GENERAL/error.controller');
 
@@ -56,6 +57,7 @@ app.use('/api/v1/my-documents', myDocumentsRouter);
 app.use('/api/v1/books', bookRouter);
 app.use('/api/v1/box', boxRouter);
 app.use('/api/v1/scanned-documents', scannedDocumentRouter);
+app.use('/api/v1/dashboard', dashboardRouter);
 
 app.get('/api/v1/health', (req, res, next) => {
   res.status(200).json({
