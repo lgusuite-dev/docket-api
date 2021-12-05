@@ -445,7 +445,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
 // UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['recipient', 'dateReleased'];
+  const pickFields = ['recipients', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -547,7 +547,7 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
   const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
   const { action } = req.params;
-  const allowedActions = ['printed', 'signed', 'released'];
+  const allowedActions = ['printed', 'signed', 'released', 'receipt'];
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
@@ -571,6 +571,7 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
     if (action === 'printed') document.process.printed = true;
     else if (action === 'signed') document.process.signed = true;
     else if (action === 'released') document.process.released = true;
+    else if (action === 'receipt') document.process.receipt = true;
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
