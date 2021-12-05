@@ -164,6 +164,10 @@ exports.uploaderModule = catchAsync(async (req, res, next) => {
     },
   ]);
 
+  const uploadedCount = uploaded[0] ? uploaded[0].count : 0;
+  const approvedUploaded = approved_uploaded[0] ? uploaded[0].count : 0;
+  const total_documents_uploaded = uploadedCount + approvedUploaded;
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -171,6 +175,7 @@ exports.uploaderModule = catchAsync(async (req, res, next) => {
       uploaded: uploaded[0] || { count: 0 },
       approved_uploading: approved_uploading[0] || { count: 0 },
       approved_uploaded: approved_uploaded[0] || { count: 0 },
+      total_documents_uploaded,
     },
   });
 });
