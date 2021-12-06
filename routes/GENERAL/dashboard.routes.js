@@ -15,5 +15,6 @@ router.get('/task', dashboardController.taskModule);
 router.get('/team-task', dashboardController.teamTaskModule);
 router.get('/approver', dashboardController.approverModule);
 router.get('/user', dashboardController.userModule);
+router.get('/releasing', dashboardController.releasingModule);
 
 module.exports = router;

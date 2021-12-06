@@ -1166,3 +1166,117 @@ exports.teamTaskModule = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+// FOR RELEASING REPORT MODULE
+exports.releasingModule = catchAsync(async (req, res, next) => {
+  // Outbound documents for releasing
+  const outbound_releasing = await Document.aggregate([
+    {
+      $match: {
+        type: 'Outgoing',
+        finalStatus: 'Approved',
+        'process.printed': true,
+        'process.signed': true,
+        'process.uploaded': true,
+        'process.released': false,
+        confidentialityLevel: { $gt: 0 },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  // Internal documents for releasing
+  const internal_releasing = await Document.aggregate([
+    {
+      $match: {
+        type: 'Internal',
+        finalStatus: 'Approved',
+        'process.printed': true,
+        'process.signed': true,
+        'process.uploaded': true,
+        'process.released': false,
+        confidentialityLevel: { $gt: 0 },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  // Archived documents for releasing
+  const archived_releasing = await Document.aggregate([
+    {
+      $match: {
+        type: 'Archived',
+        finalStatus: 'Approved',
+        'process.printed': true,
+        'process.signed': true,
+        'process.uploaded': true,
+        'process.released': false,
+        confidentialityLevel: { $gt: 0 },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  // Mark as released
+  const mark_released = await Document.aggregate([
+    {
+      $match: {
+        finalStatus: 'Approved',
+        'process.printed': true,
+        'process.signed': true,
+        'process.uploaded': true,
+        'process.released': true,
+        confidentialityLevel: { $gt: 0 },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  // Waiting for Acknowledgement
+  const waiting_acknowledgement = await Document.aggregate([
+    {
+      $match: {
+        finalStatus: 'Approved',
+        'process.printed': true,
+        'process.signed': true,
+        'process.uploaded': true,
+        'process.released': true,
+        'process.receipt': true,
+        'process.acknowledged': false,
+        confidentialityLevel: { $gt: 0 },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      outbound_releasing: outbound_releasing[0] || { count: 0 },
+      internal_releasing: internal_releasing[0] || { count: 0 },
+      archived_releasing: archived_releasing[0] || { count: 0 },
+      mark_released: mark_released[0] || { count: 0 },
+      waiting_acknowledgement: waiting_acknowledgement[0] || { count: 0 },
+    },
+  });
+});
