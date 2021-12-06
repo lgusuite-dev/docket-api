@@ -87,6 +87,10 @@ const DocumentSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
+      acknowledged: {
+        type: Boolean,
+        default: false,
+      },
     },
     ocrStatus: {
       type: String,

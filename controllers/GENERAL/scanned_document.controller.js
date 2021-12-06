@@ -62,24 +62,32 @@ const createPreview = (text) => {
 exports.searchDocument = catchAsync(async (req, res, next) => {
   const { search } = req.query;
   const extractWords = search ? search.split(' ') : [];
-
+  let sorter
   // priority of searching
   // inclusion and exclusion
   // access level
   // status [inbound, outbound, archived]
+  let qry = {
 
+    confidentialityLevel: { $lte: req.user.access_level },
+    _tenantId: req.user._tenantId,
+    status: { $ne: 'Deleted' },
+  }
+
+  if (search) {
+    qry['$text'] = { $search: `${search}` }
+    qry['score'] = { $meta: 'textScore' }
+    qry['lean'] = true
+    sorter = { score: { $meta: 'textScore' } }
+  }
+  console.log(qry)
   const searchedDocumentsQuery = new QueryFeatures(
     ScannedDocument.find(
-      {
-        $text: { $search: `${search}` },
-        confidentialityLevel: { $lte: req.user.access_level },
-        _tenantId: req.user._tenantId,
-        status: { $ne: 'Deleted' },
-      },
-      { score: { $meta: 'textScore' } },
-      { lean: true }
+
+
+      qry
     )
-      .sort({ score: { $meta: 'textScore' } })
+      .sort(sorter)
       .populate({
         path: '_documentId',
         populate: {
@@ -96,16 +104,9 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
 
 
   const nQueryFeatures = new QueryFeatures(
-    ScannedDocument.find({
-      $text: { $search: `${search}` },
-      confidentialityLevel: { $lte: req.user.access_level },
-      _tenantId: req.user._tenantId,
-      status: { $ne: 'Deleted' },
-    },
-      { score: { $meta: 'textScore' } },
-      { lean: true }
+    ScannedDocument.find(qry
     )
-      .sort({ score: { $meta: 'textScore' } })
+      .sort(sorter)
       .populate({
         path: '_documentId',
         populate: {

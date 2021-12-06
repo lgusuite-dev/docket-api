@@ -227,6 +227,65 @@ exports.getBookDocuments = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getDocumentsForBook = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const book = await Book.find(initialQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+
+  const documentQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+    $or: [
+      {
+        $and: [
+          { type: 'Incoming' },
+          { createdAt: { $gte: book.coverageFrom, $lt: book.coverageTo } },
+        ],
+      },
+      {
+        $and: [
+          { type: { $in: ['Outgoing', 'Internal', 'Archived'] } },
+          { dateApproved: { $gte: book.coverageFrom, $lt: book.coverageTo } },
+        ],
+      },
+    ],
+  };
+
+  const queryFeatures = new QueryFeatures(
+    Document.find(documentQuery),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeatures = new QueryFeatures(
+    Document.find(documentQuery),
+    req.query
+  )
+    .filter()
+    .count();
+
+  const documents = await queryFeatures.query;
+  const nDocuments = await nQueryFeatures.query;
+
+  res.status(200).json({
+    status: 'Success',
+    total_docs: nDocuments,
+    env: {
+      documents,
+    },
+  });
+});
+
 exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
   const pickFields = ['_documents'];
   const filteredBody = _.pick(req.body, pickFields);
@@ -249,7 +308,6 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
-  console.log(filteredBody._documents);
   const document = await Document.findOne(documentQuery);
   if (!document) return next(new AppError('Document not found', 404));
 
