@@ -151,6 +151,12 @@ const DocumentSchema = new mongoose.Schema(
       type: Boolean,
     },
     dateApproved: Date,
+    _fromTaskId: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Task',
+      },
+    ],
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,

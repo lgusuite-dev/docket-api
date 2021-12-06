@@ -29,35 +29,35 @@ exports.ALGORITHM = {
       },
       {
         if: '/data/ === "Civil"',
-        then: 'C',
+        then: 'B',
       },
       {
         if: '/data/ === "Complaint"',
-        then: 'CM',
-      },
-      {
-        if: '/data/ === "Criminal"',
-        then: 'CR',
-      },
-      {
-        if: '/data/ === "EPWMD"',
-        then: 'E',
-      },
-      {
-        if: '/data/ === "HR"',
         then: 'H',
       },
       {
-        if: '/data/ === "LLRC"',
-        then: 'LL',
+        if: '/data/ === "Criminal"',
+        then: 'K',
+      },
+      {
+        if: '/data/ === "EPWMD"',
+        then: 'P',
+      },
+      {
+        if: '/data/ === "HR"',
+        then: 'R',
+      },
+      {
+        if: '/data/ === "LLRB"',
+        then: 'L',
       },
       {
         if: '/data/ === "LRC"',
-        then: 'LR',
+        then: 'C',
       },
       {
         if: '/data/ === "Opinion"',
-        then: 'O',
+        then: 'A',
       },
       {
         if: '/data/ === "Supplies"',

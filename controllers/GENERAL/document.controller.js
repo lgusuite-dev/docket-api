@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const axios = require('axios');
 
 const Document = require('../../models/GENERAL/document.model');
 const File = require('../../models/GENERAL/file.model');
@@ -69,7 +70,33 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
     .populate();
 
   const nQueryFeatures = new QueryFeatures(
-    Document.find(initialQuery),
+    Document.find(initialQuery)
+      .populate({
+        path: '_excludes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_includes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_fromTaskId',
+        select: '_documentId',
+        populate: {
+          path: '_documentId',
+          model: 'Document',
+          populate: {
+            path: '_files',
+            model: 'File',
+          },
+        },
+      }),
     req.query
   )
     .filter()
@@ -464,8 +491,10 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
 // UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['recipients', 'dateReleased'];
+  const pickFields = ['documentFileLinks', 'recipients', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
+  const { documentFileLinks } = filteredBody;
+  delete filteredBody.documentFileLinks;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
@@ -502,6 +531,66 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   ];
 
   await updateSideEffects(updateArgs);
+
+  if (documentFileLinks.length !== 0) {
+    const outgoingDocument = await Document.findById(
+      updatedDocument._id
+    ).populate({
+      path: '_fromTaskId',
+      select: '_documentId',
+      populate: {
+        path: '_documentId',
+        model: 'Document',
+      },
+    });
+
+    const incomingDocument = doc._fromTaskId._documentId;
+
+    const userEmails = [incomingDocument.sender.email];
+
+    const { recipients } = outgoingDocument;
+    for (let recipient of recipients) {
+      userEmails.push(recipient.email);
+    }
+
+    let fileBufferArray = [];
+    for (let file of documentFileLinks) {
+      const { fileName, link } = file;
+      const downloadedFile = await axios.get(link);
+
+      if (downloadedFile) {
+        fileBufferArray.push({
+          name: fileName,
+          buffer: Buffer.from(downloadedFile.data).toString('base64'),
+        });
+      }
+    }
+
+    const file = await axios.get(attachment.link);
+
+    if (file) {
+      const bufferedFile = Buffer.from(file.data).toString('base64');
+      const emailAttachment = {
+        content: bufferedFile,
+        filename: `some-attachment${index}.pdf`,
+        type: 'application/pdf',
+        disposition: 'attachment',
+        content_id: 'mytext',
+      };
+
+      emailAttachments.push(emailAttachment);
+
+      const emailOptions = {
+        to: sendTo,
+        subject,
+        html: '<p>Here’s an attachment for you!</p>',
+        html: `<p>${message}</p>`,
+        attachments: emailAttachments,
+      };
+
+      await sendMail(emailOptions);
+    }
+  }
 
   res.status(200).json({
     status: 'success',
@@ -638,7 +727,9 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   if (!task) return next(new AppError('Task not found', 404));
 
   task.status = 'Completed';
-  task.message = filteredBody.message;
+  task['message'] = filteredBody.message;
+
+  document._fromTaskId = task._id;
 
   const updatedDocument = await document.save({ validateBeforeSave: false });
   await task.save({ validateBeforeSave: false });
