@@ -826,3 +826,35 @@ exports.generateControlNumber = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updateDocument = {
+    isAssigned: false,
+  };
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    initialQuery._id,
+    updateDocument,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedDocument,
+    },
+  });
+});
