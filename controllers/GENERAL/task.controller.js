@@ -76,7 +76,6 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
     pickFields = ['message', '_documentId', 'status'];
   } else if (req.body.status === 'Declined') {
     pickFields = ['message', 'status'];
-    _;
   } else if (req.body.status === 'For Approval') {
     pickFields = ['message', '_documentId', 'status'];
   } else {
@@ -320,9 +319,16 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  const task = await Task.findOneAndUpdate(initialQuery, { status: 'Deleted' });
-
+  const task = await Task.findOne(initialQuery);
   if (!task) return next(new AppError('Task not found', 404));
+
+  if (task._documentId) {
+    const document = await Document.findById(task._documentId);
+    document.isAssigned = false;
+  }
+
+  task.status = 'Deleted';
+  await task.save();
 
   res.status(204).json({
     status: 'success',
