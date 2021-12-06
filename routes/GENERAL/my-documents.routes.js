@@ -28,7 +28,7 @@ router
 
 router.route('/shared').get(myDocumentsController.getSharedToMe);
 router.put('/shared/folder/:id', myDocumentsController.updateShareFolder);
-router.put('/shared/document/:id', myDocumentsController.updateShareFolder);
+router.put('/shared/document/:id', myDocumentsController.updateShareDocument);
 
 router.post('/folders/:id/documents', myDocumentsController.createDocument);
 router.post('/documents/:id/files', myDocumentsController.uploadFile);

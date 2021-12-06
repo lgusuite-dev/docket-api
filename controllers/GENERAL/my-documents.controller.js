@@ -171,7 +171,7 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
     status: { $ne: 'Deleted' },
-    _createdBy: req.user._id,
+    // _createdBy: req.user._id,
     _parentId: id,
   };
 
@@ -181,6 +181,16 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
   });
 
   if (!currentFolder) return next(new AppError('Folder not found', 404));
+
+  let sharedUsers = currentFolder._sharedTo.map((el) => el.toString());
+
+  // console.log(currentFolder._createdBy, req.user._id, sharedUsers);
+  if (
+    currentFolder._createdBy.toString() !== req.user._id.toString() &&
+    !sharedUsers.includes(req.user._id.toString())
+  ) {
+    return next(new AppError('You do have not access', 401));
+  }
 
   const folder = await Folder.find(initialQuery).populate({
     path: '_sharedTo',
@@ -333,7 +343,7 @@ exports.getDocument = catchAsync(async (req, res, next) => {
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    _createdBy: req.user._id,
+    // _createdBy: req.user._id,
   };
 
   const document = await Document.findOne(query).populate({
@@ -346,6 +356,14 @@ exports.getDocument = catchAsync(async (req, res, next) => {
   });
 
   if (!document) return next(new AppError('Document not Found', 404));
+  const sharedUsers = document._sharedTo.map((el) => el.toString());
+
+  if (
+    document._createdBy.toString() !== req.user._id.toString() &&
+    !sharedUsers.includes(req.user._id.toString())
+  ) {
+    return next(new AppError('You do have not access', 401));
+  }
 
   res.status(200).json({
     status: 'success',

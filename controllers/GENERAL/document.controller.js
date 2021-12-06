@@ -419,6 +419,57 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const pickFields = ['dateConfirmed'];
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._updatedBy = req.user._id;
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  document.process.acknowledged = true;
+
+  filteredBody.dateConfirmed = new Date();
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    id,
+    { ...filteredBody, process: document.process },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
+});
+
 // - CLEANUP
 exports.deleteDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;

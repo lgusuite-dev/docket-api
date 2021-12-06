@@ -120,6 +120,7 @@ const DocumentSchema = new mongoose.Schema(
       },
     ],
     dateReleased: Date,
+    dateConfirmed: Date,
     message: {
       from: {
         type: mongoose.Schema.Types.ObjectId,
