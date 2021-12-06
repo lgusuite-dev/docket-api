@@ -325,6 +325,7 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
   if (task._documentId) {
     const document = await Document.findById(task._documentId);
     document.isAssigned = false;
+    await document.save();
   }
 
   task.status = 'Deleted';
