@@ -583,6 +583,7 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
     else if (action === 'signed') document.process.signed = true;
     else if (action === 'released') document.process.released = true;
     else if (action === 'receipt') document.process.receipt = true;
+    else if (action === 'acknowledged') document.process.acknowledged = true;
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
@@ -825,6 +826,38 @@ exports.generateControlNumber = catchAsync(async (req, res, next) => {
     status: 'success',
     env: {
       controlNumber: controlNumber,
+    },
+  });
+});
+
+exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updateDocument = {
+    isAssigned: false,
+  };
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    initialQuery._id,
+    updateDocument,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedDocument,
     },
   });
 });

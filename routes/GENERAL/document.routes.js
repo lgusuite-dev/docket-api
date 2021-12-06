@@ -41,7 +41,9 @@ router.route('/upload/:id').put(documentController.uploadDocumentFile);
 router.route('/classify/:id').put(documentController.classifyDocument);
 router.route('/release/:id').put(documentController.releaseDocument);
 router.route('/storage/:id').put(documentController.updateDocumentStorage);
-
+router
+  .route('/isAssigned/:id')
+  .put(documentController.updateDocumentIsAssigned);
 router.route('/file-task/:ids').get(documentController.getFileTask);
 
 module.exports = router;
