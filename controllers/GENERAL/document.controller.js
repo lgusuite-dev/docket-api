@@ -552,7 +552,13 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
   const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
   const { action } = req.params;
-  const allowedActions = ['printed', 'signed', 'released', 'receipt'];
+  const allowedActions = [
+    'printed',
+    'signed',
+    'released',
+    'receipt',
+    'acknowledged',
+  ];
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
