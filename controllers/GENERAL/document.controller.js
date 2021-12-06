@@ -583,6 +583,7 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
     else if (action === 'signed') document.process.signed = true;
     else if (action === 'released') document.process.released = true;
     else if (action === 'receipt') document.process.receipt = true;
+    else if (action === 'acknowledged') document.process.acknowledged = true;
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
