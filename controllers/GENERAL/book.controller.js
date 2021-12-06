@@ -235,7 +235,7 @@ exports.getDocumentsForBook = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  const book = await Book.find(initialQuery);
+  const book = await Book.findOne(initialQuery);
   if (!book) return next(new AppError('Book not found', 404));
 
   const documentQuery = {
