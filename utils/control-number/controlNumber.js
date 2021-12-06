@@ -143,10 +143,11 @@ class ControlNumber {
             this.configs.separator
           );
 
-          if (previousControlNumber[index]) {
-            if (currentSequence <= previousControlNumber[index + 1]) {
-              currentSequence = parseInt(previousControlNumber[index + 1]);
-            } else if (
+          if (
+            previousControlNumber[index] &&
+            currentSequence <= previousControlNumber[index]
+          ) {
+            if (
               (willResetSeq &&
                 previousControlNumber[index] !== currentSequence) ||
               !willResetSeq

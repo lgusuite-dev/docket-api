@@ -594,7 +594,6 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const pickFields = ['_taskId', 'message', 'type'];
   const filteredBody = _.pick(req.body, pickFields);
-  filteredBody.dateApproved = new Date();
 
   const documentQuery = {
     _id: id,
@@ -740,13 +739,10 @@ exports.getDocumentClassification = catchAsync(async (req, res, next) => {
     $or: [
       { $and: [{ type: 'Incoming' }, { fileLength: { $gte: 0 } }] },
       {
-        $and: [{ type: 'Outgoing' }, { 'process.uploaded': true }],
-      },
-      {
-        $and: [{ type: 'Internal' }, { 'process.uploaded': true }],
-      },
-      {
-        $and: [{ type: 'Archived' }, { 'process.uploaded': true }],
+        $and: [
+          { type: { $in: ['Outgoing', 'Internal', 'Archived'] } },
+          { 'process.uploaded': true },
+        ],
       },
     ],
   };
