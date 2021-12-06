@@ -48,7 +48,7 @@ exports.ALGORITHM = {
         then: 'H',
       },
       {
-        if: '/data/ === "LLRC"',
+        if: '/data/ === "LLRB"',
         then: 'LL',
       },
       {
