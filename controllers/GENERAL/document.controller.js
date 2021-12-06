@@ -450,7 +450,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
 // UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['recipient', 'dateReleased'];
+  const pickFields = ['recipients', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -552,7 +552,13 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
   const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
   const { action } = req.params;
-  const allowedActions = ['printed', 'signed', 'released'];
+  const allowedActions = [
+    'printed',
+    'signed',
+    'released',
+    'receipt',
+    'acknowledged',
+  ];
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
@@ -576,6 +582,8 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
     if (action === 'printed') document.process.printed = true;
     else if (action === 'signed') document.process.signed = true;
     else if (action === 'released') document.process.released = true;
+    else if (action === 'receipt') document.process.receipt = true;
+    else if (action === 'acknowledged') document.process.acknowledged = true;
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
@@ -593,7 +601,6 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const pickFields = ['_taskId', 'message', 'type'];
   const filteredBody = _.pick(req.body, pickFields);
-  filteredBody.dateApproved = new Date();
 
   const documentQuery = {
     _id: id,
@@ -738,7 +745,12 @@ exports.getDocumentClassification = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
     $or: [
       { $and: [{ type: 'Incoming' }, { fileLength: { $gte: 0 } }] },
-      { $and: [{ type: 'Outgoing' }, { 'process.uploaded': true }] },
+      {
+        $and: [
+          { type: { $in: ['Outgoing', 'Internal', 'Archived'] } },
+          { 'process.uploaded': true },
+        ],
+      },
     ],
   };
 
@@ -780,40 +792,72 @@ exports.generateControlNumber = catchAsync(async (req, res, next) => {
     _tenantId: '619f5c8c123f3ec5f10862a9',
   };
 
-  // const document = await Document.findOne(initialQuery);
+  const document = await Document.findOne(initialQuery);
 
-  // if (!document) return next(new AppError('Document not found', 404));
+  if (!document) return next(new AppError('Document not found', 404));
 
   const configs = settings.ALGORITHM;
-  // let controlNumber = await new ControlNumber(
-  //   document,
-  //   configs,
-  //   '619f5c8c123f3ec5f10862a9'
-  // )
-  //   .fieldBased('type')
-  //   .sequence('monthly', 'type')
-  //   .month()
-  //   .year()
-  //   .sequence('yearly', 'type')
-  //   .fieldBased('classification')
-  //   .generate();
-
   let controlNumber = await new ControlNumber(
-    {},
+    document,
     configs,
     '619f5c8c123f3ec5f10862a9'
   )
     .fieldBased('type')
-    .sequence('monthly', 'book')
+    .sequence('monthly', 'type')
     .month()
     .year()
-    .sequence('yearly', 'book')
+    .sequence('yearly', 'type')
+    .fieldBased('classification')
     .generate();
+
+  // let controlNumber = await new ControlNumber(
+  //   {},
+  //   configs,
+  //   '619f5c8c123f3ec5f10862a9'
+  // )
+  //   .fieldBased('type')
+  //   .sequence('monthly', 'book')
+  //   .month()
+  //   .year()
+  //   .sequence('yearly', 'book')
+  //   .generate();
 
   res.status(200).json({
     status: 'success',
     env: {
       controlNumber: controlNumber,
+    },
+  });
+});
+
+exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updateDocument = {
+    isAssigned: false,
+  };
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    initialQuery._id,
+    updateDocument,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedDocument,
     },
   });
 });

@@ -83,32 +83,42 @@ const DocumentSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
+      receipt: {
+        type: Boolean,
+        default: false,
+      },
+      acknowledged: {
+        type: Boolean,
+        default: false,
+      },
     },
     ocrStatus: {
       type: String,
       default: 'No',
       enum: ['No', 'Scanning', 'Done'],
     },
-    recipient: {
-      firstName: {
-        type: String,
-        trim: true,
+    recipients: [
+      {
+        firstName: {
+          type: String,
+          trim: true,
+        },
+        lastName: {
+          type: String,
+          trim: true,
+        },
+        mobileNumber: {
+          type: String,
+          trim: true,
+        },
+        middleInitial: String,
+        department: String,
+        position: String,
+        email: String,
+        prefix: String,
+        suffix: String,
       },
-      lastName: {
-        type: String,
-        trim: true,
-      },
-      mobileNumber: {
-        type: String,
-        trim: true,
-      },
-      middleInitial: String,
-      department: String,
-      position: String,
-      email: String,
-      prefix: String,
-      suffix: String,
-    },
+    ],
     dateReleased: Date,
     message: {
       from: {
