@@ -65,6 +65,67 @@ exports.getSharedToMe = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updateShareFolder = catchAsync(async (req, res, next) => {
+  const pickFields = ['_sharedTo'];
+  const filteredBody = _.pick(req.body, pickFields);
+
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+  };
+  const folder = await Folder.findOne(initialQuery);
+  // console.log(folder._sharedTo);
+  if (!folder) return next(new AppError('Folder not found', 404));
+  sharedIds = folder._sharedTo.map((el) => el.toString());
+
+  if (!sharedIds.includes(req.user._id.toString())) {
+    return next(new AppError('You do not have access', 400));
+  }
+  const updatedFolder = await Folder.findByIdAndUpdate(id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedFolder,
+    },
+  });
+});
+exports.updateShareDocument = catchAsync(async (req, res, next) => {
+  const pickFields = ['_sharedTo'];
+  const filteredBody = _.pick(req.body, pickFields);
+
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+  };
+  const document = await Document.findOne(initialQuery);
+  // console.log(document._sharedTo);
+  if (!document) return next(new AppError('Document not found', 404));
+  sharedIds = document._sharedTo.map((el) => el.toString());
+
+  if (!sharedIds.includes(req.user._id.toString())) {
+    return next(new AppError('You do not have access', 400));
+  }
+  const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
+    new: true,
+    runValidators: true,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedDocument,
+    },
+  });
+});
+
 exports.getRoot = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
