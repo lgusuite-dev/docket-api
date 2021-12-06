@@ -31,6 +31,40 @@ const referenceIdCleanup = async (ModelAndProps, docId) => {
   }
 };
 
+exports.getSharedToMe = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    type: { $ne: 'Incoming' },
+    status: { $ne: 'Deleted' },
+    _sharedTo: req.user._id,
+  };
+  // console.log(req.user._id);
+  const sharedFolders = await Folder.find(initialQuery).populate({
+    path: '_sharedTo',
+  });
+
+  const sharedDocuments = await Document.find(initialQuery).populate([
+    {
+      path: '_files',
+      select: '-name -dropbox',
+      populate: {
+        path: '_versions _currentVersionId',
+        select: 'name status dropbox description versionNumber createdAt',
+      },
+    },
+    {
+      path: '_sharedTo',
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      sharedFolders,
+      sharedDocuments,
+    },
+  });
+});
+
 exports.getRoot = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
@@ -179,11 +213,13 @@ exports.updateFolder = catchAsync(async (req, res, next) => {
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
-    _createdBy: req.user._id,
+    // _createdBy: req.user._id,
   };
 
   const folder = await Folder.findOne(initialQuery);
   if (!folder) return next(new AppError('Folder not found', 404));
+  if (folder._createdBy.toString() != req.user._id.toString())
+    return next(new AppError('You do not have access', 400));
 
   const updatedFolder = await Folder.findByIdAndUpdate(id, filteredBody, {
     new: true,

@@ -108,9 +108,12 @@ class ControlNumber {
             let isVariable = val1.match(regex);
             if (isVariable) {
               val[key1] = eval(val1.replace(/\//g, ''));
-              if (key1 === '$regex') val[key1] = eval(val[key1]).toString();
             } else {
               val[key1] = val1;
+            }
+
+            if (key1 === '$regex' && dataRegex) {
+              val[key1] = eval(val[key1]).toString();
             }
             findConfig[key] = {
               ...findConfig[key],
@@ -139,15 +142,18 @@ class ControlNumber {
           let previousControlNumber = result[0][this.configs.path].split(
             this.configs.separator
           );
+
           if (previousControlNumber[index]) {
-            if (
+            if (currentSequence <= previousControlNumber[index + 1]) {
+              currentSequence = parseInt(previousControlNumber[index + 1]);
+            } else if (
               (willResetSeq &&
                 previousControlNumber[index] !== currentSequence) ||
               !willResetSeq
             ) {
               currentSequence = parseInt(previousControlNumber[index]);
-              currentSequence += parseInt(config.increment);
             }
+            currentSequence += parseInt(config.increment);
           }
         }
 
@@ -183,23 +189,22 @@ class ControlNumber {
   }
 
   async generate() {
-    //Refactor for separator
     let controlNumberArray = [];
     let oldVal = '';
+    let withoutSeparator = 0;
     for (let [key, row] of Object.entries(this.controlNumberArray)) {
-      let value = row.value;
+      let value = oldVal + row.value;
       if (!row.value && row.query) {
-        value = row.callBack(await row.query, key);
+        value = row.callBack(await row.query, key - withoutSeparator);
       }
 
-      controlNumberArray.push(value);
-
-      // if (row.separate) {
-      //   oldVal = '';
-      //   controlNumberArray.push(value);
-      // } else {
-      //   oldVal = value;
-      // }
+      if (row.separate) {
+        oldVal = '';
+        controlNumberArray.push(value);
+      } else {
+        oldVal = value;
+        withoutSeparator += 1;
+      }
     }
     return controlNumberArray.join(this.configs.separator);
   }
