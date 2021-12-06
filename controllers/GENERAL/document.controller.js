@@ -45,7 +45,21 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
   };
 
   const queryFeatures = new QueryFeatures(
-    Document.find(initialQuery),
+    Document.find(initialQuery)
+      .populate({
+        path: '_excludes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_includes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      }),
     req.query
   )
     .sort()
