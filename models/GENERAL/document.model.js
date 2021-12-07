@@ -111,6 +111,10 @@ const DocumentSchema = new mongoose.Schema(
           type: String,
           trim: true,
         },
+        mailUpdates: {
+          type: Boolean,
+          default: false,
+        },
         middleInitial: String,
         department: String,
         position: String,
