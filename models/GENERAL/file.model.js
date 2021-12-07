@@ -24,6 +24,10 @@ const FileSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    fromMyDocuments: {
+      type: Boolean,
+      default: false,
+    },
     _currentVersionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'File',

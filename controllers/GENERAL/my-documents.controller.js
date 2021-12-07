@@ -441,6 +441,7 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
   filteredBody.versionNumber = 'Version 1';
+  filteredBody.fromMyDocuments = true;
 
   const query = {
     _id: id,

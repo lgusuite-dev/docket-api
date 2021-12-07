@@ -542,10 +542,16 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
 // UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['documentFileLinks', 'recipients', 'dateReleased'];
+  const pickFields = [
+    'documentFileLinks',
+    'recipients',
+    'dateReleased',
+    'fileBlob',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
-  const { documentFileLinks } = filteredBody;
+  const { fileBlob, documentFileLinks } = filteredBody;
   delete filteredBody.documentFileLinks;
+  delete filteredBody.fileBlob;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
@@ -601,42 +607,50 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
 
     const { recipients } = outgoingDocument;
     for (let recipient of recipients) {
-      userEmails.push(recipient.email);
+      if (recipient.mailUpdates) {
+        userEmails.push(recipient.email);
+      }
     }
 
-    let fileBufferArray = [];
+    if (incomingDocument.sender.mailUpdates) {
+      userEmails.push(sender.email);
+    }
+
+    //download files
+    let fileBufferArray = [filteredBody.fileBlob];
     for (let file of documentFileLinks) {
       const { fileName, link } = file;
-      const downloadedFile = await axios.get(link);
+      const downloadedFile = await axios({
+        url: link,
+        method: 'get',
+      });
 
       if (downloadedFile) {
         fileBufferArray.push({
           name: fileName,
-          buffer: Buffer.from(downloadedFile.data).toString('base64'),
+          content: Buffer.from(downloadedFile.data).toString('base64'),
         });
       }
     }
 
-    const file = await axios.get(attachment.link);
-
-    if (file) {
-      const bufferedFile = Buffer.from(file.data).toString('base64');
-      const emailAttachment = {
-        content: bufferedFile,
-        filename: `some-attachment${index}.pdf`,
+    let attachmentArray = [];
+    for (let fileBuffer of fileBufferArray) {
+      attachmentArray.push({
+        content: fileBuffer.content,
+        filename: fileBuffer.name,
         type: 'application/pdf',
         disposition: 'attachment',
-        content_id: 'mytext',
-      };
+        content_id: fileBuffer.name,
+      });
+    }
 
-      emailAttachments.push(emailAttachment);
-
+    for (let email of userEmails) {
       const emailOptions = {
-        to: sendTo,
-        subject,
+        to: email,
+        subject: 'Document For Releasing',
         html: '<p>Here’s an attachment for you!</p>',
-        html: `<p>${message}</p>`,
-        attachments: emailAttachments,
+        html: `<p>Here’s an attachment for you!</p>`,
+        attachments: attachmentArray,
       };
 
       await sendMail(emailOptions);

@@ -20,6 +20,10 @@ const DocumentSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
+      mailUpdates: {
+        type: Boolean,
+        default: false,
+      },
       middleInitial: String,
       department: String,
       position: String,
@@ -110,6 +114,10 @@ const DocumentSchema = new mongoose.Schema(
         mobileNumber: {
           type: String,
           trim: true,
+        },
+        mailUpdates: {
+          type: Boolean,
+          default: false,
         },
         middleInitial: String,
         department: String,
