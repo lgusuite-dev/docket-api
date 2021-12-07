@@ -60,6 +60,18 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
           path: '_role',
           model: 'Role',
         },
+      })
+      .populate({
+        path: '_fromTaskId',
+        select: '_documentId',
+        populate: {
+          path: '_documentId',
+          model: 'Document',
+          populate: {
+            path: '_files',
+            model: 'File',
+          },
+        },
       }),
     req.query
   )
@@ -546,12 +558,12 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
     'documentFileLinks',
     'recipients',
     'dateReleased',
-    'fileBlob',
+    'receiptBlob',
   ];
   const filteredBody = _.pick(req.body, pickFields);
-  const { fileBlob, documentFileLinks } = filteredBody;
+  const { receiptBlob, documentFileLinks } = filteredBody;
   delete filteredBody.documentFileLinks;
-  delete filteredBody.fileBlob;
+  delete filteredBody.receiptBlob;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
@@ -617,7 +629,7 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
     }
 
     //download files
-    let fileBufferArray = [filteredBody.fileBlob];
+    let fileBufferArray = [receiptBlob];
     for (let file of documentFileLinks) {
       const { fileName, link } = file;
       const downloadedFile = await axios({
