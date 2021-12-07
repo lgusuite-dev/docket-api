@@ -234,6 +234,7 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     '_assigneeId',
     '_documentId',
     'status',
+    'message',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
