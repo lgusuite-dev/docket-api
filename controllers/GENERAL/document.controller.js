@@ -795,29 +795,61 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 });
 
 exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
-  const pickFields = ['storage'];
+  const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
-  const { id } = req.params;
 
-  const initialQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
+  const documents = [];
+  for (const row of filteredBody.body) {
+    const documentQuery = {
+      _id: row._id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
 
-  const document = await Document.findOne(initialQuery);
+    const document = await Document.findOne(documentQuery);
+    if (!document)
+      return next(new AppError('One of the documents does not exist', 404));
+    documents.push(document);
+  }
 
-  if (!document) return next(new AppError('Document not found', 404));
+  const updatedDocuments = [];
+  for (const document of documents) {
+    document.storage.status = req.params.status;
 
-  document['storage']['status'] = filteredBody.storage.status;
-  const updatedDocument = await document.save({ validateBeforeSave: false });
+    const updatedDocument = await document.save({ validateBeforeSave: false });
+    updatedDocuments.push(updatedDocument);
+  }
 
   res.status(200).json({
     status: 'success',
     env: {
-      document: updatedDocument,
+      documents: updatedDocuments,
     },
   });
+
+  // const pickFields = ['storage'];
+  // const filteredBody = _.pick(req.body, pickFields);
+  // const { id } = req.params;
+
+  // const initialQuery = {
+  //   _id: id,
+  //   status: { $ne: 'Deleted' },
+  //   _tenantId: req.user._tenantId,
+  // };
+
+  // const document = await Document.findOne(initialQuery);
+
+  // if (!document) return next(new AppError('Document not found', 404));
+
+  // document['storage']['status'] = filteredBody.storage.status;
+  // const updatedDocument = await document.save({ validateBeforeSave: false });
+
+  // res.status(200).json({
+  //   status: 'success',
+  //   env: {
+  //     document: updatedDocument,
+  //   },
+  // });
 });
 
 exports.getFileTask = catchAsync(async (req, res, next) => {
