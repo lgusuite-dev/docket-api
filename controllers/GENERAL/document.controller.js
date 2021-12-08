@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const axios = require('axios');
 
 const Document = require('../../models/GENERAL/document.model');
 const File = require('../../models/GENERAL/file.model');
@@ -554,16 +553,8 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
 // UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = [
-    'documentFileLinks',
-    'recipients',
-    'dateReleased',
-    'receiptBlob',
-  ];
+  const pickFields = ['recipients', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
-  const { receiptBlob, documentFileLinks } = filteredBody;
-  delete filteredBody.documentFileLinks;
-  delete filteredBody.receiptBlob;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
@@ -600,74 +591,6 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   ];
 
   await updateSideEffects(updateArgs);
-
-  if (documentFileLinks.length !== 0) {
-    const outgoingDocument = await Document.findById(
-      updatedDocument._id
-    ).populate({
-      path: '_fromTaskId',
-      select: '_documentId',
-      populate: {
-        path: '_documentId',
-        model: 'Document',
-      },
-    });
-
-    const incomingDocument = doc._fromTaskId._documentId;
-
-    const userEmails = [incomingDocument.sender.email];
-
-    const { recipients } = outgoingDocument;
-    for (let recipient of recipients) {
-      if (recipient.mailUpdates) {
-        userEmails.push(recipient.email);
-      }
-    }
-
-    if (incomingDocument.sender.mailUpdates) {
-      userEmails.push(sender.email);
-    }
-
-    //download files
-    let fileBufferArray = [receiptBlob];
-    for (let file of documentFileLinks) {
-      const { fileName, link } = file;
-      const downloadedFile = await axios({
-        url: link,
-        method: 'get',
-      });
-
-      if (downloadedFile) {
-        fileBufferArray.push({
-          name: fileName,
-          content: Buffer.from(downloadedFile.data).toString('base64'),
-        });
-      }
-    }
-
-    let attachmentArray = [];
-    for (let fileBuffer of fileBufferArray) {
-      attachmentArray.push({
-        content: fileBuffer.content,
-        filename: fileBuffer.name,
-        type: 'application/pdf',
-        disposition: 'attachment',
-        content_id: fileBuffer.name,
-      });
-    }
-
-    for (let email of userEmails) {
-      const emailOptions = {
-        to: email,
-        subject: 'Document For Releasing',
-        html: '<p>Here’s an attachment for you!</p>',
-        html: `<p>Here’s an attachment for you!</p>`,
-        attachments: attachmentArray,
-      };
-
-      await sendMail(emailOptions);
-    }
-  }
 
   res.status(200).json({
     status: 'success',
