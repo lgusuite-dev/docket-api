@@ -62,7 +62,7 @@ const createPreview = (text) => {
 
 exports.searchDocument = catchAsync(async (req, res, next) => {
   const { search } = req.query;
-  const filteredQuery = _.omit(req.query, ['confidentialityLevel']);
+  let filteredQuery = _.omit(req.query, ['confidentialityLevel']);
   const extractWords = search ? search.split(' ') : [];
   let sorter;
   // priority of searching
@@ -139,39 +139,41 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     document.text = origText;
   }
 
-  // if (!searchedDocuments.length) {
-  //   const query = {
-  //     $or: [
-  //       { _includes: req.user._id },
-  //       { confidentialityLevel: { $lte: req.user.access_level } },
-  //     ],
-  //     _excludes: { $ne: req.user._id },
-  //     _tenantId: req.user._tenantId,
-  //     status: { $ne: 'Deleted' },
-  //   };
+  if (!searchedDocuments.length) {
+    filteredQuery = _.omit(filteredQuery, ['populate']);
 
-  //   const documentSearch = new QueryFeatures(
-  //     Document.find(query).populate({
-  //       path: '_files',
-  //     }),
-  //     filteredQuery
-  //   )
-  //     .filter()
-  //     .sort()
-  //     .limitFields()
-  //     .paginate()
-  //     .populate();
+    const query = {
+      $or: [
+        { _includes: req.user._id },
+        { confidentialityLevel: { $lte: req.user.access_level } },
+      ],
+      _excludes: { $ne: req.user._id },
+      _tenantId: req.user._tenantId,
+      status: { $ne: 'Deleted' },
+    };
 
-  //   const nDocumentSearch = new QueryFeatures(
-  //     Document.find(query),
-  //     filteredQuery
-  //   )
-  //     .filter()
-  //     .count();
+    const documentSearch = new QueryFeatures(
+      Document.find(query).populate({
+        path: '_files _assignedTo',
+      }),
+      filteredQuery
+    )
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate()
+      .populate();
 
-  //   searchedDocuments = await documentSearch.query;
-  //   scannedDocCounts = await nDocumentSearch.query;
-  // }
+    const nDocumentSearch = new QueryFeatures(
+      Document.find(query),
+      filteredQuery
+    )
+      .filter()
+      .count();
+
+    searchedDocuments = await documentSearch.query;
+    scannedDocCounts = await nDocumentSearch.query;
+  }
 
   res.status(200).json({
     status: 'success',
