@@ -19,7 +19,19 @@ exports.createBox = catchAsync(async (req, res, next) => {
   filteredBody._tenantId = req.user._tenantId;
 
   //serial number generator
-  filteredBody.serialNumber = Math.floor(Math.random() * 1000000000).toString();
+  const tempBox = await Box.findOne({
+    _tenantId: req.user._tenantId,
+  }).sort({
+    createdAt: -1,
+  });
+
+  let finalSN = 1;
+  if (tempBox.serialNumber && tempBox.serialNumber < 10000) {
+    let serialNumber = parseInt(tempBox.serialNumber);
+    finalSN = serialNumber + 1;
+  }
+
+  filteredBody.serialNumber = finalSN.toString().padStart(4, '0');
 
   //Control Number Generator
   const configs = settings.ALGORITHM;
