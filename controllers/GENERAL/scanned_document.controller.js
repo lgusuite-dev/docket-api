@@ -72,7 +72,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
       { _includes: req.user._id },
       { confidentialityLevel: { $lte: req.user.access_level } },
     ],
-    _excludes: { $ne: req.user._id },
+    // _excludes: { $ne: req.user._id },
     _tenantId: req.user._tenantId,
     status: { $ne: 'Deleted' },
   };
@@ -137,16 +137,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   }
 
   if (!searchedDocuments.length) {
-    const query = {
-      $or: [
-        { _includes: req.user._id },
-        { confidentialityLevel: { $lte: req.user.access_level } },
-      ],
-      _excludes: { $ne: req.user._id },
-      _tenantId: req.user._tenantId,
-      status: { $ne: 'Deleted' },
-    };
-
+    const query = qry;
     const documentSearch = new QueryFeatures(Document.find(query), req.query)
       .filter()
       .sort()
@@ -156,10 +147,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
 
     const nDocumentSearch = new QueryFeatures(
       Document.find(query).populate({
-        path: '_documentId',
-        populate: {
-          path: '_files',
-        },
+        path: '_files',
       }),
       req.query
     )
