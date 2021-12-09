@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const axios = require('axios');
 
 const Document = require('../../models/GENERAL/document.model');
 const File = require('../../models/GENERAL/file.model');
@@ -59,6 +58,18 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
         populate: {
           path: '_role',
           model: 'Role',
+        },
+      })
+      .populate({
+        path: '_fromTaskId',
+        select: '_documentId',
+        populate: {
+          path: '_documentId',
+          model: 'Document',
+          populate: {
+            path: '_files',
+            model: 'File',
+          },
         },
       }),
     req.query
@@ -385,6 +396,24 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
     filteredBody.controlNumber = controlNumber;
     filteredBody.dateClassified = new Date();
+  } else {
+    let controlNumberArray = document.controlNumber.split('-');
+    let data = filteredBody.classification;
+    let found = false;
+    for (let logic of settings.ALGORITHM.fieldBased.logics) {
+      let condition = logic.if.replace(/\//g, '');
+      if (eval(condition)) {
+        controlNumberArray[controlNumberArray.length - 1] = logic.then;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      controlNumberArray[controlNumberArray.length - 1] =
+        settings.ALGORITHM.fieldBased.default;
+    }
+    filteredBody['controlNumber'] = controlNumberArray.join('-');
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
@@ -542,10 +571,8 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
 // UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['documentFileLinks', 'recipients', 'dateReleased'];
+  const pickFields = ['recipients', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
-  const { documentFileLinks } = filteredBody;
-  delete filteredBody.documentFileLinks;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
@@ -582,66 +609,6 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   ];
 
   await updateSideEffects(updateArgs);
-
-  if (documentFileLinks.length !== 0) {
-    const outgoingDocument = await Document.findById(
-      updatedDocument._id
-    ).populate({
-      path: '_fromTaskId',
-      select: '_documentId',
-      populate: {
-        path: '_documentId',
-        model: 'Document',
-      },
-    });
-
-    const incomingDocument = doc._fromTaskId._documentId;
-
-    const userEmails = [incomingDocument.sender.email];
-
-    const { recipients } = outgoingDocument;
-    for (let recipient of recipients) {
-      userEmails.push(recipient.email);
-    }
-
-    let fileBufferArray = [];
-    for (let file of documentFileLinks) {
-      const { fileName, link } = file;
-      const downloadedFile = await axios.get(link);
-
-      if (downloadedFile) {
-        fileBufferArray.push({
-          name: fileName,
-          buffer: Buffer.from(downloadedFile.data).toString('base64'),
-        });
-      }
-    }
-
-    const file = await axios.get(attachment.link);
-
-    if (file) {
-      const bufferedFile = Buffer.from(file.data).toString('base64');
-      const emailAttachment = {
-        content: bufferedFile,
-        filename: `some-attachment${index}.pdf`,
-        type: 'application/pdf',
-        disposition: 'attachment',
-        content_id: 'mytext',
-      };
-
-      emailAttachments.push(emailAttachment);
-
-      const emailOptions = {
-        to: sendTo,
-        subject,
-        html: '<p>Here’s an attachment for you!</p>',
-        html: `<p>${message}</p>`,
-        attachments: emailAttachments,
-      };
-
-      await sendMail(emailOptions);
-    }
-  }
 
   res.status(200).json({
     status: 'success',
@@ -846,29 +813,61 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 });
 
 exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
-  const pickFields = ['storage'];
+  const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
-  const { id } = req.params;
 
-  const initialQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
+  const documents = [];
+  for (const row of filteredBody.body) {
+    const documentQuery = {
+      _id: row._id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
 
-  const document = await Document.findOne(initialQuery);
+    const document = await Document.findOne(documentQuery);
+    if (!document)
+      return next(new AppError('One of the documents does not exist', 404));
+    documents.push(document);
+  }
 
-  if (!document) return next(new AppError('Document not found', 404));
+  const updatedDocuments = [];
+  for (const document of documents) {
+    document.storage.status = req.params.status;
 
-  document['storage']['status'] = filteredBody.storage.status;
-  const updatedDocument = await document.save({ validateBeforeSave: false });
+    const updatedDocument = await document.save({ validateBeforeSave: false });
+    updatedDocuments.push(updatedDocument);
+  }
 
   res.status(200).json({
     status: 'success',
     env: {
-      document: updatedDocument,
+      documents: updatedDocuments,
     },
   });
+
+  // const pickFields = ['storage'];
+  // const filteredBody = _.pick(req.body, pickFields);
+  // const { id } = req.params;
+
+  // const initialQuery = {
+  //   _id: id,
+  //   status: { $ne: 'Deleted' },
+  //   _tenantId: req.user._tenantId,
+  // };
+
+  // const document = await Document.findOne(initialQuery);
+
+  // if (!document) return next(new AppError('Document not found', 404));
+
+  // document['storage']['status'] = filteredBody.storage.status;
+  // const updatedDocument = await document.save({ validateBeforeSave: false });
+
+  // res.status(200).json({
+  //   status: 'success',
+  //   env: {
+  //     document: updatedDocument,
+  //   },
+  // });
 });
 
 exports.getFileTask = catchAsync(async (req, res, next) => {

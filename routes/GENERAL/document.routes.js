@@ -41,7 +41,7 @@ router.route('/upload/:id').put(documentController.uploadDocumentFile);
 router.route('/classify/:id').put(documentController.classifyDocument);
 router.route('/release/:id').put(documentController.releaseDocument);
 router.route('/acknowledge/:id').put(documentController.acknowledgeDocument);
-router.route('/storage/:id').put(documentController.updateDocumentStorage);
+router.route('/storage/:status').put(documentController.updateDocumentStorage);
 router
   .route('/isAssigned/:id')
   .put(documentController.updateDocumentIsAssigned);

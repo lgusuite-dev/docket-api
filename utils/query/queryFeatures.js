@@ -74,6 +74,7 @@ class QueryFeatures {
       'printed',
       'released',
       'uploaded',
+      'acknowledged',
       'status',
       '_bookId',
       '_boxId',
