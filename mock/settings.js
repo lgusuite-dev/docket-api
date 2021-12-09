@@ -63,6 +63,10 @@ exports.ALGORITHM = {
         if: '/data/ === "Supplies"',
         then: 'S',
       },
+      {
+        if: '/data/ === "Ombudsman Cases"',
+        then: 'E',
+      },
     ],
   },
   sequence: {
