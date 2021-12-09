@@ -62,7 +62,7 @@ const createPreview = (text) => {
 
 exports.searchDocument = catchAsync(async (req, res, next) => {
   const { search } = req.query;
-  const filteredQuery = _.omit(req.query, confidentialityLevel);
+  const filteredQuery = _.omit(req.query, 'confidentialityLevel');
   const extractWords = search ? search.split(' ') : [];
   let sorter;
   // priority of searching
