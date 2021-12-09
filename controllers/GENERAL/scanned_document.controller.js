@@ -69,13 +69,12 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   // inclusion and exclusion
   // access level
   // status [inbound, outbound, archived]
-
   let qry = {
     $or: [
       { _includes: req.user._id },
       { confidentialityLevel: { $lte: req.user.access_level } },
     ],
-    // _excludes: { $ne: req.user._id },
+    _excludes: { $ne: req.user._id },
     _tenantId: req.user._tenantId,
     status: { $ne: 'Deleted' },
   };
@@ -138,14 +137,25 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
         : preview;
     document.text = origText;
   }
-
-  if (!searchedDocuments.length) {
+  // searchedDocuments = [];
+  if (!searchedDocuments.length && search) {
     filteredQuery = _.omit(filteredQuery, ['populate']);
 
     const query = {
-      $or: [
-        { _includes: req.user._id },
-        { confidentialityLevel: { $lte: req.user.access_level } },
+      $and: [
+        {
+          $or: [
+            { _includes: req.user._id },
+            { confidentialityLevel: { $lte: req.user.access_level } },
+          ],
+        },
+        {
+          $or: [
+            { remarks: { $regex: search, $options: 'i' } },
+            { subject: { $regex: search, $options: 'i' } },
+            { controlNumber: search },
+          ],
+        },
       ],
       _excludes: { $ne: req.user._id },
       _tenantId: req.user._tenantId,
