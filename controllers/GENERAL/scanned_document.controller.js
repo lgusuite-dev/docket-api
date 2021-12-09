@@ -69,6 +69,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   // inclusion and exclusion
   // access level
   // status [inbound, outbound, archived]
+
   let qry = {
     $or: [
       { _includes: req.user._id },
@@ -139,7 +140,16 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   }
 
   if (!searchedDocuments.length) {
-    const query = qry;
+    const query = {
+      $or: [
+        { _includes: req.user._id },
+        { confidentialityLevel: { $lte: req.user.access_level } },
+      ],
+      _excludes: { $ne: req.user._id },
+      _tenantId: req.user._tenantId,
+      status: { $ne: 'Deleted' },
+    };
+
     const documentSearch = new QueryFeatures(
       Document.find(query),
       filteredQuery
