@@ -87,6 +87,6 @@ const ScannedDocumentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-ScannedDocumentSchema.index({ text: 'text', controlNumber: 'text' });
+ScannedDocumentSchema.index({ text: 'text' });
 
 module.exports = mongoose.model('Scanned Document', ScannedDocumentSchema);
