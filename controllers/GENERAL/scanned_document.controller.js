@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 const Document = require('../../models/GENERAL/document.model');
 
@@ -61,6 +62,7 @@ const createPreview = (text) => {
 
 exports.searchDocument = catchAsync(async (req, res, next) => {
   const { search } = req.query;
+  const filteredQuery = _.omit(req.query, confidentialityLevel);
   const extractWords = search ? search.split(' ') : [];
   let sorter;
   // priority of searching
@@ -93,7 +95,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
           path: '_files',
         },
       }),
-    req.query
+    filteredQuery
   )
     .sort()
     .limitFields()
@@ -110,7 +112,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
           path: '_files',
         },
       }),
-    req.query
+    filteredQuery
   )
     .filter()
     .count();
@@ -138,7 +140,10 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
 
   if (!searchedDocuments.length) {
     const query = qry;
-    const documentSearch = new QueryFeatures(Document.find(query), req.query)
+    const documentSearch = new QueryFeatures(
+      Document.find(query),
+      filteredQuery
+    )
       .filter()
       .sort()
       .limitFields()
@@ -149,7 +154,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
       Document.find(query).populate({
         path: '_files',
       }),
-      req.query
+      filteredQuery
     )
       .filter()
       .count();
