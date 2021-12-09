@@ -560,6 +560,21 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
   res.status(200).json({
     status: 'success',
     env: {
