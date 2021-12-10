@@ -1280,3 +1280,178 @@ exports.releasingModule = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+// Mobile Dashboard
+
+// TASKS REPORTS MODULE
+exports.mobileTasks = catchAsync(async (req, res, next) => {
+  const pending_tasks = await Task.aggregate([
+    {
+      $match: {
+        status: 'Pending',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  const completed_tasks = await Task.aggregate([
+    {
+      $match: {
+        status: 'Completed',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  const cancelled_tasks = await Task.aggregate([
+    {
+      $match: {
+        status: 'Cancelled',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  const declined_tasks = await Task.aggregate([
+    {
+      $match: {
+        status: 'Declined',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  const for_approval_tasks = await Task.aggregate([
+    {
+      $match: {
+        status: 'For Approval',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      pending_tasks: pending_tasks[0] || { count: 0 },
+      completed_tasks: completed_tasks[0] || { count: 0 },
+      cancelled_tasks: cancelled_tasks[0] || { count: 0 },
+      declined_tasks: declined_tasks[0] || { count: 0 },
+      for_approval_tasks: for_approval_tasks[0] || { count: 0 },
+    },
+  });
+});
+
+exports.mobileDocTypes = catchAsync(async (req, res, next) => {
+  const incoming_docs = await Document.aggregate([
+    {
+      $match: {
+        type: 'Incoming',
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  const outgoing_docs = await Document.aggregate([
+    {
+      $match: {
+        type: 'Outgoing',
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  const internal_docs = await Document.aggregate([
+    {
+      $match: {
+        type: 'Internal',
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  const archived_docs = await Document.aggregate([
+    {
+      $match: {
+        type: 'Archived',
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      incoming_docs: incoming_docs[0] || { count: 0 },
+      outgoing_docs: outgoing_docs[0] || { count: 0 },
+      internal_docs: internal_docs[0] || { count: 0 },
+      archived_docs: archived_docs[0] || { count: 0 },
+    },
+  });
+});
+
+exports.mobileDocClassification = catchAsync(async (req, res, next) => {
+  const document_classification = await Document.aggregate([
+    {
+      $match: {
+        classification: { $ne: null },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $group: {
+        _id: '$classification',
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $addFields: {
+        classification: '$_id',
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document_classification,
+    },
+  });
+});
