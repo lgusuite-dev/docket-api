@@ -20,6 +20,10 @@ const DocumentSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
+      mailUpdates: {
+        type: Boolean,
+        default: false,
+      },
       middleInitial: String,
       department: String,
       position: String,
@@ -111,6 +115,10 @@ const DocumentSchema = new mongoose.Schema(
           type: String,
           trim: true,
         },
+        mailUpdates: {
+          type: Boolean,
+          default: false,
+        },
         middleInitial: String,
         department: String,
         position: String,
@@ -152,6 +160,11 @@ const DocumentSchema = new mongoose.Schema(
       type: Boolean,
     },
     dateApproved: Date,
+    _fromTaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
+    },
+
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,

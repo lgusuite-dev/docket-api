@@ -59,6 +59,18 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
           path: '_role',
           model: 'Role',
         },
+      })
+      .populate({
+        path: '_fromTaskId',
+        select: '_documentId',
+        populate: {
+          path: '_documentId',
+          model: 'Document',
+          populate: {
+            path: '_files',
+            model: 'File',
+          },
+        },
       }),
     req.query
   )
@@ -69,7 +81,33 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
     .populate();
 
   const nQueryFeatures = new QueryFeatures(
-    Document.find(initialQuery),
+    Document.find(initialQuery)
+      .populate({
+        path: '_excludes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_includes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_fromTaskId',
+        select: '_documentId',
+        populate: {
+          path: '_documentId',
+          model: 'Document',
+          populate: {
+            path: '_files',
+            model: 'File',
+          },
+        },
+      }),
     req.query
   )
     .filter()
@@ -358,6 +396,24 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
     filteredBody.controlNumber = controlNumber;
     filteredBody.dateClassified = new Date();
+  } else {
+    let controlNumberArray = document.controlNumber.split('-');
+    let data = filteredBody.classification;
+    let found = false;
+    for (let logic of settings.ALGORITHM.fieldBased.logics) {
+      let condition = logic.if.replace(/\//g, '');
+      if (eval(condition)) {
+        controlNumberArray[controlNumberArray.length - 1] = logic.then;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      controlNumberArray[controlNumberArray.length - 1] =
+        settings.ALGORITHM.fieldBased.default;
+    }
+    filteredBody['controlNumber'] = controlNumberArray.join('-');
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
@@ -503,6 +559,21 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
     new: true,
     runValidators: true,
   });
+
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
 
   res.status(200).json({
     status: 'success',
@@ -689,7 +760,9 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   if (!task) return next(new AppError('Task not found', 404));
 
   task.status = 'Completed';
-  task.message = filteredBody.message;
+  task['message'] = filteredBody.message;
+
+  document._fromTaskId = task._id;
 
   const updatedDocument = await document.save({ validateBeforeSave: false });
   await task.save({ validateBeforeSave: false });
@@ -755,29 +828,61 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 });
 
 exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
-  const pickFields = ['storage'];
+  const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
-  const { id } = req.params;
 
-  const initialQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
+  const documents = [];
+  for (const row of filteredBody.body) {
+    const documentQuery = {
+      _id: row._id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
 
-  const document = await Document.findOne(initialQuery);
+    const document = await Document.findOne(documentQuery);
+    if (!document)
+      return next(new AppError('One of the documents does not exist', 404));
+    documents.push(document);
+  }
 
-  if (!document) return next(new AppError('Document not found', 404));
+  const updatedDocuments = [];
+  for (const document of documents) {
+    document.storage.status = req.params.status;
 
-  document['storage']['status'] = filteredBody.storage.status;
-  const updatedDocument = await document.save({ validateBeforeSave: false });
+    const updatedDocument = await document.save({ validateBeforeSave: false });
+    updatedDocuments.push(updatedDocument);
+  }
 
   res.status(200).json({
     status: 'success',
     env: {
-      document: updatedDocument,
+      documents: updatedDocuments,
     },
   });
+
+  // const pickFields = ['storage'];
+  // const filteredBody = _.pick(req.body, pickFields);
+  // const { id } = req.params;
+
+  // const initialQuery = {
+  //   _id: id,
+  //   status: { $ne: 'Deleted' },
+  //   _tenantId: req.user._tenantId,
+  // };
+
+  // const document = await Document.findOne(initialQuery);
+
+  // if (!document) return next(new AppError('Document not found', 404));
+
+  // document['storage']['status'] = filteredBody.storage.status;
+  // const updatedDocument = await document.save({ validateBeforeSave: false });
+
+  // res.status(200).json({
+  //   status: 'success',
+  //   env: {
+  //     document: updatedDocument,
+  //   },
+  // });
 });
 
 exports.getFileTask = catchAsync(async (req, res, next) => {

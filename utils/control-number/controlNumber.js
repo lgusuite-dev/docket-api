@@ -172,7 +172,7 @@ class ControlNumber {
     //Needs moment JS for the format
     let config = this.configs.month;
     this.controlNumberArray.push({
-      value: this.now.getMonth() + 1,
+      value: (this.now.getMonth() + 1).toString().padStart(2, '0'),
       separate: config.separate,
     });
     return this;
