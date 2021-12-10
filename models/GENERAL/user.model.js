@@ -87,6 +87,10 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    hasMobileAppAccess: {
+      type: Boolean,
+      default: false,
+    },
     _teams: [
       {
         type: mongoose.Schema.Types.ObjectId,

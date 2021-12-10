@@ -85,7 +85,6 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     qry['lean'] = true;
     sorter = { score: { $meta: 'textScore' } };
   }
-
   const searchedDocumentsQuery = new QueryFeatures(
     ScannedDocument.find(qry)
       .sort(sorter)
