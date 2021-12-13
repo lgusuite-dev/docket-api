@@ -31,7 +31,7 @@ exports.createBook = catchAsync(async (req, res, next) => {
   });
 
   let finalSN = 1;
-  if (tempBook.serialNumber && tempBook.serialNumber < 10000) {
+  if (tempBook?.serialNumber && tempBook?.serialNumber < 10000) {
     let serialNumber = parseInt(tempBook.serialNumber);
     finalSN = serialNumber + 1;
   }
