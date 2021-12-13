@@ -26,9 +26,11 @@ exports.createBox = catchAsync(async (req, res, next) => {
   });
 
   let finalSN = 1;
-  if (tempBox?.serialNumber && tempBox?.serialNumber < 10000) {
-    let serialNumber = parseInt(tempBox.serialNumber);
-    finalSN = serialNumber + 1;
+  if (tempBox.serialNumber) {
+    if (tempBox.serialNumber < 10000) {
+      let serialNumber = parseInt(tempBox.serialNumber);
+      finalSN = serialNumber + 1;
+    }
   }
 
   filteredBody.serialNumber = finalSN.toString().padStart(4, '0');
