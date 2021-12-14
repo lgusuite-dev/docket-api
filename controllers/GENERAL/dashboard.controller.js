@@ -675,7 +675,7 @@ exports.taskModule = catchAsync(async (req, res, next) => {
     {
       $match: {
         dueDate: { $gte: new Date() },
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Cancelled'] },
         status: 'Pending',
         _assigneeId: req.user._id,
         _tenantId: req.user._tenantId,
@@ -691,7 +691,7 @@ exports.taskModule = catchAsync(async (req, res, next) => {
     {
       $match: {
         dueDate: { $lt: new Date() },
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Cancelled'] },
         status: 'Pending',
         _assigneeId: req.user._id,
         _tenantId: req.user._tenantId,
@@ -706,8 +706,8 @@ exports.taskModule = catchAsync(async (req, res, next) => {
   const my_declined_task = await Task.aggregate([
     {
       $match: {
-        status: 'Declined',
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Cancelled'] },
+        status: { eq: 'Declined' },
         _assigneeId: req.user._id,
         _tenantId: req.user._tenantId,
       },
@@ -721,8 +721,8 @@ exports.taskModule = catchAsync(async (req, res, next) => {
   const my_completed_task = await Task.aggregate([
     {
       $match: {
+        status: { $nin: ['Deleted', 'Cancelled'] },
         status: { $in: ['Completed', 'For Approval'] },
-        status: { $ne: 'Deleted' },
         _assigneeId: req.user._id,
         _tenantId: req.user._tenantId,
       },
