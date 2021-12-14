@@ -3,10 +3,6 @@ const router = require('express').Router();
 const documentController = require('../../controllers/GENERAL/document.controller');
 const authController = require('../../controllers/GENERAL/auth.controller');
 
-router
-  .route('/control-number/:id')
-  .get(documentController.generateControlNumber);
-
 router.use(authController.authenticate);
 
 router
