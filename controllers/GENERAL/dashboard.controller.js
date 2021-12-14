@@ -640,9 +640,6 @@ exports.warehousingModule = catchAsync(async (req, res, next) => {
 
 // OFFICE LAWYER / STAFF LAWYER TASK REPORT MODULE
 exports.taskModule = catchAsync(async (req, res, next) => {
-  const userTeam = await req.user.populate('_teams');
-  const teamUsers = userTeam._teams.length ? userTeam._teams[0].users : [];
-
   // My Pending Task
   const my_pending_task = await Task.aggregate([
     {
@@ -705,68 +702,6 @@ exports.taskModule = catchAsync(async (req, res, next) => {
     },
   ]);
 
-  // My Team Pending Task
-  const my_team_pending_task = await Task.aggregate([
-    {
-      $match: {
-        dueDate: { $gte: new Date() },
-        status: { $ne: 'Deleted' },
-        status: 'Pending',
-        _assigneeId: { $in: teamUsers },
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  // My Team Delayed Task
-  const my_team_delayed_task = await Task.aggregate([
-    {
-      $match: {
-        dueDate: { $lt: new Date() },
-        status: { $ne: 'Deleted' },
-        status: 'Pending',
-        _assigneeId: { $in: teamUsers },
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  // My Team Declined Task
-  const my_team_declined_task = await Task.aggregate([
-    {
-      $match: {
-        status: 'Declined',
-        status: { $ne: 'Deleted' },
-        _assigneeId: { $in: teamUsers },
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  // My Completed Task
-  const my_team_completed_task = await Task.aggregate([
-    {
-      $match: {
-        status: { $in: ['Completed', 'For Approval'] },
-        status: { $ne: 'Deleted' },
-        _assigneeId: { $in: teamUsers },
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
   res.status(200).json({
     status: 'success',
     env: {
@@ -774,19 +709,12 @@ exports.taskModule = catchAsync(async (req, res, next) => {
       my_delayed_task: my_delayed_task[0] || { count: 0 },
       my_declined_task: my_declined_task[0] || { count: 0 },
       my_completed_task: my_completed_task[0] || { count: 0 },
-      my_team_pending_task: my_team_pending_task[0] || { count: 0 },
-      my_team_delayed_task: my_team_delayed_task[0] || { count: 0 },
-      my_team_declined_task: my_team_declined_task[0] || { count: 0 },
-      my_team_completed_task: my_team_completed_task[0] || { count: 0 },
     },
   });
 });
 
 // APPROVER REPORT MODULE
 exports.approverModule = catchAsync(async (req, res, next) => {
-  const userTeam = await req.user.populate('_teams');
-  const teamUsers = userTeam._teams.length ? userTeam._teams[0].users : [];
-
   // Document for Assignation
   const document_assignation = await Document.aggregate([
     {
@@ -795,7 +723,7 @@ exports.approverModule = catchAsync(async (req, res, next) => {
         type: 'Incoming',
         confidentialityLevel: { $eq: null },
         status: 'Active',
-        _assignedTo: { $ne: null },
+        _assignedTo: { $eq: null },
         _tenantId: req.user._tenantId,
       },
     },
@@ -809,7 +737,7 @@ exports.approverModule = catchAsync(async (req, res, next) => {
     {
       $match: {
         workflow: { $in: ['Two-Way', 'Complex with Approval'] },
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Suspended'] },
         status: 'For Approval',
         'reply._documentId': { $ne: null },
         _mainTaskId: { $eq: null },
@@ -825,75 +753,15 @@ exports.approverModule = catchAsync(async (req, res, next) => {
   const for_final_action = await Document.aggregate([
     {
       $match: {
-        type: 'Outgoing',
-        fileLength: { $gt: 0 },
+        type: { $in: ['Outgoing', 'Internal', 'Archived'] },
+        controlNumber: { $ne: null },
+        fileLength: { $gte: 0 },
         'process.printed': true,
         'process.signed': true,
         'process.uploaded': true,
+        finalStatus: { $ne: 'Library' },
         finalStatus: { $eq: null },
         status: 'Active',
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  // My Team Pending Task
-  const my_team_pending_task = await Task.aggregate([
-    {
-      $match: {
-        dueDate: { $gte: new Date() },
-        status: { $ne: 'Deleted' },
-        status: 'Pending',
-        _assigneeId: { $in: teamUsers },
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  // My Team Delayed Task
-  const my_team_delayed_task = await Task.aggregate([
-    {
-      $match: {
-        dueDate: { $lt: new Date() },
-        status: { $ne: 'Deleted' },
-        status: 'Pending',
-        _assigneeId: { $in: teamUsers },
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  // My Team Declined Task
-  const my_team_declined_task = await Task.aggregate([
-    {
-      $match: {
-        status: 'Declined',
-        status: { $ne: 'Deleted' },
-        _assigneeId: { $in: teamUsers },
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
-
-  // My Completed Task
-  const my_team_completed_task = await Task.aggregate([
-    {
-      $match: {
-        status: { $in: ['Completed', 'For Approval'] },
-        status: { $ne: 'Deleted' },
-        _assigneeId: { $in: teamUsers },
         _tenantId: req.user._tenantId,
       },
     },
@@ -909,10 +777,6 @@ exports.approverModule = catchAsync(async (req, res, next) => {
       for_approval: for_approval[0] || { count: 0 },
       for_final_action: for_final_action[0] || { count: 0 },
       returned_task: { count: 0 },
-      my_team_pending_task: my_team_pending_task[0] || { count: 0 },
-      my_team_delayed_task: my_team_delayed_task[0] || { count: 0 },
-      my_team_declined_task: my_team_declined_task[0] || { count: 0 },
-      my_team_completed_task: my_team_completed_task[0] || { count: 0 },
     },
   });
 });
@@ -1091,12 +955,6 @@ exports.userModule = catchAsync(async (req, res, next) => {
 
 // TEAM TASK REPORT MODLE
 exports.teamTaskModule = catchAsync(async (req, res, next) => {
-  const userTeam = await req.user.populate('_teams');
-  const teamUsers = userTeam._teams.length ? userTeam._teams[0].users : [];
-
-  console.log(userTeam);
-  console.log(teamUsers);
-
   // My Team Pending Task
   const my_team_pending_task = await Task.aggregate([
     {
