@@ -1094,14 +1094,17 @@ exports.teamTaskModule = catchAsync(async (req, res, next) => {
   const userTeam = await req.user.populate('_teams');
   const teamUsers = userTeam._teams.length ? userTeam._teams[0].users : [];
 
+  console.log(userTeam);
+  console.log(teamUsers);
+
   // My Team Pending Task
   const my_team_pending_task = await Task.aggregate([
     {
       $match: {
-        dueDate: { $gte: new Date() },
+        _mainTaskId: { $eq: null },
         status: { $ne: 'Deleted' },
+        dueDate: { $gte: new Date() },
         status: 'Pending',
-        _assigneeId: { $in: teamUsers },
         _tenantId: req.user._tenantId,
       },
     },
@@ -1114,10 +1117,10 @@ exports.teamTaskModule = catchAsync(async (req, res, next) => {
   const my_team_delayed_task = await Task.aggregate([
     {
       $match: {
-        dueDate: { $lt: new Date() },
+        _mainTaskId: { $eq: null },
         status: { $ne: 'Deleted' },
+        dueDate: { $lt: new Date() },
         status: 'Pending',
-        _assigneeId: { $in: teamUsers },
         _tenantId: req.user._tenantId,
       },
     },
@@ -1130,9 +1133,9 @@ exports.teamTaskModule = catchAsync(async (req, res, next) => {
   const my_team_declined_task = await Task.aggregate([
     {
       $match: {
-        status: 'Declined',
+        _mainTaskId: { $eq: null },
         status: { $ne: 'Deleted' },
-        _assigneeId: { $in: teamUsers },
+        status: 'Declined',
         _tenantId: req.user._tenantId,
       },
     },
@@ -1145,9 +1148,9 @@ exports.teamTaskModule = catchAsync(async (req, res, next) => {
   const my_team_completed_task = await Task.aggregate([
     {
       $match: {
-        status: { $in: ['Completed', 'For Approval'] },
+        _mainTaskId: { $eq: null },
         status: { $ne: 'Deleted' },
-        _assigneeId: { $in: teamUsers },
+        status: { $in: ['Completed', 'For Approval'] },
         _tenantId: req.user._tenantId,
       },
     },
@@ -1357,6 +1360,7 @@ exports.mobileTasks = catchAsync(async (req, res, next) => {
   });
 });
 
+// DOCUMENT TYPES REPORTS MODULE
 exports.mobileDocTypes = catchAsync(async (req, res, next) => {
   const incoming_docs = await Document.aggregate([
     {
@@ -1421,6 +1425,7 @@ exports.mobileDocTypes = catchAsync(async (req, res, next) => {
   });
 });
 
+// DOCUMENT CLASSIFICATION REPORTS MODULE
 exports.mobileDocClassification = catchAsync(async (req, res, next) => {
   const document_classification = await Document.aggregate([
     {
