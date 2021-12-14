@@ -985,6 +985,9 @@ exports.userModule = catchAsync(async (req, res, next) => {
 
 // TEAM TASK REPORT MODLE
 exports.teamTaskModule = catchAsync(async (req, res, next) => {
+  let userAccess;
+  let isApprover;
+
   const user = await req.user.populate({
     path: '_role',
     select: 'access',
@@ -1002,10 +1005,13 @@ exports.teamTaskModule = catchAsync(async (req, res, next) => {
     'For Approval',
     'Document Assignation',
   ];
-  const userAccess = _getUserAccess(user._role.access);
-  const isApprover = _checkAccess(userAccess, ...approverAccess);
 
-  if (!isApprover) {
+  if (user.type !== 'Admin') {
+    userAccess = _getUserAccess(user._role.access);
+    isApprover = _checkAccess(userAccess, ...approverAccess);
+  }
+
+  if (user.type !== 'Admin' && !isApprover) {
     matchQuery = {
       status: { $ne: 'Deleted' },
       _createdBy: req.user._id,
