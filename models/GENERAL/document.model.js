@@ -20,6 +20,10 @@ const DocumentSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
+      mailUpdates: {
+        type: Boolean,
+        default: false,
+      },
       middleInitial: String,
       department: String,
       position: String,
@@ -52,10 +56,11 @@ const DocumentSchema = new mongoose.Schema(
       enum: ['Active', 'Deleted', 'Suspended'],
     },
     controlNumber: String,
+    dateClassified: Date,
 
     finalStatus: {
       type: String,
-      enum: ['Approved', 'On Hold', 'Destroy'],
+      enum: ['Approved', 'On Hold', 'Destroy', 'Library'],
     },
     fileLength: {
       type: Number,
@@ -82,33 +87,48 @@ const DocumentSchema = new mongoose.Schema(
         type: Boolean,
         default: false,
       },
+      receipt: {
+        type: Boolean,
+        default: false,
+      },
+      acknowledged: {
+        type: Boolean,
+        default: false,
+      },
     },
     ocrStatus: {
       type: String,
       default: 'No',
       enum: ['No', 'Scanning', 'Done'],
     },
-    recipient: {
-      firstName: {
-        type: String,
-        trim: true,
+    recipients: [
+      {
+        firstName: {
+          type: String,
+          trim: true,
+        },
+        lastName: {
+          type: String,
+          trim: true,
+        },
+        mobileNumber: {
+          type: String,
+          trim: true,
+        },
+        mailUpdates: {
+          type: Boolean,
+          default: false,
+        },
+        middleInitial: String,
+        department: String,
+        position: String,
+        email: String,
+        prefix: String,
+        suffix: String,
       },
-      lastName: {
-        type: String,
-        trim: true,
-      },
-      mobileNumber: {
-        type: String,
-        trim: true,
-      },
-      middleInitial: String,
-      department: String,
-      position: String,
-      email: String,
-      prefix: String,
-      suffix: String,
-    },
+    ],
     dateReleased: Date,
+    dateConfirmed: Date,
     message: {
       from: {
         type: mongoose.Schema.Types.ObjectId,
@@ -140,10 +160,11 @@ const DocumentSchema = new mongoose.Schema(
       type: Boolean,
     },
     dateApproved: Date,
-    _taskId: {
+    _fromTaskId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',
     },
+
     _files: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -174,6 +195,7 @@ const DocumentSchema = new mongoose.Schema(
     },
     _includes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     _excludes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    _sharedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     classification: String,
     subClassification: String,
     remarks: String,

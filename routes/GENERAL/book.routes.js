@@ -10,6 +10,8 @@ router
   .get(bookController.getAllBooks)
   .post(bookController.createBook);
 
+router.route('/:id/document-selection').get(bookController.getDocumentsForBook);
+
 router
   .route('/:id')
   .get(bookController.getBook)

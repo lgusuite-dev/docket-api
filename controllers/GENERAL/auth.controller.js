@@ -97,6 +97,33 @@ exports.login = catchAsync(async (req, res, next) => {
   sendAuthResponse(user, 200, res);
 });
 
+exports.loginMobile = catchAsync(async (req, res, next) => {
+  const { type } = req.params;
+  const { email, password } = req.body;
+  const validTypes = ['super', 'tenant'];
+
+  if (!email) return next(new AppError('Please provide email', 400));
+  if (!password) return next(new AppError('Please provide password', 400));
+
+  if (!validTypes.includes(type))
+    return next(new AppError('Invalid type params', 400));
+  const query = {
+    ...generateLoginQuery(type),
+    email,
+    hasMobileAppAccess: true,
+  };
+
+  const user = await User.findOne(query).select('+password');
+
+  if (!user || !(await user.isPasswordCorrect(password, user.password)))
+    return next(new AppError('Incorrect email or password', 401));
+
+  if (user.status === 'Suspended')
+    return next(new AppError('Your Account is Suspended', 403));
+
+  sendAuthResponse(user, 200, res);
+});
+
 exports.authenticate = catchAsync(async (req, res, next) => {
   const { authorization, s_auth } = req.headers;
   let sessionToken;

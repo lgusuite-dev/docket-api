@@ -4,6 +4,9 @@ const Box = require('../../models/GENERAL/box.model');
 const Book = require('../../models/GENERAL/book.model');
 const Document = require('../../models/GENERAL/document.model');
 
+const ControlNumber = require('../../utils/control-number/controlNumber');
+const settings = require('../../mock/settings');
+
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -16,7 +19,35 @@ exports.createBox = catchAsync(async (req, res, next) => {
   filteredBody._tenantId = req.user._tenantId;
 
   //serial number generator
-  filteredBody.serialNumber = Math.floor(Math.random() * 1000000000).toString();
+  const tempBox = await Box.findOne({
+    _tenantId: req.user._tenantId,
+  }).sort({
+    createdAt: -1,
+  });
+
+  let finalSN = 1;
+  if (tempBox.serialNumber) {
+    if (tempBox.serialNumber < 10000) {
+      let serialNumber = parseInt(tempBox.serialNumber);
+      finalSN = serialNumber + 1;
+    }
+  }
+
+  filteredBody.serialNumber = finalSN.toString().padStart(4, '0');
+
+  //Control Number Generator
+  const configs = settings.ALGORITHM;
+  filteredBody.controlNumber = await new ControlNumber(
+    {},
+    configs,
+    req.user._tenantId
+  )
+    .fieldBased('type')
+    .sequence('monthly', 'box')
+    .month()
+    .year()
+    .sequence('yearly', 'box')
+    .generate();
 
   const box = await Box.create(filteredBody);
 

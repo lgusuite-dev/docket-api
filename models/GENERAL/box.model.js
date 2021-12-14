@@ -23,6 +23,7 @@ const BoxSchema = new mongoose.Schema(
     },
     remarks: String,
     serialNumber: String,
+    controlNumber: String,
     _books: [
       {
         type: mongoose.Schema.Types.ObjectId,

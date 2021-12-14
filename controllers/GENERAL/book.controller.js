@@ -3,6 +3,9 @@ const _ = require('lodash');
 const Book = require('../../models/GENERAL/book.model');
 const Document = require('../../models/GENERAL/document.model');
 
+const ControlNumber = require('../../utils/control-number/controlNumber');
+const settings = require('../../mock/settings');
+
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -21,7 +24,37 @@ exports.createBook = catchAsync(async (req, res, next) => {
   filteredBody._tenantId = req.user._tenantId;
 
   //serial number generator
-  filteredBody.serialNumber = Math.floor(Math.random() * 1000000000).toString();
+  const tempBook = await Book.findOne({
+    _tenantId: req.user._tenantId,
+  }).sort({
+    createdAt: -1,
+  });
+
+  let finalSN = 1;
+
+  if (tempBook.serialNumber) {
+    if (tempBook.serialNumber < 10000) {
+      let serialNumber = parseInt(tempBook.serialNumber);
+      finalSN = serialNumber + 1;
+    }
+    
+  }
+
+  filteredBody.serialNumber = finalSN.toString().padStart(4, '0');
+
+  //Control Number Generator
+  const configs = settings.ALGORITHM;
+  filteredBody.controlNumber = await new ControlNumber(
+    {},
+    configs,
+    req.user._tenantId
+  )
+    .fieldBased('type')
+    .sequence('monthly', 'book')
+    .month()
+    .year()
+    .sequence('yearly', 'book')
+    .generate();
 
   const book = await Book.create(filteredBody);
 
@@ -210,6 +243,65 @@ exports.getBookDocuments = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getDocumentsForBook = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const book = await Book.findOne(initialQuery);
+  if (!book) return next(new AppError('Book not found', 404));
+
+  const documentQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+    $or: [
+      {
+        $and: [
+          { type: 'Incoming' },
+          { createdAt: { $gte: book.coverageFrom, $lt: book.coverageTo } },
+        ],
+      },
+      {
+        $and: [
+          { type: { $in: ['Outgoing', 'Internal', 'Archived'] } },
+          { dateApproved: { $gte: book.coverageFrom, $lt: book.coverageTo } },
+        ],
+      },
+    ],
+  };
+
+  const queryFeatures = new QueryFeatures(
+    Document.find(documentQuery),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeatures = new QueryFeatures(
+    Document.find(documentQuery),
+    req.query
+  )
+    .filter()
+    .count();
+
+  const documents = await queryFeatures.query;
+  const nDocuments = await nQueryFeatures.query;
+
+  res.status(200).json({
+    status: 'Success',
+    total_docs: nDocuments,
+    env: {
+      documents,
+    },
+  });
+});
+
 exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
   const pickFields = ['_documents'];
   const filteredBody = _.pick(req.body, pickFields);
@@ -232,7 +324,6 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     status: { $ne: 'Deleted' },
     _tenantId: req.user._tenantId,
   };
-  console.log(filteredBody._documents);
   const document = await Document.findOne(documentQuery);
   if (!document) return next(new AppError('Document not found', 404));
 

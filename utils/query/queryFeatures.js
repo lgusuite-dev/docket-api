@@ -70,9 +70,11 @@ class QueryFeatures {
     let queryObj = JSON.parse(JSON.stringify(this.queryString));
     const allowedSecondaryOperator = [
       'signed',
+      'receipt',
       'printed',
       'released',
       'uploaded',
+      'acknowledged',
       'status',
       '_bookId',
       '_boxId',

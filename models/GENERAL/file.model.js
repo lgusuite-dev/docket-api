@@ -24,6 +24,10 @@ const FileSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    fromMyDocuments: {
+      type: Boolean,
+      default: false,
+    },
     _currentVersionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'File',
@@ -52,6 +56,10 @@ const FileSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Please provide tenant id'],
+    },
+    acknowledgementReceipt: {
+      type: Boolean,
+      default: false,
     },
     description: String,
     versionNumber: String,

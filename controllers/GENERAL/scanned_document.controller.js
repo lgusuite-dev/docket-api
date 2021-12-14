@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 const Document = require('../../models/GENERAL/document.model');
 
@@ -61,32 +62,39 @@ const createPreview = (text) => {
 
 exports.searchDocument = catchAsync(async (req, res, next) => {
   const { search } = req.query;
+  let filteredQuery = _.omit(req.query, ['confidentialityLevel']);
   const extractWords = search ? search.split(' ') : [];
-
+  let sorter;
   // priority of searching
   // inclusion and exclusion
   // access level
   // status [inbound, outbound, archived]
+  let qry = {
+    $or: [
+      { _includes: req.user._id },
+      { confidentialityLevel: { $lte: req.user.access_level } },
+    ],
+    _excludes: { $ne: req.user._id },
+    _tenantId: req.user._tenantId,
+    status: { $ne: 'Deleted' },
+  };
 
+  if (search) {
+    qry['$text'] = { $search: `${search}` };
+    qry['score'] = { $meta: 'textScore' };
+    qry['lean'] = true;
+    sorter = { score: { $meta: 'textScore' } };
+  }
   const searchedDocumentsQuery = new QueryFeatures(
-    ScannedDocument.find(
-      {
-        $text: { $search: `${search}` },
-        confidentialityLevel: { $lte: req.user.access_level },
-        _tenantId: req.user._tenantId,
-        status: { $ne: 'Deleted' },
-      },
-      { score: { $meta: 'textScore' } },
-      { lean: true }
-    )
-      .sort({ score: { $meta: 'textScore' } })
+    ScannedDocument.find(qry)
+      .sort(sorter)
       .populate({
         path: '_documentId',
         populate: {
           path: '_files',
         },
       }),
-    req.query
+    filteredQuery
   )
     .sort()
     .limitFields()
@@ -94,25 +102,22 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     .paginate()
     .populate();
 
-  const searchedDocuments = await searchedDocumentsQuery.query;
+  const nQueryFeatures = new QueryFeatures(
+    ScannedDocument.find(qry)
+      .sort(sorter)
+      .populate({
+        path: '_documentId',
+        populate: {
+          path: '_files',
+        },
+      }),
+    filteredQuery
+  )
+    .filter()
+    .count();
 
-  // const searchedDocuments = await ScannedDocument.find(
-  //   {
-  //     $text: { $search: `${search}` },
-  //     confidentialityLevel: { $lte: req.user.access_level },
-  //     _tenantId: req.user._tenantId,
-  //     status: { $ne: 'Deleted' },
-  //   },
-  //   { score: { $meta: 'textScore' } },
-  //   { lean: true }
-  // )
-  //   .sort({ score: { $meta: 'textScore' } })
-  //   .populate({
-  //     path: '_documentId',
-  //     populate: {
-  //       path: '_files',
-  //     },
-  //   })
+  let searchedDocuments = await searchedDocumentsQuery.query;
+  let scannedDocCounts = await nQueryFeatures.query;
 
   for (let document of searchedDocuments) {
     const origText = document.text;
@@ -131,27 +136,58 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
         : preview;
     document.text = origText;
   }
+  // searchedDocuments = [];
+  if (!searchedDocuments.length && search) {
+    filteredQuery = _.omit(filteredQuery, ['populate']);
 
-  // // get unique document ids
-  // const documentIds = searchedDocuments.map((document) =>
-  //   document._documentId.toString()
-  // );
-  // console.log('shee')
+    const query = {
+      $and: [
+        {
+          $or: [
+            { _includes: req.user._id },
+            { confidentialityLevel: { $lte: req.user.access_level } },
+          ],
+        },
+        {
+          $or: [
+            { remarks: { $regex: search, $options: 'i' } },
+            { subject: { $regex: search, $options: 'i' } },
+            { controlNumber: search },
+          ],
+        },
+      ],
+      _excludes: { $ne: req.user._id },
+      _tenantId: req.user._tenantId,
+      status: { $ne: 'Deleted' },
+    };
 
-  // const queryFeature = new QueryFeatures(
-  //   Document.find({ _id: { $in: documentIds } }).populate('_files'),
-  //   req.query
-  // )
-  //   .limitFields()
-  //   .populate()
-  //   .sort()
-  //   .paginate();
+    const documentSearch = new QueryFeatures(
+      Document.find(query).populate({
+        path: '_files _assignedTo',
+      }),
+      filteredQuery
+    )
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate()
+      .populate();
 
-  // const documents = await queryFeature.query;
+    const nDocumentSearch = new QueryFeatures(
+      Document.find(query),
+      filteredQuery
+    )
+      .filter()
+      .count();
+
+    searchedDocuments = await documentSearch.query;
+    scannedDocCounts = await nDocumentSearch.query;
+  }
 
   res.status(200).json({
     status: 'success',
     results: searchedDocuments.length,
+    'total-docs': scannedDocCounts,
     env: {
       documents: searchedDocuments,
     },

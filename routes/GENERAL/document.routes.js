@@ -10,7 +10,9 @@ router
   .post(documentController.createDocument)
   .get(documentController.getAllDocuments);
 
-router.get('/assigned', documentController.getAssigned);
+router
+  .route('/classification')
+  .get(documentController.getDocumentClassification);
 
 router
   .route('/:id')
@@ -34,8 +36,11 @@ router.route('/final-status/:id').put(documentController.forFinalAction);
 router.route('/upload/:id').put(documentController.uploadDocumentFile);
 router.route('/classify/:id').put(documentController.classifyDocument);
 router.route('/release/:id').put(documentController.releaseDocument);
-router.route('/storage/:id').put(documentController.updateDocumentStorage);
-
+router.route('/acknowledge/:id').put(documentController.acknowledgeDocument);
+router.route('/storage/:status').put(documentController.updateDocumentStorage);
+router
+  .route('/isAssigned/:id')
+  .put(documentController.updateDocumentIsAssigned);
 router.route('/file-task/:ids').get(documentController.getFileTask);
 
 module.exports = router;

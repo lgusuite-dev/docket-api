@@ -5,6 +5,9 @@ const File = require('../../models/GENERAL/file.model');
 const Task = require('../../models/GENERAL/task.model');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
+const ControlNumber = require('../../utils/control-number/controlNumber');
+const settings = require('../../mock/settings');
+
 const { updateSideEffects } = require('../../utils/cleanup');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -42,7 +45,33 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
   };
 
   const queryFeatures = new QueryFeatures(
-    Document.find(initialQuery),
+    Document.find(initialQuery)
+      .populate({
+        path: '_excludes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_includes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_fromTaskId',
+        select: '_documentId',
+        populate: {
+          path: '_documentId',
+          model: 'Document',
+          populate: {
+            path: '_files',
+            model: 'File',
+          },
+        },
+      }),
     req.query
   )
     .sort()
@@ -52,7 +81,33 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
     .populate();
 
   const nQueryFeatures = new QueryFeatures(
-    Document.find(initialQuery),
+    Document.find(initialQuery)
+      .populate({
+        path: '_excludes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_includes',
+        populate: {
+          path: '_role',
+          model: 'Role',
+        },
+      })
+      .populate({
+        path: '_fromTaskId',
+        select: '_documentId',
+        populate: {
+          path: '_documentId',
+          model: 'Document',
+          populate: {
+            path: '_files',
+            model: 'File',
+          },
+        },
+      }),
     req.query
   )
     .filter()
@@ -192,7 +247,12 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 
 // UPDATE DOCUMENT OCR STATUS TO NO
 exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
-  const pickFields = ['name', 'description', 'dropbox'];
+  const pickFields = [
+    'name',
+    'description',
+    'dropbox',
+    'acknowledgementReceipt',
+  ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
   filteredBody._documentId = id;
@@ -316,10 +376,44 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   if (!document) return next(new AppError('Document not found', 404));
 
   if (!document.controlNumber) {
-    //control number generator
-    filteredBody.controlNumber = Math.floor(
-      Math.random() * 1000000000
-    ).toString();
+    const data = {
+      type: document.type,
+      ...filteredBody,
+    };
+    const configs = settings.ALGORITHM;
+    const controlNumber = await new ControlNumber(
+      data,
+      configs,
+      req.user._tenantId
+    )
+      .fieldBased('type')
+      .sequence('monthly', 'type')
+      .month()
+      .year()
+      .sequence('yearly', 'type')
+      .fieldBased('classification')
+      .generate();
+
+    filteredBody.controlNumber = controlNumber;
+    filteredBody.dateClassified = new Date();
+  } else {
+    let controlNumberArray = document.controlNumber.split('-');
+    let data = filteredBody.classification;
+    let found = false;
+    for (let logic of settings.ALGORITHM.fieldBased.logics) {
+      let condition = logic.if.replace(/\//g, '');
+      if (eval(condition)) {
+        controlNumberArray[controlNumberArray.length - 1] = logic.then;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      controlNumberArray[controlNumberArray.length - 1] =
+        settings.ALGORITHM.fieldBased.default;
+    }
+    filteredBody['controlNumber'] = controlNumberArray.join('-');
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
@@ -330,6 +424,57 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
     new: true,
     runValidators: true,
   });
+
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      document: updatedDocument,
+    },
+  });
+});
+
+exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const pickFields = ['dateConfirmed'];
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._updatedBy = req.user._id;
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  document.process.acknowledged = true;
+
+  filteredBody.dateConfirmed = new Date();
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    id,
+    { ...filteredBody, process: document.process },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
 
   // UPDATE SIDE EFFECTS
   const updateArgs = [
@@ -415,6 +560,21 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  // UPDATE SIDE EFFECTS
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: filteredBody,
+    },
+  ];
+
+  await updateSideEffects(updateArgs);
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -426,7 +586,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
 // UPDATE OCR DOCUMENT
 exports.releaseDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const pickFields = ['recipient', 'dateReleased'];
+  const pickFields = ['recipients', 'dateReleased'];
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -528,7 +688,13 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
   const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
   const { action } = req.params;
-  const allowedActions = ['printed', 'signed', 'released'];
+  const allowedActions = [
+    'printed',
+    'signed',
+    'released',
+    'receipt',
+    'acknowledged',
+  ];
 
   if (!allowedActions.includes(action))
     return next(new AppError('Invalid action params', 400));
@@ -552,6 +718,8 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
     if (action === 'printed') document.process.printed = true;
     else if (action === 'signed') document.process.signed = true;
     else if (action === 'released') document.process.released = true;
+    else if (action === 'receipt') document.process.receipt = true;
+    else if (action === 'acknowledged') document.process.acknowledged = true;
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
@@ -569,7 +737,6 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const pickFields = ['_taskId', 'message', 'type'];
   const filteredBody = _.pick(req.body, pickFields);
-  filteredBody.dateApproved = new Date();
 
   const documentQuery = {
     _id: id,
@@ -593,7 +760,9 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   if (!task) return next(new AppError('Task not found', 404));
 
   task.status = 'Completed';
-  task.message = filteredBody.message;
+  task['message'] = filteredBody.message;
+
+  document._fromTaskId = task._id;
 
   const updatedDocument = await document.save({ validateBeforeSave: false });
   await task.save({ validateBeforeSave: false });
@@ -659,30 +828,63 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 });
 
 exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
-  const pickFields = ['storage'];
+  const pickFields = ['body'];
   const filteredBody = _.pick(req.body, pickFields);
-  const { id } = req.params;
 
-  const initialQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-  };
+  const documents = [];
+  for (const row of filteredBody.body) {
+    const documentQuery = {
+      _id: row._id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    };
 
-  const document = await Document.findOne(initialQuery);
+    const document = await Document.findOne(documentQuery);
+    if (!document)
+      return next(new AppError('One of the documents does not exist', 404));
+    documents.push(document);
+  }
 
-  if (!document) return next(new AppError('Document not found', 404));
+  const updatedDocuments = [];
+  for (const document of documents) {
+    document.storage.status = req.params.status;
 
-  document['storage']['status'] = filteredBody.storage.status;
-  const updatedDocument = await document.save({ validateBeforeSave: false });
+    const updatedDocument = await document.save({ validateBeforeSave: false });
+    updatedDocuments.push(updatedDocument);
+  }
 
   res.status(200).json({
     status: 'success',
     env: {
-      document: updatedDocument,
+      documents: updatedDocuments,
     },
   });
+
+  // const pickFields = ['storage'];
+  // const filteredBody = _.pick(req.body, pickFields);
+  // const { id } = req.params;
+
+  // const initialQuery = {
+  //   _id: id,
+  //   status: { $ne: 'Deleted' },
+  //   _tenantId: req.user._tenantId,
+  // };
+
+  // const document = await Document.findOne(initialQuery);
+
+  // if (!document) return next(new AppError('Document not found', 404));
+
+  // document['storage']['status'] = filteredBody.storage.status;
+  // const updatedDocument = await document.save({ validateBeforeSave: false });
+
+  // res.status(200).json({
+  //   status: 'success',
+  //   env: {
+  //     document: updatedDocument,
+  //   },
+  // });
 });
+
 exports.getFileTask = catchAsync(async (req, res, next) => {
   let route = [];
   const ids = req.params.ids.split(',');
@@ -707,4 +909,78 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getAssigned = catchAsync(async (req, res, next) => {});
+exports.getDocumentClassification = catchAsync(async (req, res, next) => {
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+    $or: [
+      { $and: [{ type: 'Incoming' }, { fileLength: { $gte: 0 } }] },
+      {
+        $and: [
+          { type: { $in: ['Outgoing', 'Internal', 'Archived'] } },
+          { 'process.uploaded': true },
+        ],
+      },
+    ],
+  };
+
+  const queryFeatures = new QueryFeatures(
+    Document.find(initialQuery),
+    req.query
+  )
+    .sort()
+    .limitFields()
+    .filter()
+    .paginate()
+    .populate();
+
+  const nQueryFeatures = new QueryFeatures(
+    Document.find(initialQuery),
+    req.query
+  )
+    .filter()
+    .count();
+
+  const documents = await queryFeatures.query;
+  const nDocuments = await nQueryFeatures.query;
+
+  res.status(200).json({
+    status: 'Success',
+    total_docs: nDocuments,
+    env: {
+      documents,
+    },
+  });
+});
+
+exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const updateDocument = {
+    isAssigned: false,
+  };
+
+  const updatedDocument = await Document.findByIdAndUpdate(
+    initialQuery._id,
+    updateDocument,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      updatedDocument,
+    },
+  });
+});
