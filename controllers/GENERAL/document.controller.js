@@ -134,7 +134,7 @@ exports.getDocument = catchAsync(async (req, res, next) => {
   };
 
   const queryFeatures = new QueryFeatures(
-    Document.findOne(initialQuery),
+    Document.findOne(initialQuery).populate({ path: '_files' }),
     req.query
   )
     .limitFields()
