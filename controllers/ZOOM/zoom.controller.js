@@ -28,7 +28,8 @@ exports.createMeeting = catchAsync(async (req, res, next) => {
         host_video: true,
         participant_video: true,
         join_before_host: true,
-        enforce_login: false,
+        jbh_time: 5, //time before join before host. can be 0 minutes, 5 minutes, or 10 minutes before meeting
+        waiting_room: false,
       },
     },
     headers: {
