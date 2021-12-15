@@ -17,7 +17,7 @@ exports.createBook = catchAsync(async (req, res, next) => {
     'description',
     'coverageFrom',
     'coverageTo',
-    'retensionPeriod',
+    'retentionPeriod',
   ];
 
   const filteredBody = _.pick(req.body, pickFields);
@@ -33,7 +33,7 @@ exports.createBook = catchAsync(async (req, res, next) => {
 
   let finalSN = 1;
 
-  if (tempBook.serialNumber) {
+  if (tempBook) {
     if (tempBook.serialNumber < 10000) {
       let serialNumber = parseInt(tempBook.serialNumber);
       finalSN = serialNumber + 1;
@@ -131,7 +131,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
     'description',
     'coverageFrom',
     'coverageTo',
-    'retensionPeriod',
+    'retentionPeriod',
     '_documents',
     '_boxId',
   ];
