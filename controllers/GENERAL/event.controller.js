@@ -1,6 +1,8 @@
 const _ = require('lodash');
 const Event = require('../../models/GENERAL/event.model');
 
+const audit = require('../../utils/audit/index.js');
+
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -75,6 +77,15 @@ exports.createEvent = catchAsync(async (req, res, next) => {
 
   const event = await Event.create(filteredBody);
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Event',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -110,6 +121,15 @@ exports.updateEvent = catchAsync(async (req, res, next) => {
 
   if (!event) return next(new AppError('Event not found!'));
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Event',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -139,6 +159,15 @@ exports.updateEventStatus = catchAsync(async (req, res, next) => {
 
   if (!event) return next(new AppError('Event not found'));
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Event',
+      action: 'Update Status',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -159,6 +188,13 @@ exports.deleteEvent = catchAsync(async (req, res, next) => {
   });
 
   if (!event) return next(new AppError('Event not found!', 400));
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Event',
+    action: 'Delete',
+    requestBody: { eventId: id },
+  });
 
   res.status(204).json({
     status: 'success',

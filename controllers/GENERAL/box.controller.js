@@ -7,6 +7,7 @@ const Document = require('../../models/GENERAL/document.model');
 const ControlNumber = require('../../utils/control-number/controlNumber');
 const settings = require('../../mock/settings');
 
+const audit = require('../../utils/audit/index.js');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -50,6 +51,15 @@ exports.createBox = catchAsync(async (req, res, next) => {
     .generate();
 
   const box = await Box.create(filteredBody);
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Box',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(201).json({
     status: 'success',
@@ -159,6 +169,15 @@ exports.updateBox = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Box',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -260,6 +279,15 @@ exports.removeBookFromBox = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Box',
+      action: 'Remove Book',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -341,6 +369,15 @@ exports.transferBookToBox = catchAsync(async (req, res, next) => {
       runValidators: true,
     }
   );
+
+  if (book) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Box',
+      action: 'Transfer Book',
+      requestBody: bookId,
+    });
+  }
 
   res.status(200).json({
     status: 'success',

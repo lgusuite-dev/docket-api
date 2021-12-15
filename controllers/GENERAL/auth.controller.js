@@ -3,6 +3,7 @@ const crypto = require('crypto');
 
 const User = require('../../models/GENERAL/user.model');
 
+const audit = require('../../utils/audit/index.js');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const {
@@ -94,6 +95,15 @@ exports.login = catchAsync(async (req, res, next) => {
   if (user.status === 'Suspended')
     return next(new AppError('Your Account is Suspended', 403));
 
+  // const log = audit.createLogData(user._id, 'Authentication', 'Login');
+  await audit.createAudit({
+    _userId: user._id,
+    type: 'Authentication',
+    action: 'Login',
+    // requestBody: user,
+    requestBody: { email },
+  });
+
   sendAuthResponse(user, 200, res);
 });
 
@@ -120,6 +130,13 @@ exports.loginMobile = catchAsync(async (req, res, next) => {
 
   if (user.status === 'Suspended')
     return next(new AppError('Your Account is Suspended', 403));
+
+  await audit.createAudit({
+    _userId: user._id,
+    type: 'Authentication',
+    action: 'Login',
+    requestBody: { email },
+  });
 
   sendAuthResponse(user, 200, res);
 });
@@ -178,6 +195,15 @@ exports.updateInfo = catchAsync(async (req, res, next) => {
 
   if (!user) return next(new AppError('User not found', 404));
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: user._id,
+      type: 'User',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   sendAuthResponse(user, 200, res);
 });
 
@@ -202,6 +228,12 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   user.passwordConfirm = confirmNewPassword;
 
   await user.save();
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'User',
+    action: 'Update Password',
+  });
 
   sendAuthResponse(user, 200, res);
 });
@@ -261,6 +293,12 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   await user.save();
 
+  await audit.createAudit({
+    _userId: user._id,
+    type: 'User',
+    action: 'Reset Password',
+  });
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -307,10 +345,16 @@ exports.getMe = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.logout = (req, res, next) => {
+exports.logout = catchAsync(async (req, res, next) => {
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Authentication',
+    action: 'Logout',
+  });
+
   res.status(200).json({
     status: 'success',
     token: '',
     session_token: '',
   });
-};
+});
