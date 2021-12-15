@@ -588,9 +588,13 @@ exports.updateFile = catchAsync(async (req, res, next) => {
 
   const newFileVersion = await File.create(newFileVersionData);
 
+  if (filteredBody.name) file.name = filteredBody.name;
+  if (filteredBody.description) file.description = filteredBody.description;
+
   file._currentVersionId = newFileVersion._id;
   file._versions.unshift(newFileVersion._id);
   file.versionsLength = file._versions.length;
+  file.versionNumber = newFileVersionData.versionNumber;
 
   await file.save();
 
