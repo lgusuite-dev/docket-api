@@ -134,7 +134,7 @@ exports.getDocument = catchAsync(async (req, res, next) => {
   };
 
   const queryFeatures = new QueryFeatures(
-    Document.findOne(initialQuery),
+    Document.findOne(initialQuery).populate({ path: '_files' }),
     req.query
   )
     .limitFields()
@@ -949,53 +949,6 @@ exports.getDocumentClassification = catchAsync(async (req, res, next) => {
     total_docs: nDocuments,
     env: {
       documents,
-    },
-  });
-});
-
-exports.generateControlNumber = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
-
-  const initialQuery = {
-    _id: id,
-    status: { $ne: 'Deleted' },
-    _tenantId: '619f5c8c123f3ec5f10862a9',
-  };
-
-  const document = await Document.findOne(initialQuery);
-
-  if (!document) return next(new AppError('Document not found', 404));
-
-  const configs = settings.ALGORITHM;
-  let controlNumber = await new ControlNumber(
-    document,
-    configs,
-    '619f5c8c123f3ec5f10862a9'
-  )
-    .fieldBased('type')
-    .sequence('monthly', 'type')
-    .month()
-    .year()
-    .sequence('yearly', 'type')
-    .fieldBased('classification')
-    .generate();
-
-  // let controlNumber = await new ControlNumber(
-  //   {},
-  //   configs,
-  //   '619f5c8c123f3ec5f10862a9'
-  // )
-  //   .fieldBased('type')
-  //   .sequence('monthly', 'book')
-  //   .month()
-  //   .year()
-  //   .sequence('yearly', 'book')
-  //   .generate();
-
-  res.status(200).json({
-    status: 'success',
-    env: {
-      controlNumber: controlNumber,
     },
   });
 });

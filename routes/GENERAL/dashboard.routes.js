@@ -17,4 +17,11 @@ router.get('/approver', dashboardController.approverModule);
 router.get('/user', dashboardController.userModule);
 router.get('/releasing', dashboardController.releasingModule);
 
+router.get('/mobile/tasks', dashboardController.mobileTasks);
+router.get('/mobile/document-types', dashboardController.mobileDocTypes);
+router.get(
+  '/mobile/document-classification',
+  dashboardController.mobileDocClassification
+);
+
 module.exports = router;
