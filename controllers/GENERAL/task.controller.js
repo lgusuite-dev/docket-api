@@ -130,6 +130,7 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
   await task.save();
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.taskId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Task',
@@ -291,6 +292,7 @@ exports.updateTask = catchAsync(async (req, res, next) => {
   if (!task) return next(new AppError('Task not found!', 404));
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.taskId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Task',
@@ -335,6 +337,7 @@ exports.updateTaskStatus = catchAsync(async (req, res, next) => {
   if (!task) return next(new AppError('Task not found'));
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.taskId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Task',

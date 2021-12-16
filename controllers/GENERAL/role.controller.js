@@ -145,6 +145,7 @@ exports.updateRole = catchAsync(async (req, res, next) => {
   if (!role) return next(new AppError('Role not found!', 404));
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.roleId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Role',

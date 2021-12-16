@@ -90,6 +90,7 @@ exports.updateShareFolder = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.folderId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Folder',
@@ -129,6 +130,7 @@ exports.updateShareDocument = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -333,6 +335,7 @@ exports.updateFolder = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.folderId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Folder',
@@ -453,6 +456,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
   if (!updatedDocument) return next(new AppError('Document not found', 404));
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -530,6 +534,7 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
   await document.save();
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -599,6 +604,7 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   await file.save();
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.fileId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'File',

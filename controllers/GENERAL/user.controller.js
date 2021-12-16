@@ -325,6 +325,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.userId = req.params.id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'User',
