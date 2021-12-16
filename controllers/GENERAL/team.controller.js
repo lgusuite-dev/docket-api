@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const Team = require('../../models/GENERAL/team.model');
 const User = require('../../models/GENERAL/user.model');
+const audit = require('../../utils/audit/index.js');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -122,6 +123,15 @@ exports.createTeam = catchAsync(async (req, res, next) => {
   if (team.users)
     await addOrRemoveTeamIdToUsers(team.users, team._id, 'upsert');
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Team',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -232,6 +242,16 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
   if (removedData.length)
     await addOrRemoveTeamIdToUsers(removedData, updatedTeam._id, 'delete');
 
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.teamId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Team',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -254,6 +274,13 @@ exports.deleteTeam = catchAsync(async (req, res, next) => {
 
   if (team.users.length)
     return next(new AppError("Can't delete team that have users", 400));
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Team',
+    action: 'Delete',
+    requestBody: { teamId: id },
+  });
 
   res.status(204).json({
     status: 'success',

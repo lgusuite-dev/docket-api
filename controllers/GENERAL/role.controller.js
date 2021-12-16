@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const Role = require('../../models/GENERAL/role.model');
 
+const audit = require('../../utils/audit/index.js');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -99,6 +100,15 @@ exports.createRole = catchAsync(async (req, res, next) => {
 
   const role = await Role.create(filteredBody);
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Role',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -134,6 +144,16 @@ exports.updateRole = catchAsync(async (req, res, next) => {
 
   if (!role) return next(new AppError('Role not found!', 404));
 
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.roleId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Role',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -153,6 +173,13 @@ exports.deleteRole = catchAsync(async (req, res, next) => {
   const role = await Role.findOneAndUpdate(initialQuery, { status: 'Deleted' });
 
   if (!role) return next(new AppError('Role not found!', 400));
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Role',
+    action: 'Delete',
+    requestBody: { roleId: id },
+  });
 
   res.status(204).json({
     status: 'success',

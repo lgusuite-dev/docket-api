@@ -5,6 +5,8 @@ const User = require('../../models/GENERAL/user.model');
 const Team = require('../../models/GENERAL/team.model');
 const Role = require('../../models/GENERAL/role.model');
 
+const audit = require('../../utils/audit/index.js');
+
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const { _generateRandomPassword } = require('../../utils/tokens');
@@ -182,6 +184,15 @@ exports.createSuper = catchAsync(async (req, res, next) => {
 
   const newSuper = await User.create(filteredBody);
 
+  // if (!_.isEmpty(filteredBody)) {
+  //   await audit.createAudit({
+  //     _userId: req.user._id,
+  //     type: 'Team',
+  //     action: 'Create',
+  //     requestBody: filteredBody,
+  //   });
+  // }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -201,6 +212,15 @@ exports.createUser = catchAsync(async (req, res, next) => {
 
   const newUser = await User.create(userData);
   newUser.password = undefined;
+
+  if (!_.isEmpty(newUser)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'User',
+      action: 'Create',
+      requestBody: newUser,
+    });
+  }
 
   res.status(201).json({
     status: 'success',
@@ -304,6 +324,16 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.userId = req.params.id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'User',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -336,6 +366,13 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
     };
     await User.updateMany(query, { status: 'Deleted' });
   }
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'User',
+    action: 'Update',
+    requestBody: { userId: id },
+  });
 
   res.status(204).json({
     status: 'success',
@@ -379,7 +416,79 @@ exports.patchUser = catchAsync(async (req, res, next) => {
 
   await userPatchOrDeleteCascade(id, req);
 
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'User',
+    action: 'Update',
+    requestBody: { userId: id, status: action },
+  });
+
   res.status(200).json({
     status: 'success',
   });
 });
+
+exports.getInclusionExclusion = catchAsync(async (req, res, next) => {
+  const { access_level, routeTo } = req.params;
+  const inclusionQuery = {
+    access_level: { $lt: access_level },
+    status: { $eq: 'Active' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const inclusionList = await User.find(inclusionQuery);
+
+  const exclusionQuery = {
+    access_level: { $gte: access_level },
+    status: { $eq: 'Active' },
+    _tenantId: req.user._tenantId,
+  };
+
+  let exclusionList = await User.find(exclusionQuery).populate({
+    path: '_role',
+  });
+
+  exclusionList = exclusionList.filter((user) => {
+    if (user._role) {
+      let roleAccess = user._role.access;
+      for (let access of roleAccess) {
+        if (access.hasAccess && access.children) {
+          let userWithDocAssign = access.children.find(
+            (accessChild) =>
+              accessChild.routeTo === routeTo && accessChild.hasAccess
+          );
+          if (userWithDocAssign) return false;
+        }
+      }
+    }
+
+    return true;
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      inclusionList,
+      exclusionList,
+    },
+  });
+});
+
+// private _filterExclusionList(userArray: any) {
+//   if (!userArray || userArray.length === 0) return [];
+// return userArray.filter((user: User) => {
+//   let roleAccess: any = user._role?.access;
+//   for (let access of roleAccess) {
+//     if (access.hasAccess && access.children) {
+//       let userWithDocAssign = access.children.find(
+//         (accessChild: any) =>
+//           accessChild.routeTo === 'document-assignation' &&
+//           accessChild.hasAccess
+//       );
+//       if (userWithDocAssign) return false;
+//     }
+//   }
+
+//   return user.access_level >= this.selectedConfLevel.value + 1;
+// });
+// }

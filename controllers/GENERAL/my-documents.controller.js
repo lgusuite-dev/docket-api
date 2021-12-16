@@ -4,6 +4,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Document = require('../../models/GENERAL/document.model');
 const Folder = require('../../models/GENERAL/folder.model');
 const File = require('../../models/GENERAL/file.model');
+const audit = require('../../utils/audit/index.js');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -88,6 +89,16 @@ exports.updateShareFolder = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.folderId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Folder',
+      action: 'Update Shared User/s',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -117,6 +128,16 @@ exports.updateShareDocument = catchAsync(async (req, res, next) => {
     new: true,
     runValidators: true,
   });
+
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update Shared User/s',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -256,6 +277,13 @@ exports.deleteFolder = catchAsync(async (req, res, next) => {
 
   if (!folder) return next(new AppError('Folder not found', 404));
 
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Folder',
+    action: 'Delete',
+    requestBody: { folderId: id },
+  });
+
   res.status(204).json({
     status: 'success',
   });
@@ -267,6 +295,15 @@ exports.createFolder = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
   const folder = await Folder.create(filteredBody);
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Folder',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(201).json({
     status: 'success',
@@ -296,6 +333,16 @@ exports.updateFolder = catchAsync(async (req, res, next) => {
     new: true,
     runValidators: true,
   });
+
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.folderId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Folder',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -327,6 +374,15 @@ exports.createDocument = catchAsync(async (req, res, next) => {
     filteredBody._folderId = folder._id;
 
     newDocument = await Document.create(filteredBody);
+  }
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
   }
 
   res.status(201).json({
@@ -399,6 +455,16 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 
   if (!updatedDocument) return next(new AppError('Document not found', 404));
 
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -426,6 +492,13 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   );
 
   if (!updatedDocument) return next(new AppError('Document not found', 404));
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Document',
+    action: 'Delete',
+    requestBody: { docId: id },
+  });
 
   res.status(204).json({
     status: 'success',
@@ -459,6 +532,16 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
   document._updatedBy = req.user._id;
 
   await document.save();
+
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Upload File',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -519,6 +602,16 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   file.versionNumber = newFileVersionData.versionNumber;
 
   await file.save();
+
+  if (!_.isEmpty(filteredBody)) {
+    filteredBody.fileId = id;
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'File',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -588,6 +681,13 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
   ];
 
   await referenceIdCleanup(modelQueryArgs, id);
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'File',
+    action: 'Delete ',
+    requestBody: { fileId: id },
+  });
 
   res.status(204).json({
     status: 'success',
