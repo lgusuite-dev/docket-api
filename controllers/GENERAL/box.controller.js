@@ -170,6 +170,7 @@ exports.updateBox = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.boxId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Box',
@@ -280,6 +281,7 @@ exports.removeBookFromBox = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.boxId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Box',
@@ -375,7 +377,7 @@ exports.transferBookToBox = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Box',
       action: 'Transfer Book',
-      requestBody: bookId,
+      requestBody: { boxId: id, bookId },
     });
   }
 

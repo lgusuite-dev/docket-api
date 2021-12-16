@@ -17,7 +17,7 @@ exports.createBook = catchAsync(async (req, res, next) => {
     'description',
     'coverageFrom',
     'coverageTo',
-    'retensionPeriod',
+    'retentionPeriod',
   ];
 
   const filteredBody = _.pick(req.body, pickFields);
@@ -33,7 +33,7 @@ exports.createBook = catchAsync(async (req, res, next) => {
 
   let finalSN = 1;
 
-  if (tempBook.serialNumber) {
+  if (tempBook) {
     if (tempBook.serialNumber < 10000) {
       let serialNumber = parseInt(tempBook.serialNumber);
       finalSN = serialNumber + 1;
@@ -131,7 +131,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
     'description',
     'coverageFrom',
     'coverageTo',
-    'retensionPeriod',
+    'retentionPeriod',
     '_documents',
     '_boxId',
   ];
@@ -177,6 +177,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.bookId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Book',
@@ -210,6 +211,7 @@ exports.patchBook = catchAsync(async (req, res, next) => {
   const updatedBook = await book.save({ validateBeforeSave: false });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.bookId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Book',
@@ -381,6 +383,7 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
   });
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.bookId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Book',
@@ -470,7 +473,7 @@ exports.transferDocumentToBook = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Book',
       action: 'Transfer Document',
-      requestBody: documentId,
+      requestBody: { bookId: id, documentId },
     });
   }
 

@@ -122,6 +122,7 @@ exports.updateEvent = catchAsync(async (req, res, next) => {
   if (!event) return next(new AppError('Event not found!'));
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.eventId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Event',
@@ -160,6 +161,7 @@ exports.updateEventStatus = catchAsync(async (req, res, next) => {
   if (!event) return next(new AppError('Event not found'));
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.eventId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Event',

@@ -243,6 +243,7 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
     await addOrRemoveTeamIdToUsers(removedData, updatedTeam._id, 'delete');
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.teamId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Team',

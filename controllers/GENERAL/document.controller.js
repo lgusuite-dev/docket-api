@@ -248,6 +248,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
   if (filteredBody.dateReceived) await updateSideEffects(updateArgs);
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -300,6 +301,8 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   await document.save();
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
+
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -374,6 +377,8 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
   }
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = _documentId;
+    filteredBody.fileId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -478,6 +483,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   await updateSideEffects(updateArgs);
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -538,6 +544,7 @@ exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
   await updateSideEffects(updateArgs);
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -638,6 +645,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
   await updateSideEffects(updateArgs);
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -697,6 +705,8 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   await updateSideEffects(updateArgs);
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
+
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -757,6 +767,7 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   await updateSideEffects(updateArgs);
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -881,6 +892,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
   await updateSideEffects(updateArgs);
 
   if (!_.isEmpty(filteredBody)) {
+    filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
       type: 'Document',
@@ -930,7 +942,7 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
     _userId: req.user._id,
     type: 'Document',
     action: 'Update Status',
-    requestBody: { status: action },
+    requestBody: { status: action, documentId: id },
   });
 
   res.status(200).json({
