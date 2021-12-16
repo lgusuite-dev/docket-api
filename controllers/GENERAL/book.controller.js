@@ -6,6 +6,7 @@ const Document = require('../../models/GENERAL/document.model');
 const ControlNumber = require('../../utils/control-number/controlNumber');
 const settings = require('../../mock/settings');
 
+const audit = require('../../utils/audit/index.js');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
@@ -16,7 +17,7 @@ exports.createBook = catchAsync(async (req, res, next) => {
     'description',
     'coverageFrom',
     'coverageTo',
-    'retensionPeriod',
+    'retentionPeriod',
   ];
 
   const filteredBody = _.pick(req.body, pickFields);
@@ -32,12 +33,11 @@ exports.createBook = catchAsync(async (req, res, next) => {
 
   let finalSN = 1;
 
-  if (tempBook.serialNumber) {
+  if (tempBook) {
     if (tempBook.serialNumber < 10000) {
       let serialNumber = parseInt(tempBook.serialNumber);
       finalSN = serialNumber + 1;
     }
-    
   }
 
   filteredBody.serialNumber = finalSN.toString().padStart(4, '0');
@@ -57,6 +57,15 @@ exports.createBook = catchAsync(async (req, res, next) => {
     .generate();
 
   const book = await Book.create(filteredBody);
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Book',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(201).json({
     status: 'success',
@@ -122,7 +131,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
     'description',
     'coverageFrom',
     'coverageTo',
-    'retensionPeriod',
+    'retentionPeriod',
     '_documents',
     '_boxId',
   ];
@@ -167,6 +176,15 @@ exports.updateBook = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Book',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -190,6 +208,15 @@ exports.patchBook = catchAsync(async (req, res, next) => {
 
   book.status = filteredBody.status;
   const updatedBook = await book.save({ validateBeforeSave: false });
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Book',
+      action: 'Update Status',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -353,6 +380,15 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Book',
+      action: 'Remove Document',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -428,6 +464,15 @@ exports.transferDocumentToBook = catchAsync(async (req, res, next) => {
       runValidators: true,
     }
   );
+
+  if (document) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Book',
+      action: 'Transfer Document',
+      requestBody: documentId,
+    });
+  }
 
   res.status(200).json({
     status: 'success',

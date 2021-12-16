@@ -1,5 +1,7 @@
 const _ = require('lodash');
 
+const audit = require('../../utils/audit/index.js');
+
 const Task = require('../../models/GENERAL/task.model');
 const Document = require('../../models/GENERAL/document.model');
 const { sendMail } = require('../../utils/comms/email');
@@ -48,6 +50,15 @@ exports.createTask = catchAsync(async (req, res, next) => {
   }
 
   const task = await Task.create(filteredBody);
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Task',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(201).json({
     status: 'success',
@@ -117,6 +128,15 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
   }
 
   await task.save();
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Task',
+      action: 'Reply',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(201).json({
     status: 'success',
@@ -270,6 +290,15 @@ exports.updateTask = catchAsync(async (req, res, next) => {
 
   if (!task) return next(new AppError('Task not found!', 404));
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Task',
+      action: 'Reply',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -305,6 +334,15 @@ exports.updateTaskStatus = catchAsync(async (req, res, next) => {
 
   if (!task) return next(new AppError('Task not found'));
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Task',
+      action: 'Update Status',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(201).json({
     status: 'success',
     env: {
@@ -332,6 +370,13 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
 
   task.status = 'Deleted';
   await task.save();
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Task',
+    action: 'Delete',
+    requestBody: { taskId: id },
+  });
 
   res.status(204).json({
     status: 'success',

@@ -19,7 +19,7 @@ const BookSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Please provide the coverage to'],
     },
-    retensionPeriod: {
+    retentionPeriod: {
       type: String,
       enum: [
         '1 year',

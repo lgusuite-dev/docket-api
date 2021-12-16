@@ -8,6 +8,7 @@ const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 const ControlNumber = require('../../utils/control-number/controlNumber');
 const settings = require('../../mock/settings');
 
+const audit = require('../../utils/audit/index.js');
 const { updateSideEffects } = require('../../utils/cleanup');
 const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
@@ -29,6 +30,15 @@ exports.createDocument = catchAsync(async (req, res, next) => {
   filteredBody.type = 'Incoming';
 
   const document = await Document.create(filteredBody);
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Create',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(201).json({
     status: 'success',
@@ -237,6 +247,15 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 
   if (filteredBody.dateReceived) await updateSideEffects(updateArgs);
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -279,6 +298,15 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
     document.process.uploaded = true;
 
   await document.save();
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Upload File',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -343,6 +371,15 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
     ];
 
     await updateSideEffects(updateArgs);
+  }
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update uploaded file',
+      requestBody: filteredBody,
+    });
   }
 
   res.status(200).json({
@@ -440,6 +477,15 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
   await updateSideEffects(updateArgs);
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Classify',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -491,6 +537,15 @@ exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
 
   await updateSideEffects(updateArgs);
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Acknowledge',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -530,6 +585,13 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   await updateSideEffects(updateArgs);
 
   // DO SOME DOCUMENT ID CLEANUP HERE using referenceIdCleanup util
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Document',
+    action: 'Delete',
+    requestBody: { documentId: id },
+  });
 
   res.status(204).json({
     status: 'success',
@@ -574,6 +636,15 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
   ];
 
   await updateSideEffects(updateArgs);
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update for Final Action',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -624,6 +695,15 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   ];
 
   await updateSideEffects(updateArgs);
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Release',
+      requestBody: filteredBody,
+    });
+  }
 
   res.status(200).json({
     status: 'success',
@@ -676,6 +756,15 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
 
   await updateSideEffects(updateArgs);
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Assign',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -723,6 +812,15 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
+  }
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update Process',
+      requestBody: filteredBody,
+    });
   }
 
   res.status(200).json({
@@ -782,6 +880,15 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
 
   await updateSideEffects(updateArgs);
 
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update Type',
+      requestBody: filteredBody,
+    });
+  }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -819,6 +926,13 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 
   const updatedDocument = await document.save({ validateBeforeSave: false });
 
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Document',
+    action: 'Update Status',
+    requestBody: { status: action },
+  });
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -851,6 +965,15 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
+  }
+
+  if (!_.isEmpty(filteredBody)) {
+    await audit.createAudit({
+      _userId: req.user._id,
+      type: 'Document',
+      action: 'Update Storage',
+      requestBody: filteredBody,
+    });
   }
 
   res.status(200).json({
@@ -901,6 +1024,7 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
       .populate('_assigneeId', 'firstName lastName');
     if (tasks) route.push({ file, task: tasks });
   }
+
   res.status(200).json({
     status: 'success',
     env: {
@@ -976,6 +1100,13 @@ exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
       runValidators: true,
     }
   );
+
+  await audit.createAudit({
+    _userId: req.user._id,
+    type: 'Document',
+    action: 'Update Assigned Status',
+    requestBody: { documentId: id },
+  });
 
   res.status(200).json({
     status: 'success',
