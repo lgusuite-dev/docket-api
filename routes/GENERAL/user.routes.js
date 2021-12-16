@@ -18,6 +18,10 @@ router
   .post(authController.restrictTo('Admin', 'User'), userController.createUser);
 
 router
+  .route('/users/inclusion-exclusion/:access_level/:routeTo')
+  .get(userController.getInclusionExclusion);
+
+router
   .route('/admins/:id')
   .get(userController.getUser)
   .put(authController.restrictTo('Superadmin'), userController.updateUser)

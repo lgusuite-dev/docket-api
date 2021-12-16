@@ -426,3 +426,68 @@ exports.patchUser = catchAsync(async (req, res, next) => {
     status: 'success',
   });
 });
+
+exports.getInclusionExclusion = catchAsync(async (req, res, next) => {
+  const { access_level, routeTo } = req.params;
+  const inclusionQuery = {
+    access_level: { $lt: access_level },
+    status: { $eq: 'Active' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const inclusionList = await User.find(inclusionQuery);
+
+  const exclusionQuery = {
+    access_level: { $gte: access_level },
+    status: { $eq: 'Active' },
+    _tenantId: req.user._tenantId,
+  };
+
+  let exclusionList = await User.find(exclusionQuery).populate({
+    path: '_role',
+  });
+
+  exclusionList = exclusionList.filter((user) => {
+    if (user._role) {
+      let roleAccess = user._role.access;
+      for (let access of roleAccess) {
+        if (access.hasAccess && access.children) {
+          let userWithDocAssign = access.children.find(
+            (accessChild) =>
+              accessChild.routeTo === routeTo && accessChild.hasAccess
+          );
+          if (userWithDocAssign) return false;
+        }
+      }
+    }
+
+    return true;
+  });
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      inclusionList,
+      exclusionList,
+    },
+  });
+});
+
+// private _filterExclusionList(userArray: any) {
+//   if (!userArray || userArray.length === 0) return [];
+// return userArray.filter((user: User) => {
+//   let roleAccess: any = user._role?.access;
+//   for (let access of roleAccess) {
+//     if (access.hasAccess && access.children) {
+//       let userWithDocAssign = access.children.find(
+//         (accessChild: any) =>
+//           accessChild.routeTo === 'document-assignation' &&
+//           accessChild.hasAccess
+//       );
+//       if (userWithDocAssign) return false;
+//     }
+//   }
+
+//   return user.access_level >= this.selectedConfLevel.value + 1;
+// });
+// }
