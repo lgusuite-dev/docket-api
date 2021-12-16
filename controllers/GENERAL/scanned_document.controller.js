@@ -138,6 +138,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
   }
   // searchedDocuments = [];
   if (!searchedDocuments.length && search) {
+    console.log('Here');
     filteredQuery = _.omit(filteredQuery, ['populate']);
 
     const query = {
