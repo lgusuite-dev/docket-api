@@ -136,8 +136,11 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
         : preview;
     document.text = origText;
   }
+  console.log();
+
   // searchedDocuments = [];
-  if (!searchedDocuments.length && search) {
+  if (!searchedDocuments.length) {
+    console.log('no scanned files');
     filteredQuery = _.omit(filteredQuery, ['populate']);
 
     const query = {
@@ -150,9 +153,9 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
         },
         {
           $or: [
-            { remarks: { $regex: search, $options: 'i' } },
-            { subject: { $regex: search, $options: 'i' } },
-            { controlNumber: search },
+            { remarks: { $regex: search || '', $options: 'i' } },
+            { subject: { $regex: search || '', $options: 'i' } },
+            { controlNumber: search || '' },
           ],
         },
       ],
