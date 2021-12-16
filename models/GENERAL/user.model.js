@@ -115,6 +115,7 @@ const UserSchema = new mongoose.Schema(
     passwordResetToken: String,
     passwordResetTokenExpires: Date,
     passwordChangedAt: Date,
+    firebase_token: Array,
   },
   { timestamps: true }
 );
