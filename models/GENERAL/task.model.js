@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const { sendMail } = require('../../utils/comms/email');
+const { sendSMS } = require('../../utils/comms/sms');
 
 const TaskSchema = new mongoose.Schema(
   {
@@ -121,9 +122,46 @@ const TaskSchema = new mongoose.Schema(
 TaskSchema.pre('save', async function (next) {
   if (!this.isNew) return next();
 
-  const doc = await this.populate('_assigneeId');
+  const doc = await this.populate('_assigneeId _createdBy');
 
-  console.log(doc);
+  const assignee = doc._assigneeId;
+  const assigner = doc._createdBy;
+
+  const tasksLink = 'https://www.lgudocket.com/portal/my-workflow';
+
+  const mailOptions = {
+    to: assignee.email,
+    subject: `Task '${doc.name}' Assigned To You`,
+    html: `<h3>Good day ${
+      assignee.firstName
+    }, you have a new task that is assigned to you.</h3>
+    <h4>Task Details: </h4>
+    <ul>
+      <li>Task Name: ${doc.name}</li>
+      <li>Instruction: ${doc.instruction}</li>
+      <li>Assigner: ${assigner.firstName} ${assigner.lastName}</li>
+      <li>Due Date: ${new Date(`${doc.dueDate}`).toLocaleString()}</li>
+    </ul>
+
+    <p>Click <strong><a href=${tasksLink} target="_blank">here</a></strong> to view all your tasks.</p>
+    `,
+  };
+
+  const smsOptions = {
+    to: assignee.mobileNumber,
+    message: `Good day ${
+      assignee.firstName
+    }, you have a new task that is assigned to you.
+
+    Task Details: 
+      • Task Name: ${doc.name}
+      • Instruction: ${doc.instruction}
+      • Assigner: ${assigner.firstName} ${assigner.lastName}
+      • Due Date: ${new Date(`${doc.dueDate}`).toLocaleString()}`,
+  };
+
+  await sendMail(mailOptions);
+  await sendSMS(smsOptions);
 
   next();
 });
