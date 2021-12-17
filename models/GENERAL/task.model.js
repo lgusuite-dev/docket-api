@@ -118,6 +118,10 @@ const TaskSchema = new mongoose.Schema(
 TaskSchema.pre('save', async function (next) {
   if (!this.isNew) return next();
 
+  const doc = await this.populate('_assigneeId');
+
+  console.log(doc);
+
   next();
 });
 
