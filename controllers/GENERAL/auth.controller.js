@@ -120,7 +120,7 @@ exports.loginMobile = catchAsync(async (req, res, next) => {
   const query = {
     ...generateLoginQuery(type),
     email,
-    hasMobileAppAccess: true,
+    hasMobileAppAccess: 'Yes',
   };
 
   const user = await User.findOne(query).select('+password');

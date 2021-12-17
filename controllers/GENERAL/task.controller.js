@@ -121,6 +121,7 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
   task.status = filteredBody.status;
   task.reply = {
     message: filteredBody.message,
+    date: new Date(),
   };
 
   if (filteredBody._documentId) {

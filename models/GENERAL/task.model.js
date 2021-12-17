@@ -101,6 +101,9 @@ const TaskSchema = new mongoose.Schema(
       message: {
         type: String,
       },
+      date: {
+        type: Date,
+      },
       _documentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Document',
