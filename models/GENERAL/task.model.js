@@ -54,6 +54,7 @@ const TaskSchema = new mongoose.Schema(
         'Cancelled',
         'Declined',
         'For Approval',
+        'Returned',
       ],
     },
     message: {

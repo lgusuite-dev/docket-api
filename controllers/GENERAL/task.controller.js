@@ -75,7 +75,7 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
 
   const task = await Task.findById(id);
 
-  if (task.status != 'Pending')
+  if (task.status != 'Pending' && task.status != 'Returned')
     return next(
       new AppError(
         `Unable to reply to this task. (Current Status: ${task.status})`,
