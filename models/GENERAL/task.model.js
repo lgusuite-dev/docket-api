@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 
 const { sendMail } = require('../../utils/comms/email');
 const { sendSMS } = require('../../utils/comms/sms');
+const serviceAccount = require('../../docketmobile-firebase-adminsdk-jmzg1-d0dec12b77.json');
+const admin = require('firebase-admin');
 
 const TaskSchema = new mongoose.Schema(
   {
@@ -159,7 +161,17 @@ TaskSchema.pre('save', async function (next) {
       • Assigner: ${assigner.firstName} ${assigner.lastName}
       • Due Date: ${new Date(`${doc.dueDate}`).toLocaleString()}`,
   };
-
+  const messages = [];
+  for (let tok of assignee.firebase_token) {
+    messages.push({
+      notification: {
+        title: `Task '${doc.name}' Assigned To You`,
+        body: 'You have a new TASK Assigned to you!',
+      },
+      token: tok,
+    });
+  }
+  await admin.messaging().sendAll(messages);
   await sendMail(mailOptions);
   await sendSMS(smsOptions);
 

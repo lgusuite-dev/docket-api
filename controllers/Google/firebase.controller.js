@@ -8,7 +8,7 @@ admin.initializeApp({
 });
 
 exports.sendOne = catchAsync(async (req, res, next) => {
-  const { title, body, token, mobile } = req.body;
+  const { title, body, token } = req.body;
   console.log(token);
   try {
     admin
