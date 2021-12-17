@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const { sendMail } = require('../../utils/comms/email');
+
 const TaskSchema = new mongoose.Schema(
   {
     name: {
@@ -106,9 +108,24 @@ const TaskSchema = new mongoose.Schema(
         ref: 'Document',
       },
     },
+    notification: {
+      tenMinDueDate: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
-
   { timestamps: true }
 );
+
+TaskSchema.pre('save', async function (next) {
+  if (!this.isNew) return next();
+
+  const doc = await this.populate('_assigneeId');
+
+  console.log(doc);
+
+  next();
+});
 
 module.exports = mongoose.model('Task', TaskSchema);

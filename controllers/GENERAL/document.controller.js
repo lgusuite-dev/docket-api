@@ -1023,18 +1023,22 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
 exports.getFileTask = catchAsync(async (req, res, next) => {
   let route = [];
   const ids = req.params.ids.split(',');
+  console.log(ids);
 
   const files = await File.find({
     _id: { $in: ids },
   });
   for (let file of files) {
-    console.log(file);
-    let tasks = await Task.findOne({
+    // console.log(file);
+    let tasks = await Task.find({
       _documentId: file._documentId,
     })
       .populate('_createdBy', 'firstName lastName')
       .populate('_assigneeId', 'firstName lastName');
-    if (tasks) route.push({ file, task: tasks });
+    if (tasks.length)
+      for (let t of tasks) {
+        route.push({ file, task: t });
+      }
   }
 
   res.status(200).json({
