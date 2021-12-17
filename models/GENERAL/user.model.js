@@ -87,11 +87,11 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    hasMobileAppAccess: {
-      type: String,
-      enum: ['Yes', 'No'],
-      default: ['No'],
-    },
+    // hasMobileAppAccess: {
+    //   type: String,
+    //   enum: ['Yes', 'No'],
+    //   default: ['No'],
+    // },
     _teams: [
       {
         type: mongoose.Schema.Types.ObjectId,

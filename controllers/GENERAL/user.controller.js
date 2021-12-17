@@ -81,7 +81,6 @@ const generateUserData = (type, req) => {
     'others',
     'sex',
     'address',
-    'hasMobileAppAccess',
   ];
 
   const filteredBody = _.pick(req.body, pickFields);
@@ -300,7 +299,6 @@ exports.updateUser = catchAsync(async (req, res, next) => {
     'others',
     '_role',
     'access_level',
-    'hasMobileAppAccess',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const type = endpoint.split('/api/v1/tenants/')[1].split('/')[0];
