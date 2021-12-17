@@ -88,8 +88,9 @@ const UserSchema = new mongoose.Schema(
       default: true,
     },
     hasMobileAppAccess: {
-      type: Boolean,
-      default: false,
+      type: String,
+      enum: ['Yes', 'No'],
+      default: ['No'],
     },
     _teams: [
       {
