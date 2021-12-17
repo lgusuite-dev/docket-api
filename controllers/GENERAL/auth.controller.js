@@ -185,7 +185,13 @@ exports.restrictTo = (...roles) => {
 };
 
 exports.updateInfo = catchAsync(async (req, res, next) => {
-  const pickField = ['firstName', 'lastName', 'middleName', 'mobileNumber'];
+  const pickField = [
+    'firstName',
+    'lastName',
+    'middleName',
+    'mobileNumber',
+    'firebase_token',
+  ];
   const filteredBody = _.pick(req.body, pickField);
 
   const user = await User.findByIdAndUpdate(req.user._id, filteredBody, {
