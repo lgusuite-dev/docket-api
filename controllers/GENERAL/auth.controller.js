@@ -75,27 +75,19 @@ const mailResetToken = async (user, resetToken) => {
 };
 
 const checkMobileAccess = (user) => {
+  const access = false;
+
   if (user._role.access.length) {
-    user._role.access.forEach((type) => {
-      if (type.label === 'My Tasks') {
-        if (type.hasAccess) {
-          type.children.forEach((child) => {
-            if (child.routeTo === 'for-approval') {
-              if (child.hasAccess) {
-                return true;
-              } else {
-                return false;
-              }
-            }
-          });
-        } else {
-          return false;
+    for (const type of user._role.access) {
+      if (type.label === 'My Tasks' && type.hasAccess) {
+        for (const child of type.children) {
+          if (child.routeTo === 'for-approval' && child.hasAccess) return true;
         }
       }
-    });
-  } else {
-    return false;
+    }
   }
+
+  return false;
 };
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -155,9 +147,7 @@ exports.loginMobile = catchAsync(async (req, res, next) => {
     return next(new AppError('Your Account is Suspended', 403));
 
   if (user.type !== 'Superadmin' && user.type !== 'Admin') {
-    if (!checkMobileAccess(user)) {
-      return next(new AppError('You do not have mobile app access', 403));
-    }
+    console.log(checkMobileAccess(user));
   }
 
   if (user._role)
