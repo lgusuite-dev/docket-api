@@ -147,7 +147,8 @@ exports.loginMobile = catchAsync(async (req, res, next) => {
     return next(new AppError('Your Account is Suspended', 403));
 
   if (user.type !== 'Superadmin' && user.type !== 'Admin') {
-    console.log(checkMobileAccess(user));
+    if (!checkMobileAccess(user))
+      return next(new AppError('You do not have mobile app access!', 401));
   }
 
   if (user._role)
