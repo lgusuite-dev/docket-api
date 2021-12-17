@@ -81,7 +81,6 @@ const generateUserData = (type, req) => {
     'others',
     'sex',
     'address',
-    'hasMobileAppAccess',
   ];
 
   const filteredBody = _.pick(req.body, pickFields);

@@ -74,6 +74,30 @@ const mailResetToken = async (user, resetToken) => {
   }
 };
 
+const checkMobileAccess = (user) => {
+  if (user._role.access.length) {
+    user._role.access.forEach((type) => {
+      if (type.label === 'My Tasks') {
+        if (type.hasAccess) {
+          type.children.forEach((child) => {
+            if (child.routeTo === 'for-approval') {
+              if (child.hasAccess) {
+                return true;
+              } else {
+                return false;
+              }
+            }
+          });
+        } else {
+          return false;
+        }
+      }
+    });
+  } else {
+    return false;
+  }
+};
+
 exports.login = catchAsync(async (req, res, next) => {
   const { type } = req.params;
   const { email, password } = req.body;
@@ -120,10 +144,9 @@ exports.loginMobile = catchAsync(async (req, res, next) => {
   const query = {
     ...generateLoginQuery(type),
     email,
-    hasMobileAppAccess: 'Yes',
   };
 
-  const user = await User.findOne(query).select('+password');
+  const user = await User.findOne(query).select('+password').populate('_role');
 
   if (!user || !(await user.isPasswordCorrect(password, user.password)))
     return next(new AppError('Incorrect email or password', 401));
@@ -131,12 +154,19 @@ exports.loginMobile = catchAsync(async (req, res, next) => {
   if (user.status === 'Suspended')
     return next(new AppError('Your Account is Suspended', 403));
 
-  await audit.createAudit({
-    _userId: user._id,
-    type: 'Authentication',
-    action: 'Login',
-    requestBody: { email },
-  });
+  if (user.type !== 'Superadmin' && user.type !== 'Admin') {
+    if (!checkMobileAccess(user)) {
+      return next(new AppError('You do not have mobile app access', 403));
+    }
+  }
+
+  if (user._role)
+    await audit.createAudit({
+      _userId: user._id,
+      type: 'Authentication',
+      action: 'Login',
+      requestBody: { email },
+    });
 
   sendAuthResponse(user, 200, res);
 });
@@ -185,7 +215,13 @@ exports.restrictTo = (...roles) => {
 };
 
 exports.updateInfo = catchAsync(async (req, res, next) => {
-  const pickField = ['firstName', 'lastName', 'middleName', 'mobileNumber'];
+  const pickField = [
+    'firstName',
+    'lastName',
+    'middleName',
+    'mobileNumber',
+    'firebase_token',
+  ];
   const filteredBody = _.pick(req.body, pickField);
 
   const user = await User.findByIdAndUpdate(req.user._id, filteredBody, {
