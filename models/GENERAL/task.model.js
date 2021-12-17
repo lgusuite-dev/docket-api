@@ -171,7 +171,9 @@ TaskSchema.pre('save', async function (next) {
       token: tok,
     });
   }
-  await admin.messaging().sendAll(messages);
+  if (messages.length) {
+    await admin.messaging().sendAll(messages);
+  }
   await sendMail(mailOptions);
   await sendSMS(smsOptions);
 
