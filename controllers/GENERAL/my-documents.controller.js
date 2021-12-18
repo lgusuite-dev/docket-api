@@ -32,6 +32,35 @@ const referenceIdCleanup = async (ModelAndProps, docId) => {
   }
 };
 
+const checkAccess = async (curItem, req) => {
+  // console.log(curItem);
+  let sharedUsers = curItem._sharedTo.map((el) => el.toString());
+  let userId = req.user._id.toString();
+  if (
+    curItem._createdBy.toString() !== userId &&
+    !sharedUsers.includes(userId)
+  ) {
+    if (curItem._parentId) {
+      let parentFolder = await Folder.findOne({
+        _id: curItem._parentId,
+        status: { $ne: 'Deleted' },
+      });
+
+      return checkAccess(parentFolder, req);
+    } else if (curItem._folderId) {
+      let parentFolder = await Folder.findOne({
+        _id: curItem._folderId,
+        status: { $ne: 'Deleted' },
+      });
+
+      return checkAccess(parentFolder, req);
+    } else {
+      return false;
+    }
+  }
+  return true;
+};
+
 exports.getSharedToMe = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
@@ -206,12 +235,16 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
   let sharedUsers = currentFolder._sharedTo.map((el) => el.toString());
 
   // console.log(currentFolder._createdBy, req.user._id, sharedUsers);
-  if (
-    currentFolder._createdBy.toString() !== req.user._id.toString() &&
-    !sharedUsers.includes(req.user._id.toString())
-  ) {
+  console.log(await checkAccess(currentFolder, req));
+  if (!(await checkAccess(currentFolder, req)))
     return next(new AppError('You do have not access', 401));
-  }
+
+  // if (
+  //   currentFolder._createdBy.toString() !== req.user._id.toString() &&
+  //   !sharedUsers.includes(req.user._id.toString())
+  // ) {
+  //   return next(new AppError('You do have not access', 401));
+  // }
 
   const folder = await Folder.find(initialQuery).populate({
     path: '_sharedTo',
@@ -412,14 +445,17 @@ exports.getDocument = catchAsync(async (req, res, next) => {
   });
 
   if (!document) return next(new AppError('Document not Found', 404));
-  const sharedUsers = document._sharedTo.map((el) => el.toString());
+  // const sharedUsers = document._sharedTo.map((el) => el.toString());
 
-  if (
-    document._createdBy.toString() !== req.user._id.toString() &&
-    !sharedUsers.includes(req.user._id.toString())
-  ) {
+  // if (
+  //   document._createdBy.toString() !== req.user._id.toString() &&
+  //   !sharedUsers.includes(req.user._id.toString())
+  // ) {
+  //   return next(new AppError('You do have not access', 401));
+  // }
+  // console.log(await checkAccess(document, req));
+  if (!(await checkAccess(document, req)))
     return next(new AppError('You do have not access', 401));
-  }
 
   res.status(200).json({
     status: 'success',
