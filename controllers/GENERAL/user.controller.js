@@ -439,6 +439,7 @@ exports.getInclusionExclusion = catchAsync(async (req, res, next) => {
 
   const exclusionQuery = {
     access_level: { $gte: access_level },
+    type: { $nin: ['Superadmin', 'Admin'] },
     status: { $eq: 'Active' },
     _tenantId: req.user._tenantId,
   };
