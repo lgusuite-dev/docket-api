@@ -235,7 +235,7 @@ exports.getFoldersAndDocs = catchAsync(async (req, res, next) => {
   let sharedUsers = currentFolder._sharedTo.map((el) => el.toString());
 
   // console.log(currentFolder._createdBy, req.user._id, sharedUsers);
-  console.log(await checkAccess(currentFolder, req));
+  // console.log(await checkAccess(currentFolder, req));
   if (!(await checkAccess(currentFolder, req)))
     return next(new AppError('You do have not access', 401));
 
