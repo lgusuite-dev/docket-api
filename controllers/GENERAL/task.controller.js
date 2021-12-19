@@ -382,7 +382,7 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
     requestBody: { taskId: id },
   });
 
-  res.status(204).json({
+  res.status(200).json({
     status: 'success',
   });
 });
