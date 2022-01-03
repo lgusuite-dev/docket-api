@@ -71,6 +71,13 @@ exports.getAllDocuments = catchAsync(async (req, res, next) => {
         },
       })
       .populate({
+        path: '_files',
+        populate: {
+          path: '_currentVersionId',
+          select: 'name status dropbox description versionNumber createdAt',
+        },
+      })
+      .populate({
         path: '_fromTaskId',
         select: '_documentId',
         populate: {
@@ -169,27 +176,35 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  const queryFeatures = new QueryFeatures(
-    Document.findOne(initialQuery),
-    req.query
-  );
-
-  const document = await queryFeatures.query;
+  const document = await Document.findOne(initialQuery);
   if (!document) return next(new AppError('Document not found', 404));
 
   const fileQuery = {
     _documentId: id,
+    _id: { $in: document._files },
     status: { $ne: 'Deleted' },
   };
 
-  const fileQueryFeature = new QueryFeatures(File.find(fileQuery), req.query)
+  const fileQueryFeature = new QueryFeatures(
+    File.find(fileQuery).populate({
+      path: '_versions _currentVersionId',
+      select: 'name status dropbox description versionNumber createdAt',
+    }),
+    req.query
+  )
     .sort()
     .limitFields()
     .filter()
     .paginate()
     .populate();
 
-  const nFileQueryFeature = new QueryFeatures(File.find(fileQuery), req.query)
+  const nFileQueryFeature = new QueryFeatures(
+    File.find(fileQuery).populate({
+      path: '_versions _currentVersionId',
+      select: 'name status dropbox description versionNumber createdAt',
+    }),
+    req.query
+  )
     .filter()
     .count();
 
@@ -278,6 +293,8 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   filteredBody._documentId = id;
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
+  filteredBody.versionNumber = 'Version 1';
+
   const initialQuery = {
     _id: id,
     status: { $ne: 'Deleted' },
