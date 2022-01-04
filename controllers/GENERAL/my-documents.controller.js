@@ -591,17 +591,21 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
 exports.updateFile = catchAsync(async (req, res, next) => {
   let fileVersion;
   const { id } = req.params;
-  const pickFields = ['name', 'description', 'dropbox'];
+  const pickFields = ['name', 'description', 'dropbox', 'forApproval'];
   const filteredBody = _.pick(req.body, pickFields);
-  filteredBody._documentId = id;
   filteredBody._createdBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
 
   const query = {
     _id: id,
     status: { $ne: 'Deleted' },
-    _createdBy: req.user._id,
   };
+
+  if (!filteredBody.forApproval) {
+    query['_createdBy'] = req.user._id;
+  } else {
+    delete filteredBody.forApproval;
+  }
 
   const file = await File.findOne(query);
   if (!file) return next(new AppError('File not found', 404));
@@ -609,6 +613,7 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   if (file._id.toString() === file._currentVersionId.toString())
     file._versions.push(file._id);
 
+  filteredBody._documentId = file._documentId;
   const newFileVersionData = { ...file._doc, ...filteredBody };
   delete newFileVersionData._id;
   delete newFileVersionData.createdAt;
