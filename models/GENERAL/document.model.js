@@ -33,7 +33,7 @@ const DocumentSchema = new mongoose.Schema(
     },
     senderType: {
       type: String,
-      enum: ['Private', 'Other Government Agencies', 'Courts'],
+      enum: ['QC Department', 'Private', 'Other Government Agencies', 'Courts'],
     },
     requestDate: Date,
     dateReceived: Date,
