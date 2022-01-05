@@ -157,10 +157,8 @@ class ControlNumber {
             currentSequence += parseInt(config.increment);
           }
         }
-
-        currentSequence = currentSequence
-          .toString()
-          .padStart(eval(config.padding));
+        // eval(config.padding)
+        currentSequence = currentSequence.toString().padStart(config.padStart.length, config.padStart.string);
         return currentSequence;
       },
     });
