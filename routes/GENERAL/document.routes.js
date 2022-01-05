@@ -14,6 +14,8 @@ router
   .route('/classification')
   .get(documentController.getDocumentClassification);
 
+router.route('/migrate').post(documentController.migrateDocuments);
+
 router
   .route('/:id')
   .put(documentController.updateDocument)
