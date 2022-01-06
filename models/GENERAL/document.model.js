@@ -191,6 +191,10 @@ const DocumentSchema = new mongoose.Schema(
     classification: String,
     subClassification: String,
     remarks: String,
+    migrated: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
