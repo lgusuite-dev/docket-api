@@ -1158,34 +1158,6 @@ exports.migrateDocuments = catchAsync(async (req, res, next) => {
     ordered: false,
   });
 
-  console.log(insertedDocuments);
-  const configs = settings.ALGORITHM;
-
-  for (let document of insertedDocuments) {
-    const controlNumber = await new ControlNumber(
-      document,
-      configs,
-      req.user._tenantId
-    )
-      .fieldBased('type')
-      .sequence('monthly', 'type')
-      .month()
-      .year()
-      .sequence('yearly', 'type')
-      .fieldBased('classification')
-      .generate();
-
-    const toUpdate = {
-      controlNumber: controlNumber,
-      dateClassified: new Date(),
-    };
-
-    await Document.findByIdAndUpdate(document._id, toUpdate, {
-      new: true,
-      runValidators: true,
-    });
-  }
-
   res.status(200).json({
     status: 'success',
   });
