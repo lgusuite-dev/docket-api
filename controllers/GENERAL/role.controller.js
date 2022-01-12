@@ -103,6 +103,7 @@ exports.createRole = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Role',
       action: 'Create',
       requestBody: filteredBody,
@@ -148,6 +149,7 @@ exports.updateRole = catchAsync(async (req, res, next) => {
     filteredBody.roleId = id;
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Role',
       action: 'Update',
       requestBody: filteredBody,
@@ -176,6 +178,7 @@ exports.deleteRole = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Role',
     action: 'Delete',
     requestBody: { roleId: id },

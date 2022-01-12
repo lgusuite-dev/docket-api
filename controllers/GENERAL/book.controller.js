@@ -60,6 +60,8 @@ exports.createBook = catchAsync(async (req, res, next) => {
 
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
+
       _userId: req.user._id,
       type: 'Book',
       action: 'Create',
@@ -179,6 +181,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.bookId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Book',
       action: 'Update',
@@ -213,6 +216,7 @@ exports.patchBook = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.bookId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Book',
       action: 'Update Status',
@@ -385,6 +389,7 @@ exports.removeDocumentFromBook = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.bookId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Book',
       action: 'Remove Document',
@@ -470,6 +475,7 @@ exports.transferDocumentToBook = catchAsync(async (req, res, next) => {
 
   if (document) {
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Book',
       action: 'Transfer Document',

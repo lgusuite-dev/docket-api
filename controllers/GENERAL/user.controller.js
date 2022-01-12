@@ -214,6 +214,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
 
   if (!_.isEmpty(newUser)) {
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'User',
       action: 'Create',
@@ -326,6 +327,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.userId = req.params.id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'User',
       action: 'Update',
@@ -367,6 +369,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
   }
 
   await audit.createAudit({
+    _tenantId: req.user._tenantId,
     _userId: req.user._id,
     type: 'User',
     action: 'Update',
@@ -416,6 +419,7 @@ exports.patchUser = catchAsync(async (req, res, next) => {
   await userPatchOrDeleteCascade(id, req);
 
   await audit.createAudit({
+    _tenantId: req.user._tenantId,
     _userId: req.user._id,
     type: 'User',
     action: 'Update',

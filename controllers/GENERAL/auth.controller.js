@@ -114,6 +114,7 @@ exports.login = catchAsync(async (req, res, next) => {
   // const log = audit.createLogData(user._id, 'Authentication', 'Login');
   await audit.createAudit({
     _userId: user._id,
+    _tenantId: user._tenantId,
     type: 'Authentication',
     action: 'Login',
     // requestBody: user,
@@ -154,6 +155,8 @@ exports.loginMobile = catchAsync(async (req, res, next) => {
   if (user._role)
     await audit.createAudit({
       _userId: user._id,
+      _tenantId: user._tenantId,
+
       type: 'Authentication',
       action: 'Login',
       requestBody: { email },
@@ -225,6 +228,8 @@ exports.updateInfo = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: user._id,
+      _tenantId: user._tenantId,
+
       type: 'User',
       action: 'Update',
       requestBody: filteredBody,
@@ -258,6 +263,8 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: user._tenantId,
+
     type: 'User',
     action: 'Update Password',
   });
@@ -322,6 +329,8 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: user._id,
+    _tenantId: user._tenantId,
+
     type: 'User',
     action: 'Reset Password',
   });
@@ -375,6 +384,7 @@ exports.getMe = catchAsync(async (req, res, next) => {
 exports.logout = catchAsync(async (req, res, next) => {
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Authentication',
     action: 'Logout',
   });
