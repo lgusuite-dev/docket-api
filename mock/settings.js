@@ -104,7 +104,7 @@ exports.ALGORITHM = {
       },
       classification: {
         collection: 'Document',
-        find: '{ "classification": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`^${dataRegex}.*`" } }',
+        find: '{ "classification": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`${dataRegex}$`" } }',
         dataRegex: [
           {
             if: '/data/ === "Admin"',

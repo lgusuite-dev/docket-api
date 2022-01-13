@@ -460,23 +460,22 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
     filteredBody.controlNumber = controlNumber;
     filteredBody.dateClassified = new Date();
   } else {
-    let controlNumberArray = document.controlNumber.split('-');
-    let data = filteredBody.classification;
-    let found = false;
-    for (let logic of settings.ALGORITHM.fieldBased.logics) {
-      let condition = logic.if.replace(/\//g, '');
-      if (eval(condition)) {
-        controlNumberArray[controlNumberArray.length - 1] = logic.then;
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      controlNumberArray[controlNumberArray.length - 1] =
-        settings.ALGORITHM.fieldBased.default;
-    }
-    filteredBody['controlNumber'] = controlNumberArray.join('-');
+    // let controlNumberArray = document.controlNumber.split('-');
+    // let data = filteredBody.classification;
+    // let found = false;
+    // for (let logic of settings.ALGORITHM.fieldBased.logics) {
+    //   let condition = logic.if.replace(/\//g, '');
+    //   if (eval(condition)) {
+    //     controlNumberArray[controlNumberArray.length - 1] = logic.then;
+    //     found = true;
+    //     break;
+    //   }
+    // }
+    // if (!found) {
+    //   controlNumberArray[controlNumberArray.length - 1] =
+    //     settings.ALGORITHM.fieldBased.default;
+    // }
+    // filteredBody['controlNumber'] = controlNumberArray.join('-');
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
