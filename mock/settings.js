@@ -26,7 +26,7 @@ exports.ALGORITHM = {
       },
       {
         if: '/data/ === "Admin"',
-        then: 'A',
+        then: 'D',
       },
       {
         if: '/data/ === "Civil"',
@@ -108,7 +108,7 @@ exports.ALGORITHM = {
         dataRegex: [
           {
             if: '/data/ === "Admin"',
-            then: 'A',
+            then: 'D',
           },
           {
             if: '/data/ === "Civil"',
