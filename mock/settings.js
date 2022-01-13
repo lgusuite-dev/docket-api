@@ -102,6 +102,57 @@ exports.ALGORITHM = {
         ],
         sort: '-dateClassified',
       },
+      classification: {
+        collection: 'Document',
+        find: '{ "classification": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`^${dataRegex}.*`" } }',
+        dataRegex: [
+          {
+            if: '/data/ === "Admin"',
+            then: 'A',
+          },
+          {
+            if: '/data/ === "Civil"',
+            then: 'B',
+          },
+          {
+            if: '/data/ === "Complaint"',
+            then: 'H',
+          },
+          {
+            if: '/data/ === "Criminal"',
+            then: 'K',
+          },
+          {
+            if: '/data/ === "EPWMD"',
+            then: 'P',
+          },
+          {
+            if: '/data/ === "HR"',
+            then: 'R',
+          },
+          {
+            if: '/data/ === "LLRB"',
+            then: 'L',
+          },
+          {
+            if: '/data/ === "LRC"',
+            then: 'C',
+          },
+          {
+            if: '/data/ === "Opinion"',
+            then: 'A',
+          },
+          {
+            if: '/data/ === "Supplies"',
+            then: 'S',
+          },
+          {
+            if: '/data/ === "Ombudsman Cases"',
+            then: 'E',
+          },
+        ],
+        sort: '-dateClassified',
+      },
       book: {
         collection: 'Book',
         find: '{ "createdAt": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "^QCLD.*" } }',

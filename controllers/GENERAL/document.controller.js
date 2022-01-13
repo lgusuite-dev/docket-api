@@ -449,7 +449,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
       .sequence('monthly', 'type')
       .month()
       .year()
-      .sequence('yearly', 'type')
+      .sequence('yearly', 'classification')
       .fieldBased('classification')
       .generate();
 
