@@ -80,6 +80,7 @@ exports.createEvent = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Event',
       action: 'Create',
       requestBody: filteredBody,
@@ -125,6 +126,7 @@ exports.updateEvent = catchAsync(async (req, res, next) => {
     filteredBody.eventId = id;
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Event',
       action: 'Update',
       requestBody: filteredBody,
@@ -164,6 +166,7 @@ exports.updateEventStatus = catchAsync(async (req, res, next) => {
     filteredBody.eventId = id;
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Event',
       action: 'Update Status',
       requestBody: filteredBody,
@@ -193,6 +196,7 @@ exports.deleteEvent = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Event',
     action: 'Delete',
     requestBody: { eventId: id },

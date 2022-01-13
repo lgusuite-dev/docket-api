@@ -15,6 +15,11 @@ const AuditSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide an action'],
     },
+    _tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Please provide a tenant ID'],
+    },
     requestBody: Object,
   },
   { timestamps: true }
