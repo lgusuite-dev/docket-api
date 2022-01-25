@@ -7,14 +7,18 @@ const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
 exports.getAllAudit = catchAsync(async (req, res, next) => {
-  const queryFeatures = new QueryFeatures(Audit.find({}), req.query)
+  const initialQuery = {
+    _tenantId: req.user._tenantId,
+  };
+
+  const queryFeatures = new QueryFeatures(Audit.find(initialQuery), req.query)
     .sort()
     .limitFields()
     .filter()
     .paginate()
     .populate();
 
-  const nQueryFeatures = new QueryFeatures(Audit.find({}), req.query)
+  const nQueryFeatures = new QueryFeatures(Audit.find(initialQuery), req.query)
     .filter()
     .count();
 

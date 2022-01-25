@@ -121,6 +121,7 @@ exports.updateShareFolder = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.folderId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Folder',
       action: 'Update Shared User/s',
@@ -161,6 +162,7 @@ exports.updateShareDocument = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.documentId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Update Shared User/s',
@@ -312,6 +314,7 @@ exports.deleteFolder = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Folder',
     action: 'Delete',
     requestBody: { folderId: id },
@@ -332,6 +335,7 @@ exports.createFolder = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Folder',
       action: 'Create',
       requestBody: filteredBody,
@@ -370,6 +374,7 @@ exports.updateFolder = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.folderId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Folder',
       action: 'Update',
@@ -412,6 +417,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Create',
       requestBody: filteredBody,
@@ -494,6 +500,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.documentId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Update',
@@ -530,6 +537,7 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   if (!updatedDocument) return next(new AppError('Document not found', 404));
 
   await audit.createAudit({
+    _tenantId: req.user._tenantId,
     _userId: req.user._id,
     type: 'Document',
     action: 'Delete',
@@ -573,6 +581,7 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
     filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Upload File',
       requestBody: filteredBody,
@@ -647,6 +656,7 @@ exports.updateFile = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.fileId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'File',
       action: 'Update',
@@ -725,6 +735,7 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'File',
     action: 'Delete ',
     requestBody: { fileId: id },

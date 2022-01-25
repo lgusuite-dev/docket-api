@@ -53,6 +53,7 @@ exports.createTask = catchAsync(async (req, res, next) => {
 
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Task',
       action: 'Create',
@@ -133,6 +134,7 @@ exports.replyToTask = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.taskId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Task',
       action: 'Reply',
@@ -313,6 +315,7 @@ exports.updateTask = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.taskId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Task',
       action: 'Reply',
@@ -358,6 +361,7 @@ exports.updateTaskStatus = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.taskId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Task',
       action: 'Update Status',
@@ -395,6 +399,7 @@ exports.deleteTask = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Task',
     action: 'Delete',
     requestBody: { taskId: id },

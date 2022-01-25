@@ -125,6 +125,7 @@ exports.createTeam = catchAsync(async (req, res, next) => {
 
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Team',
       action: 'Create',
@@ -245,6 +246,7 @@ exports.updateTeam = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.teamId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Team',
       action: 'Update',
@@ -276,6 +278,7 @@ exports.deleteTeam = catchAsync(async (req, res, next) => {
     return next(new AppError("Can't delete team that have users", 400));
 
   await audit.createAudit({
+    _tenantId: req.user._tenantId,
     _userId: req.user._id,
     type: 'Team',
     action: 'Delete',

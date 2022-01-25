@@ -131,7 +131,7 @@ UserSchema.pre('save', async function (next) {
       const mailOptions = {
         to: this.email,
         subject: 'New Docket Account Created',
-        html: `<h1>Good day ${this.firstName}, this is your new docket account:</h1> <p>email: ${this.email}</p> <p>password:${this.password}</p>`,
+        html: `<h1>Good day ${this.firstName}, this is your new docket account:</h1> <p>email: ${this.email}</p> <p>password:${this.password}</p> <p>website: https://www.lgudocket.com/login</p>`,
       };
 
       await sendMail(mailOptions);

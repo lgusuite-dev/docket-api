@@ -33,6 +33,7 @@ exports.createDocument = catchAsync(async (req, res, next) => {
 
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Create',
@@ -265,6 +266,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.documentId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Update',
@@ -321,6 +323,7 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
     filteredBody.documentId = id;
 
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Upload File',
@@ -397,6 +400,7 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
     filteredBody.documentId = _documentId;
     filteredBody.fileId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Update uploaded file',
@@ -449,30 +453,29 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
       .sequence('monthly', 'type')
       .month()
       .year()
-      .sequence('yearly', 'type')
+      .sequence('yearly', 'classification')
       .fieldBased('classification')
       .generate();
 
     filteredBody.controlNumber = controlNumber;
     filteredBody.dateClassified = new Date();
   } else {
-    let controlNumberArray = document.controlNumber.split('-');
-    let data = filteredBody.classification;
-    let found = false;
-    for (let logic of settings.ALGORITHM.fieldBased.logics) {
-      let condition = logic.if.replace(/\//g, '');
-      if (eval(condition)) {
-        controlNumberArray[controlNumberArray.length - 1] = logic.then;
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      controlNumberArray[controlNumberArray.length - 1] =
-        settings.ALGORITHM.fieldBased.default;
-    }
-    filteredBody['controlNumber'] = controlNumberArray.join('-');
+    // let controlNumberArray = document.controlNumber.split('-');
+    // let data = filteredBody.classification;
+    // let found = false;
+    // for (let logic of settings.ALGORITHM.fieldBased.logics) {
+    //   let condition = logic.if.replace(/\//g, '');
+    //   if (eval(condition)) {
+    //     controlNumberArray[controlNumberArray.length - 1] = logic.then;
+    //     found = true;
+    //     break;
+    //   }
+    // }
+    // if (!found) {
+    //   controlNumberArray[controlNumberArray.length - 1] =
+    //     settings.ALGORITHM.fieldBased.default;
+    // }
+    // filteredBody['controlNumber'] = controlNumberArray.join('-');
   }
 
   if (document.type === 'Incoming' && document.isAssigned !== true) {
@@ -502,6 +505,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.documentId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Classify',
@@ -563,6 +567,7 @@ exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.documentId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Acknowledge',
@@ -612,6 +617,7 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Document',
     action: 'Delete',
     requestBody: { documentId: id },
@@ -665,6 +671,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
     filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update for Final Action',
       requestBody: filteredBody,
@@ -726,6 +733,7 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
 
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Release',
       requestBody: filteredBody,
@@ -786,6 +794,7 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     filteredBody.documentId = id;
     await audit.createAudit({
+      _tenantId: req.user._tenantId,
       _userId: req.user._id,
       type: 'Document',
       action: 'Assign',
@@ -845,6 +854,7 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update Process',
       requestBody: filteredBody,
@@ -912,6 +922,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
     filteredBody.documentId = id;
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update Type',
       requestBody: filteredBody,
@@ -957,6 +968,7 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Document',
     action: 'Update Status',
     requestBody: { status: action, documentId: id },
@@ -999,6 +1011,7 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
   if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: req.user._id,
+      _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update Storage',
       requestBody: filteredBody,
@@ -1136,6 +1149,7 @@ exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
 
   await audit.createAudit({
     _userId: req.user._id,
+    _tenantId: req.user._tenantId,
     type: 'Document',
     action: 'Update Assigned Status',
     requestBody: { documentId: id },
@@ -1146,5 +1160,19 @@ exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
     env: {
       updatedDocument,
     },
+  });
+});
+
+exports.migrateDocuments = catchAsync(async (req, res, next) => {
+  const pickFields = ['documents'];
+  const filteredBody = _.pick(req.body, pickFields);
+  const { documents } = filteredBody;
+
+  const insertedDocuments = await Document.insertMany(documents, {
+    ordered: false,
+  });
+
+  res.status(200).json({
+    status: 'success',
   });
 });

@@ -20,10 +20,6 @@ const DocumentSchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
-      mailUpdates: {
-        type: Boolean,
-        default: false,
-      },
       middleInitial: String,
       department: String,
       position: String,
@@ -33,7 +29,7 @@ const DocumentSchema = new mongoose.Schema(
     },
     senderType: {
       type: String,
-      enum: ['Private', 'Other Government Agencies', 'Courts'],
+      enum: ['QC Department', 'Private', 'Other Government Agencies', 'Courts'],
     },
     requestDate: Date,
     dateReceived: Date,
@@ -115,10 +111,6 @@ const DocumentSchema = new mongoose.Schema(
           type: String,
           trim: true,
         },
-        mailUpdates: {
-          type: Boolean,
-          default: false,
-        },
         middleInitial: String,
         department: String,
         position: String,
@@ -199,6 +191,10 @@ const DocumentSchema = new mongoose.Schema(
     classification: String,
     subClassification: String,
     remarks: String,
+    migrated: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
