@@ -55,11 +55,11 @@ const TaskSchema = new mongoose.Schema(
       enum: [
         'Pending',
         'Completed',
-        'Deleted',
-        'Cancelled',
         'Declined',
         'For Approval',
         'Returned',
+        'Cancelled',
+        'Deleted',
       ],
     },
     message: {
