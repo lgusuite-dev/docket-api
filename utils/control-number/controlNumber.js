@@ -102,6 +102,7 @@ class ControlNumber {
 
       let findConfig = eval(JSON.parse(queryConfig.find));
       for (let [key, val] of Object.entries(findConfig)) {
+        console.log(val);
         if (typeof val === 'object') {
           for (let [key1, val1] of Object.entries(val)) {
             let regex = /\//g;
@@ -121,9 +122,12 @@ class ControlNumber {
             };
           }
         } else {
-          findConfig[key] = eval(val.replace(/\//g, ''));
+          if (typeof val !== 'boolean') {
+            findConfig[key] = eval(val.replace(/\//g, ''));
+          }
         }
       }
+
       findQuery = {
         ...findConfig,
         ...findQuery,
@@ -158,7 +162,9 @@ class ControlNumber {
           }
         }
         // eval(config.padding)
-        currentSequence = currentSequence.toString().padStart(config.padStart.length, config.padStart.string);
+        currentSequence = currentSequence
+          .toString()
+          .padStart(config.padStart.length, config.padStart.string);
         return currentSequence;
       },
     });
