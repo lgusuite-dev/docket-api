@@ -525,24 +525,26 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
     _createdBy: req.user._id,
   };
 
-  const updatedDocument = await Document.findOneAndUpdate(
-    query,
-    { status: 'Deleted' },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  // check if document is deletable or not.
 
-  if (!updatedDocument) return next(new AppError('Document not found', 404));
+  // const updatedDocument = await Document.findOneAndUpdate(
+  //   query,
+  //   { status: 'Deleted' },
+  //   {
+  //     new: true,
+  //     runValidators: true,
+  //   }
+  // );
 
-  await audit.createAudit({
-    _tenantId: req.user._tenantId,
-    _userId: req.user._id,
-    type: 'Document',
-    action: 'Delete',
-    requestBody: { docId: id },
-  });
+  // if (!updatedDocument) return next(new AppError('Document not found', 404));
+
+  // await audit.createAudit({
+  //   _tenantId: req.user._tenantId,
+  //   _userId: req.user._id,
+  //   type: 'Document',
+  //   action: 'Delete',
+  //   requestBody: { docId: id },
+  // });
 
   res.status(204).json({
     status: 'success',
