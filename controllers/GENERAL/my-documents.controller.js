@@ -538,13 +538,24 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
 
   var tasks = await Task.find(query);
 
-  if (tasks && tasks.length)
-    return next(
-      new AppError(
-        `Unable to delete. ${tasks.length} is linked to this document.`,
-        405
-      )
-    );
+  if (tasks && tasks.length) {
+    if (tasks.length === 1)
+      return next(
+        new AppError(
+          `Unable to delete. 1 task is linked to this document.`,
+          405
+        )
+      );
+    else
+      return next(
+        new AppError(
+          `Unable to delete. ${tasks.length} tasks are linked to this document.`,
+          405
+        )
+      );
+  }
+
+  //proceed to deleting if no task is linked on this document
 
   query = {
     _id: id,
@@ -552,24 +563,24 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
     _createdBy: req.user._id,
   };
 
-  // const updatedDocument = await Document.findOneAndUpdate(
-  //   query,
-  //   { status: 'Deleted' },
-  //   {
-  //     new: true,
-  //     runValidators: true,
-  //   }
-  // );
+  const updatedDocument = await Document.findOneAndUpdate(
+    query,
+    { status: 'Deleted' },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
 
-  // if (!updatedDocument) return next(new AppError('Document not found', 404));
+  if (!updatedDocument) return next(new AppError('Document not found', 404));
 
-  // await audit.createAudit({
-  //   _tenantId: req.user._tenantId,
-  //   _userId: req.user._id,
-  //   type: 'Document',
-  //   action: 'Delete',
-  //   requestBody: { docId: id },
-  // });
+  await audit.createAudit({
+    _tenantId: req.user._tenantId,
+    _userId: req.user._id,
+    type: 'Document',
+    action: 'Delete',
+    requestBody: { docId: id },
+  });
 
   res.status(204).json({
     status: 'success',
