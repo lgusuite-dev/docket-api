@@ -4,6 +4,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Document = require('../../models/GENERAL/document.model');
 const Folder = require('../../models/GENERAL/folder.model');
 const File = require('../../models/GENERAL/file.model');
+const Task = require('../../models/GENERAL/task.model');
 const audit = require('../../utils/audit/index.js');
 
 const catchAsync = require('../../utils/errors/catchAsync');
@@ -519,7 +520,44 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 exports.deleteDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  const query = {
+  let query = {
+    $or: [
+      {
+        _documentId: id,
+      },
+      {
+        'reply._documentId': id,
+      },
+    ],
+    status: {
+      $in: ['Pending', 'Completed', 'Declined', 'For Approval', 'Returned'],
+    },
+  };
+
+  // check if document is deletable or not.
+
+  var tasks = await Task.find(query);
+
+  if (tasks && tasks.length) {
+    if (tasks.length === 1)
+      return next(
+        new AppError(
+          `Unable to delete. 1 task is linked to this document.`,
+          405
+        )
+      );
+    else
+      return next(
+        new AppError(
+          `Unable to delete. ${tasks.length} tasks are linked to this document.`,
+          405
+        )
+      );
+  }
+
+  //proceed to deleting if no task is linked on this document
+
+  query = {
     _id: id,
     status: { $ne: 'Deleted' },
     _createdBy: req.user._id,

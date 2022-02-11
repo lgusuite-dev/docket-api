@@ -185,19 +185,24 @@ exports.getForApprovalTasks = catchAsync(async (req, res, next) => {
   const queryFeatures = new QueryFeatures(
     Task.find(initialQuery).populate({
       path: 'reply._documentId',
-      populate: {
-        path: '_files',
-        match: {
-          status: { $ne: 'Deleted' },
-        },
-        populate: {
-          path: '_versions _currentVersionId',
-          select: 'name status dropbox description versionNumber createdAt',
+      populate: [
+        {
+          path: '_files',
           match: {
             status: { $ne: 'Deleted' },
           },
+          populate: {
+            path: '_versions _currentVersionId',
+            select: 'name status dropbox description versionNumber createdAt',
+            match: {
+              status: { $ne: 'Deleted' },
+            },
+          },
         },
-      },
+        {
+          path: '_createdBy',
+        },
+      ],
     }),
     req.query
   )

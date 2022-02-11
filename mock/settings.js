@@ -81,7 +81,7 @@ exports.ALGORITHM = {
     queries: {
       type: {
         collection: 'Document',
-        find: '{ "type": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`^${dataRegex}.*`" } }',
+        find: '{ "type": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`^${dataRegex}.*`" }, "migrated": false }',
         dataRegex: [
           {
             if: '/data/ == "Incoming"',
@@ -104,7 +104,7 @@ exports.ALGORITHM = {
       },
       classification: {
         collection: 'Document',
-        find: '{ "classification": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`${dataRegex}$`" } }',
+        find: '{ "classification": "/data/", "dateClassified": { "$gte": "/from/", "$lte": "/to/" }, "controlNumber": { "$regex": "`${dataRegex}$`" }, "migrated": false }',
         dataRegex: [
           {
             if: '/data/ === "Admin"',
