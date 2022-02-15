@@ -79,8 +79,8 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     status: { $ne: 'Deleted' },
   };
 
-  let searchedDocuments;
-  let scannedDocCounts;
+  let searchedDocuments = [];
+  let scannedDocCounts = [];
   if (search) {
     console.log('no scanned files');
     filteredQuery = _.omit(filteredQuery, ['populate']);
