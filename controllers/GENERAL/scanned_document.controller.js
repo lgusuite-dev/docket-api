@@ -79,67 +79,9 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     status: { $ne: 'Deleted' },
   };
 
+  let searchedDocuments = [];
+  let scannedDocCounts = [];
   if (search) {
-    qry['$text'] = { $search: `${search}` };
-    qry['score'] = { $meta: 'textScore' };
-    qry['lean'] = true;
-    sorter = { score: { $meta: 'textScore' } };
-  }
-  const searchedDocumentsQuery = new QueryFeatures(
-    ScannedDocument.find(qry)
-      .sort(sorter)
-      .populate({
-        path: '_documentId',
-        populate: {
-          path: '_files',
-        },
-      }),
-    filteredQuery
-  )
-    .sort()
-    .limitFields()
-    .filter()
-    .paginate()
-    .populate();
-
-  const nQueryFeatures = new QueryFeatures(
-    ScannedDocument.find(qry)
-      .sort(sorter)
-      .populate({
-        path: '_documentId',
-        populate: {
-          path: '_files',
-        },
-      }),
-    filteredQuery
-  )
-    .filter()
-    .count();
-
-  let searchedDocuments = await searchedDocumentsQuery.query;
-  let scannedDocCounts = await nQueryFeatures.query;
-
-  for (let document of searchedDocuments) {
-    const origText = document.text;
-
-    for (let word of extractWords) {
-      const regex = new RegExp(word, 'ig');
-
-      document.text = document.text.replace(regex, `<strong>${word}</strong>`);
-    }
-
-    const preview = createPreview(document.text);
-
-    document.preview =
-      preview !== 'No preview available.'
-        ? `Page ${document.page} - ${preview}`
-        : preview;
-    document.text = origText;
-  }
-  console.log();
-
-  // searchedDocuments = [];
-  if (!searchedDocuments.length) {
     console.log('no scanned files');
     filteredQuery = _.omit(filteredQuery, ['populate']);
 
@@ -185,6 +127,69 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
 
     searchedDocuments = await documentSearch.query;
     scannedDocCounts = await nDocumentSearch.query;
+  }
+
+  if (search) {
+    qry['$text'] = { $search: `${search}` };
+    qry['score'] = { $meta: 'textScore' };
+    qry['lean'] = true;
+    sorter = { score: { $meta: 'textScore' } };
+  }
+  if (!searchedDocuments.length) {
+    const searchedDocumentsQuery = new QueryFeatures(
+      ScannedDocument.find(qry)
+        .sort(sorter)
+        .populate({
+          path: '_documentId',
+          populate: {
+            path: '_files',
+          },
+        }),
+      filteredQuery
+    )
+      .sort()
+      .limitFields()
+      .filter()
+      .paginate()
+      .populate();
+
+    const nQueryFeatures = new QueryFeatures(
+      ScannedDocument.find(qry)
+        .sort(sorter)
+        .populate({
+          path: '_documentId',
+          populate: {
+            path: '_files',
+          },
+        }),
+      filteredQuery
+    )
+      .filter()
+      .count();
+
+    searchedDocuments = await searchedDocumentsQuery.query;
+    scannedDocCounts = await nQueryFeatures.query;
+
+    for (let document of searchedDocuments) {
+      const origText = document.text;
+
+      for (let word of extractWords) {
+        const regex = new RegExp(word, 'ig');
+
+        document.text = document.text.replace(
+          regex,
+          `<strong>${word}</strong>`
+        );
+      }
+
+      const preview = createPreview(document.text);
+
+      document.preview =
+        preview !== 'No preview available.'
+          ? `Page ${document.page} - ${preview}`
+          : preview;
+      document.text = origText;
+    }
   }
 
   res.status(200).json({
