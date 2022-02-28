@@ -232,7 +232,7 @@ exports.createUser = catchAsync(async (req, res, next) => {
 
 exports.getAllUsers = catchAsync(async (req, res, next) => {
   const endpoint = req.originalUrl;
-  const validTypes = ['admins', 'admin-employees', 'users'];
+  const validTypes = ['admins', 'users'];
   const type = endpoint.split('/api/v1/tenants/')[1].split('?')[0];
   const initialQuery = generateGetUsersQuery(type, req);
 
