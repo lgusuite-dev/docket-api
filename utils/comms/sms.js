@@ -5,7 +5,7 @@ exports.sendSMS = async ({ to, message }) => {
     const apiEndpoint = 'https://api.semaphore.co/api/v4/messages';
 
     const smsOptions = {
-      sendername: 'SEMAPHORE',
+      sendername: 'DOCKETPH',
       number: to,
       message,
       apikey: process.env.SEMAPHORE_KEY,
