@@ -760,8 +760,8 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
 
-  if (filteredBody._assignedTo) delete filteredBody._assignedTo;
-  if (filteredBody._fromTaskId) delete filteredBody._fromTaskId;
+  if (!filteredBody._assignedTo) delete filteredBody._assignedTo;
+  if (!filteredBody._fromTaskId) delete filteredBody._fromTaskId;
 
   const initialQuery = {
     _id: id,
