@@ -23,10 +23,13 @@ exports.createTask = catchAsync(async (req, res, next) => {
     '_assigneeId',
     '_documentId',
   ];
+
   let filteredBody = _.pick(req.body, pickFields);
   filteredBody._createdBy = req.user._id;
   filteredBody._updatedBy = req.user._id;
   filteredBody._tenantId = req.user._tenantId;
+
+  if (!filteredBody._assigneeId) delete filteredBody._assigneeId;
 
   if (filteredBody._documentId && !ObjectId.isValid(filteredBody._documentId)) {
     return res.status(400).json({

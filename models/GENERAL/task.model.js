@@ -42,7 +42,7 @@ const TaskSchema = new mongoose.Schema(
     _assigneeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Please provide assignee id'],
+      // required: [true, 'Please provide assignee id'],
     },
     _documentId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -125,7 +125,7 @@ TaskSchema.pre('save', async function (next) {
   if (!this.isNew) return next();
 
   const doc = await this.populate('_assigneeId _createdBy');
-
+  if (!doc._assigneeId) return next();
   const assignee = doc._assigneeId;
   const assigner = doc._createdBy;
 
