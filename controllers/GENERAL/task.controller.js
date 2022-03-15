@@ -287,6 +287,7 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     'message',
   ];
   const filteredBody = _.pick(req.body, pickFields);
+  if (!filteredBody._assigneeId) delete filteredBody._assigneeId;
   const { id } = req.params;
   const initialQuery = {
     _id: id,
