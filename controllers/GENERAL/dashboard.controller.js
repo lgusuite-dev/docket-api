@@ -82,6 +82,20 @@ exports.receiverModule = catchAsync(async (req, res, next) => {
     },
   ]);
 
+  // Sender Type = QC Department
+  const qcd = await Document.aggregate([
+    {
+      $match: {
+        senderType: 'QC Department',
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
   // Total Inbound Documents
   const totalInboundDocuments = await Document.aggregate([
     {
@@ -121,6 +135,7 @@ exports.receiverModule = catchAsync(async (req, res, next) => {
       private: private[0] || { count: 0 },
       other: other[0] || { count: 0 },
       courts: courts[0] || { count: 0 },
+      qcd: qcd[0] || { count: 0 },
       total_inbound_documents: totalInboundDocuments[0] || { count: 0 },
       monthly_inbound_documents: monthlyInboundDocuments[0] || { count: 0 },
     },
