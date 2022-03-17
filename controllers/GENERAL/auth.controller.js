@@ -76,7 +76,7 @@ const mailResetToken = async (user, resetToken) => {
 
 const checkMobileAccess = (user) => {
   const access = false;
-  console.log('asd');
+
   if (user._role.access.length) {
     for (const type of user._role.access) {
       if (type.label === 'My Tasks' && type.hasAccess) {
