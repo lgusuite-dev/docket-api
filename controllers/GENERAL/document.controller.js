@@ -1077,7 +1077,7 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
   const documents = [];
   for (const row of filteredBody.body) {
     const documentQuery = {
-      _id: row._id,
+      _id: row,
       status: { $ne: 'Deleted' },
       _tenantId: req.user._tenantId,
     };
