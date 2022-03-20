@@ -1,6 +1,69 @@
 // R-100-1121-100-A
 // R-005-0222-100-A
 
+exports.CLASSIFICATION_LOGIC = [
+  {
+    if: '/type/ === "Incoming"',
+    then: 'R',
+  },
+  {
+    if: '/type/ === "Outgoing"',
+    then: 'O',
+  },
+  {
+    if: '/type/ === "Internal"',
+    then: 'I',
+  },
+  {
+    if: '/type/ === "Archived"',
+    then: 'A',
+  },
+  {
+    if: '/classification/ === "Admin"',
+    then: 'D',
+  },
+  {
+    if: '/classification/ === "Civil"',
+    then: 'B',
+  },
+  {
+    if: '/classification/ === "Complaint"',
+    then: 'H',
+  },
+  {
+    if: '/classification/ === "Criminal"',
+    then: 'K',
+  },
+  {
+    if: '/classification/ === "EPWMD"',
+    then: 'P',
+  },
+  {
+    if: '/classification/ === "HR"',
+    then: 'R',
+  },
+  {
+    if: '/classification/ === "LLRB"',
+    then: 'L',
+  },
+  {
+    if: '/classification/ === "LRC"',
+    then: 'C',
+  },
+  {
+    if: '/classification/ === "Opinion"',
+    then: 'A',
+  },
+  {
+    if: '/classification/ === "Supplies"',
+    then: 'S',
+  },
+  {
+    if: '/classification/ === "Ombudsman Cases"',
+    then: 'E',
+  },
+];
+
 exports.ALGORITHM = {
   separator: '-',
   path: 'controlNumber',

@@ -5,7 +5,6 @@ const DocumentSchema = new mongoose.Schema(
     subject: {
       type: String,
       trim: true,
-      required: [true, 'Please provide the Subject'],
     },
     sender: {
       firstName: {
@@ -44,6 +43,7 @@ const DocumentSchema = new mongoose.Schema(
         'Archived',
         'Personal',
         'Not Defined',
+        'Initial',
       ],
     },
     status: {

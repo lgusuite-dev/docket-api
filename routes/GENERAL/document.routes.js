@@ -5,6 +5,8 @@ const authController = require('../../controllers/GENERAL/auth.controller');
 
 router.use(authController.authenticate);
 
+router.route('/generate').post(documentController.generateDocuments);
+
 router
   .route('/')
   .post(documentController.createDocument)

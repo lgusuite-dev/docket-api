@@ -6,6 +6,8 @@ const Task = require('../../models/GENERAL/task.model');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
 const ControlNumber = require('../../utils/control-number/controlNumber');
+const { evaluateString } = require('../../utils/function');
+
 const settings = require('../../mock/settings');
 
 const audit = require('../../utils/audit/index.js');
@@ -45,6 +47,57 @@ exports.createDocument = catchAsync(async (req, res, next) => {
     status: 'success',
     env: {
       document,
+    },
+  });
+});
+
+exports.generateDocuments = catchAsync(async (req, res, next) => {
+  const { nDocuments } = req.body;
+
+  const now = new Date();
+
+  const month = now.toLocaleString('en-US', {
+    month: 'numeric',
+    timeZone: 'Asia/Singapore',
+  });
+
+  const year = now.toLocaleString('en-US', {
+    year: 'numeric',
+    timeZone: 'Asia/Singapore',
+  });
+
+  let from = new Date(year, month - 1, 1, 0 - 8);
+
+  const initialQuery = {
+    status: { $ne: 'Deleted' },
+    type: { $in: ['Incoming', 'Initial'] },
+    _tenantId: req.user._tenantId,
+    createdAt: {
+      $gte: from,
+    },
+  };
+
+  let totalDocuments = await Document.find(initialQuery).count();
+
+  const newDocuments = [];
+  for (let i = 1; i <= nDocuments; i++) {
+    const seq1 = totalDocuments.toString().padStart(3, '0');
+    const mm = month.toString().padStart(2, '0');
+    const yy = year.toString().substring(2);
+
+    newDocuments.push({
+      controlNumber: `R-${seq1}-${mm}${yy}`,
+      type: 'Initial',
+    });
+    totalDocuments++;
+  }
+
+  const documents = await Document.insertMany(newDocuments);
+
+  res.status(200).json({
+    status: 'Success',
+    env: {
+      documents,
     },
   });
 });
@@ -437,6 +490,37 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
   const document = await Document.findOne(initialQuery);
   if (!document) return next(new AppError('Document not found', 404));
+
+  const year = now.toLocaleString('en-US', {
+    year: 'numeric',
+    timeZone: 'Asia/Singapore',
+  });
+
+  let from = new Date(year, 0, 1, 0 - 8);
+
+  if (document.type === 'Incoming') {
+    const classificationQuery = {
+      type: document.type,
+      classification: filteredBody.classification,
+      createdAt: {
+        $gte: from,
+      },
+    };
+
+    const classifiedDocument = await Document.find(classificationQuery).count();
+
+    let fieldBased2 = '';
+    for (const logic of settings.CLASSIFICATION_LOGIC) {
+      if (evaluateString(logic, document)) {
+        seq2 = logic.then;
+        break;
+      }
+    }
+
+    const controlNumber = `${document.controlNumber}-${
+      classifiedDocument + 1
+    }-${fieldBased2}`;
+  }
 
   if (!document.controlNumber) {
     const data = {
