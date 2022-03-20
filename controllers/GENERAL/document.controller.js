@@ -66,7 +66,7 @@ exports.generateDocuments = catchAsync(async (req, res, next) => {
     timeZone: 'Asia/Singapore',
   });
 
-  let from = new Date(year, month - 1, 1, 0 - 8);
+  const from = new Date(year, month - 1, 1).toISOString();
 
   const initialQuery = {
     status: { $ne: 'Deleted' },
@@ -78,9 +78,11 @@ exports.generateDocuments = catchAsync(async (req, res, next) => {
   };
 
   let totalDocuments = await Document.find(initialQuery).count();
+  const dateReceived = new Date();
 
   const newDocuments = [];
   for (let i = 1; i <= nDocuments; i++) {
+    totalDocuments++;
     const seq1 = totalDocuments.toString().padStart(3, '0');
     const mm = month.toString().padStart(2, '0');
     const yy = year.toString().substring(2);
@@ -88,11 +90,15 @@ exports.generateDocuments = catchAsync(async (req, res, next) => {
     newDocuments.push({
       controlNumber: `R-${seq1}-${mm}${yy}`,
       type: 'Initial',
+      dateReceived,
+      _tenantId: req.user._tenantId,
+      _createdBy: req.user._id,
     });
-    totalDocuments++;
   }
 
-  const documents = await Document.insertMany(newDocuments);
+  const documents = await Document.insertMany(newDocuments, {
+    new: true,
+  });
 
   res.status(200).json({
     status: 'Success',
@@ -283,6 +289,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
     'requestDate',
     'dateReceived',
     'receivedThru',
+    'type',
   ];
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
@@ -295,6 +302,15 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 
   const document = await Document.findOne(initialQuery);
   if (!document) return next(new AppError('Document not found', 404));
+
+  if (filteredBody.type === 'Incoming' && document.status === 'Incoming') {
+    return next(
+      new AppError(
+        `Document ${document.controlNumber} was already taken, Please select another document`,
+        404
+      )
+    );
+  }
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,
@@ -489,82 +505,80 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   };
 
   const document = await Document.findOne(initialQuery);
+
   if (!document) return next(new AppError('Document not found', 404));
+
+  const now = new Date();
+
+  const month = now.toLocaleString('en-US', {
+    month: 'numeric',
+    timeZone: 'Asia/Singapore',
+  });
 
   const year = now.toLocaleString('en-US', {
     year: 'numeric',
     timeZone: 'Asia/Singapore',
   });
 
-  let from = new Date(year, 0, 1, 0 - 8);
+  const classificationQuery = {
+    type: document.type,
+    classification: filteredBody.classification,
+    createdAt: {
+      $gte: new Date(year, 0, 1).toISOString(),
+    },
+    _tenantId: req.user._tenantId,
+  };
+
+  const classifiedDocument = await Document.find(classificationQuery).count();
+  const seq2 = (classifiedDocument + 1).toString().padStart(3, '0');
+
+  let fieldBased2 = '';
+  for (const logic of settings.CLASSIFICATION_LOGIC) {
+    if (evaluateString(logic.if, filteredBody)) {
+      fieldBased2 = logic.then;
+      break;
+    }
+  }
 
   if (document.type === 'Incoming') {
-    const classificationQuery = {
+    const controlNumber = `${document.controlNumber}-${seq2}-${fieldBased2}`;
+
+    filteredBody.controlNumber = controlNumber;
+
+    res.status(200).json({
+      status: 'success',
+      env: {
+        document: filteredBody,
+      },
+    });
+  } else {
+    const initialQuery = {
+      status: { $ne: 'Deleted' },
       type: document.type,
-      classification: filteredBody.classification,
+      _tenantId: req.user._tenantId,
       createdAt: {
         $gte: from,
       },
     };
 
-    const classifiedDocument = await Document.find(classificationQuery).count();
+    let totalDocuments = await Document.find(initialQuery).count();
 
-    let fieldBased2 = '';
+    let fieldBased1 = '';
     for (const logic of settings.CLASSIFICATION_LOGIC) {
-      if (evaluateString(logic, document)) {
-        seq2 = logic.then;
+      if (evaluateString(logic.if, { type: document.type })) {
+        fieldBased1 = logic.then;
         break;
       }
     }
 
-    const controlNumber = `${document.controlNumber}-${
-      classifiedDocument + 1
-    }-${fieldBased2}`;
+    const seq1 = (totalDocuments + 1).toString().padStart(3, '0');
+    const mm = month.toString().padStart(2, '0');
+    const yy = year.toString().substring(2);
+
+    filteredBody.controlNumber = `${fieldBased1}-${seq1}-${mm}${yy}-${seq2}-${fieldBased2}`;
   }
 
-  if (!document.controlNumber) {
-    const data = {
-      type: document.type,
-      ...filteredBody,
-    };
-    const configs = settings.ALGORITHM;
-    const controlNumber = await new ControlNumber(
-      data,
-      configs,
-      req.user._tenantId
-    )
-      .fieldBased('type')
-      .sequence('monthly', 'type')
-      .month()
-      .year()
-      .sequence('yearly', 'classification')
-      .fieldBased('classification')
-      .generate();
-
-    filteredBody.controlNumber = controlNumber;
-    filteredBody.dateClassified = new Date();
-  } else {
-    // let controlNumberArray = document.controlNumber.split('-');
-    // let data = filteredBody.classification;
-    // let found = false;
-    // for (let logic of settings.ALGORITHM.fieldBased.logics) {
-    //   let condition = logic.if.replace(/\//g, '');
-    //   if (eval(condition)) {
-    //     controlNumberArray[controlNumberArray.length - 1] = logic.then;
-    //     found = true;
-    //     break;
-    //   }
-    // }
-    // if (!found) {
-    //   controlNumberArray[controlNumberArray.length - 1] =
-    //     settings.ALGORITHM.fieldBased.default;
-    // }
-    // filteredBody['controlNumber'] = controlNumberArray.join('-');
-  }
-
-  if (document.type === 'Incoming' && document.isAssigned !== true) {
-    filteredBody.isAssigned = false;
-  }
+  filteredBody.dateClassified = new Date();
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,

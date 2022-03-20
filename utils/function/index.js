@@ -4,15 +4,17 @@ exports.callbackAsync = async (cb, ...cbArgs) =>
 exports.callbackSync = (cb, ...cbArgs) => cb.bind(this, ...cbArgs)();
 
 exports.evaluateString = (logic, obj) => {
-  const tempLogic = logic;
+  let tempLogic = logic;
   const regexp = /\/(.*?)\//g;
   const paths = logic.match(regexp);
 
   if (!paths) return false;
   for (const path of paths) {
     const objPath = path.split('/')[1];
-    tempLogic = tempLogic.replace(path, obj[objPath] || '');
+    tempLogic = tempLogic.replace(path, obj[objPath]);
   }
+
+  console.log(tempLogic);
 
   try {
     return eval(tempLogic);
