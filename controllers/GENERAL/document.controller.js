@@ -485,6 +485,119 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.declassifyDocument = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  const initialQuery = {
+    _id: id,
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+  };
+
+  const document = await Document.findOne(initialQuery);
+
+  if (!document) return next(new AppError('Document not found', 404));
+
+  const documentsToUpdateQuery = {
+    _id: { $ne: id },
+    status: { $ne: 'Deleted' },
+    _tenantId: req.user._tenantId,
+    type: document.type,
+    classification: document.classification,
+    dateClassified: {
+      $gte: document.dateClassified,
+    },
+  };
+
+  const documents = await Document.find(documentsToUpdateQuery);
+
+  const updateArgs = [];
+  for (const documentToUpdate of documents) {
+    const controlNumberArr = documentToUpdate.controlNumber.split('-');
+
+    const fieldBased1 = controlNumberArr[0];
+    const seq1 = controlNumberArr[1];
+    const monthYr = controlNumberArr[2];
+    const seq2 = controlNumberArr[3];
+    const fieldBased2 = controlNumberArr[4];
+
+    const newControlNumber = `${fieldBased1}-${seq1}-${monthYr}-${(
+      parseInt(seq2) - 1
+    )
+      .toString()
+      .padStart(3, '0')}-${fieldBased2}`;
+
+    documentToUpdate.controlNumber = newControlNumber;
+
+    updateArgs.push({
+      Model: ScannedDocument,
+      query: {
+        _documentId: documentToUpdate._id,
+        status: { $ne: 'Deleted' },
+        _tenantId: req.user._tenantId,
+      },
+      data: {
+        controlNumber: newControlNumber,
+      },
+    });
+
+    await documentToUpdate.save({ validateBeforeSave: false });
+  }
+
+  const controlNumberArr = document.controlNumber.split('-');
+
+  const fieldBased1 = controlNumberArr[0];
+  const seq1 = controlNumberArr[1];
+  const monthYr = controlNumberArr[2];
+
+  document.controlNumber = `${fieldBased1}-${seq1}-${monthYr}`;
+
+  document.dateClassified = undefined;
+  document.classification = undefined;
+  document.subClassification = undefined;
+  document.remarks = undefined;
+
+  await document.save({ validateBeforeSave: false });
+
+  // UPDATE SIDE EFFECTS
+  updateArgs.push({
+    Model: ScannedDocument,
+    query: {
+      _documentId: document._id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    },
+    data: {
+      dateClassified: undefined,
+      classification: undefined,
+      subClassification: undefined,
+      subClassification: undefined,
+      remarks: undefined,
+      controlNumber: `${fieldBased1}-${seq1}-${monthYr}`,
+    },
+  });
+
+  await updateSideEffects(updateArgs);
+
+  await audit.createAudit({
+    _tenantId: req.user._tenantId,
+    _userId: req.user._id,
+    type: 'Document',
+    action: 'Declassify',
+    requestBody: {
+      documentId: id,
+    },
+  });
+
+  res.status(200).json({
+    status: 'success',
+    affectedDocuments: updateArgs.length - 1,
+    env: {
+      document,
+    },
+  });
+});
+
 // UPDATE OCR DOCUMENT
 exports.classifyDocument = catchAsync(async (req, res, next) => {
   const pickFields = [
