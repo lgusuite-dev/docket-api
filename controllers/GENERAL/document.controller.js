@@ -971,7 +971,13 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   const { id } = req.params;
 
-  if (!filteredBody._assignedTo) delete filteredBody._assignedTo;
+  if (!filteredBody._assignedTo) {
+    delete filteredBody._assignedTo;
+    filteredBody['isAssigned'] = false;
+  } else {
+    filteredBody['isAssigned'] = true;
+  }
+
   if (!filteredBody._fromTaskId) delete filteredBody._fromTaskId;
 
   const initialQuery = {
@@ -983,8 +989,6 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
   const document = await Document.findOne(initialQuery);
 
   if (!document) return next(new AppError('Document not found', 404));
-
-  if (filteredBody._assignedTo) filteredBody.isAssigned = true;
 
   const updatedDocument = await Document.findByIdAndUpdate(id, filteredBody, {
     new: true,
