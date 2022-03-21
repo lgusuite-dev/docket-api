@@ -803,24 +803,114 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  const document = await Document.findOneAndUpdate(initialQuery, {
-    status: 'Deleted',
-  });
+  let document = await Document.findOne(initialQuery);
 
   if (!document) return next(new AppError('Document not found', 404));
 
-  // UPDATE SIDE EFFECTS
-  const updateArgs = [
+  if (document._assignedTo)
+    return next(
+      new AppError('Cannot delete documents with task assigned to it', 404)
+    );
+
+  const fieldsToDelete = {
+    subject: undefined,
+    sender: undefined,
+    senderType: undefined,
+    requestDate: undefined,
+    receivedThru: undefined,
+    controlNumber: undefined,
+    dateClassified: undefined,
+    fileLength: undefined,
+    _files: undefined,
+    confidentialityLevel: undefined,
+    recipients: undefined,
+    dateReleased: undefined,
+    dateConfirmed: undefined,
+    message: undefined,
+    _includes: undefined,
+    _excludes: undefined,
+    classification: undefined,
+    subClassification: undefined,
+    remarks: undefined,
+  };
+  const controlNumberArr = document.controlNumber.split('-');
+  const fieldBased1 = controlNumberArr[0];
+  const seq1 = controlNumberArr[1];
+  const monthYr = controlNumberArr[2];
+
+  const newDocument = await Document.findByIdAndUpdate(
+    document._id,
     {
-      Model: ScannedDocument,
-      query: {
-        _documentId: document._id,
-        status: { $ne: 'Deleted' },
-        _tenantId: req.user._tenantId,
+      $set: {
+        type: 'Initial',
+        controlNumber: `${fieldBased1}-${seq1}-${monthYr}`,
       },
-      data: { status: 'Deleted' },
+      $unset: fieldsToDelete,
     },
-  ];
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  const updateArgs = [];
+  if (document.classification) {
+    const documentsToUpdateQuery = {
+      _id: { $ne: id },
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+      type: document.type,
+      classification: document.classification,
+      dateClassified: {
+        $gte: document.dateClassified,
+      },
+    };
+
+    const documents = await Document.find(documentsToUpdateQuery);
+
+    for (const documentToUpdate of documents) {
+      const controlNumberArr = documentToUpdate.controlNumber.split('-');
+
+      const fieldBased1 = controlNumberArr[0];
+      const seq1 = controlNumberArr[1];
+      const monthYr = controlNumberArr[2];
+      const seq2 = controlNumberArr[3];
+      const fieldBased2 = controlNumberArr[4];
+
+      const newControlNumber = `${fieldBased1}-${seq1}-${monthYr}-${(
+        parseInt(seq2) - 1
+      )
+        .toString()
+        .padStart(3, '0')}-${fieldBased2}`;
+
+      documentToUpdate.controlNumber = newControlNumber;
+
+      updateArgs.push({
+        Model: ScannedDocument,
+        query: {
+          _documentId: documentToUpdate._id,
+          status: { $ne: 'Deleted' },
+          _tenantId: req.user._tenantId,
+        },
+        data: {
+          controlNumber: newControlNumber,
+        },
+      });
+
+      await documentToUpdate.save({ validateBeforeSave: false });
+    }
+  }
+
+  // UPDATE SIDE EFFECTS
+  updateArgs.push({
+    Model: ScannedDocument,
+    query: {
+      _documentId: document._id,
+      status: { $ne: 'Deleted' },
+      _tenantId: req.user._tenantId,
+    },
+    data: { ...fieldsToDelete, type: 'Initial' },
+  });
 
   await updateSideEffects(updateArgs);
 
