@@ -67,12 +67,12 @@ const TaskSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
       },
-      like: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
-        },
-      ],
+      // like: [
+      //   {
+      //     type: mongoose.Schema.Types.ObjectId,
+      //     ref: 'User',
+      //   },
+      // ],
       text: String,
     },
     // tracker

@@ -49,7 +49,7 @@ const DocumentSchema = new mongoose.Schema(
     status: {
       type: String,
       default: 'Active',
-      enum: ['Active', 'Deleted', 'Suspended'],
+      enum: ['Active', 'Deleted', 'Suspended', 'Reclassified'],
     },
     controlNumber: String,
     dateClassified: Date,
@@ -126,12 +126,12 @@ const DocumentSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
       },
-      like: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User',
-        },
-      ],
+      // like: [
+      //   {
+      //     type: mongoose.Schema.Types.ObjectId,
+      //     ref: 'User',
+      //   },
+      // ],
       text: String,
     },
     storage: {

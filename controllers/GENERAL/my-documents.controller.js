@@ -65,7 +65,7 @@ const checkAccess = async (curItem, req) => {
 exports.getSharedToMe = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _sharedTo: req.user._id,
   };
   // console.log(req.user._id);
@@ -145,7 +145,7 @@ exports.updateShareDocument = catchAsync(async (req, res, next) => {
 
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
   };
   const document = await Document.findOne(initialQuery);
   // console.log(document._sharedTo);
@@ -183,7 +183,7 @@ exports.getRoot = catchAsync(async (req, res, next) => {
   const initialQuery = {
     type: { $ne: 'Incoming' },
     _createdBy: req.user._id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _parentId: { $eq: null },
   };
 
@@ -438,7 +438,7 @@ exports.getDocument = catchAsync(async (req, res, next) => {
 
   const query = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     // _createdBy: req.user._id,
   };
 
@@ -486,7 +486,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
 
   const query = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     isMyDocuments: true,
     _createdBy: req.user._id,
   };
@@ -559,7 +559,7 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
 
   query = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _createdBy: req.user._id,
   };
 
@@ -600,7 +600,7 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
 
   const query = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _createdBy: req.user._id,
   };
 
