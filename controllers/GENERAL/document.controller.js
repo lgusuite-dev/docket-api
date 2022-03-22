@@ -503,13 +503,18 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
     status: 'Reclassified',
   });
 
-  const controlNumberArr = document.controlNumber.split('-');
+  let controlNumber = undefined;
+  if (document.type === 'Incoming') {
+    const controlNumberArr = document.controlNumber.split('-');
 
-  const fieldBased1 = controlNumberArr[0];
-  const seq1 = controlNumberArr[1];
-  const monthYr = controlNumberArr[2];
+    const fieldBased1 = controlNumberArr[0];
+    const seq1 = controlNumberArr[1];
+    const monthYr = controlNumberArr[2];
 
-  document.controlNumber = `${fieldBased1}-${seq1}-${monthYr}`;
+    controlNumber = `${fieldBased1}-${seq1}-${monthYr}`;
+  }
+
+  document.controlNumber = controlNumber;
 
   document.dateClassified = undefined;
   document.classification = undefined;
@@ -533,7 +538,7 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
         subClassification: undefined,
         subClassification: undefined,
         remarks: undefined,
-        controlNumber: `${fieldBased1}-${seq1}-${monthYr}`,
+        controlNumber,
       },
     },
   ];
@@ -627,16 +632,17 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
     });
   } else {
     const from = new Date(year, month - 1, 1).toISOString();
-    const initialQuery = {
-      status: { $ne: 'Deleted' },
+    const totalDocsQuery = {
+      status: { $nin: ['Deleted', 'Reclassified'] },
       type: document.type,
       _tenantId: req.user._tenantId,
+      classification: { $ne: null },
       createdAt: {
         $gte: from,
       },
     };
 
-    let totalDocuments = await Document.find(initialQuery).count();
+    let totalDocuments = await Document.find(totalDocsQuery).count();
 
     let fieldBased1 = '';
     for (const logic of settings.CLASSIFICATION_LOGIC) {
