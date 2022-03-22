@@ -69,7 +69,7 @@ exports.generateDocuments = catchAsync(async (req, res, next) => {
   const from = new Date(year, month - 1, 1).toISOString();
 
   const initialQuery = {
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     type: { $in: ['Incoming', 'Initial'] },
     _tenantId: req.user._tenantId,
     createdAt: {
@@ -110,7 +110,7 @@ exports.generateDocuments = catchAsync(async (req, res, next) => {
 
 exports.getAllDocuments = catchAsync(async (req, res, next) => {
   const initialQuery = {
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -206,7 +206,7 @@ exports.getDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -232,7 +232,7 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -296,7 +296,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -324,7 +324,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
       query: {
         _documentId: id,
         _tenantId: req.user._tenantId,
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Reclassified'] },
       },
       data: { dateReceived: filteredBody.dateReceived },
     },
@@ -368,7 +368,7 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
 
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -376,7 +376,6 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   if (!document) return next(new AppError('Document not found', 404));
 
   const file = await File.create(filteredBody);
-  console.log(file);
 
   document._files.push(file._id);
   document.fileLength = document._files.length;
@@ -386,7 +385,7 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
   if (['Outgoing', 'Archived', 'Internal'].includes(document.type))
     document.process.uploaded = true;
 
-  await document.save();
+  await document.save({ validateBeforeSave: false });
 
   if (!_.isEmpty(filteredBody)) {
     filteredBody.documentId = id;
@@ -417,7 +416,7 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
   const initialQuery = {
     _id: id,
     _documentId: _documentId,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -446,7 +445,7 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
         Model: Document,
         query: {
           _id: _documentId,
-          status: { $ne: 'Deleted' },
+          status: { $nin: ['Deleted', 'Reclassified'] },
           _tenantId: req.user._tenantId,
         },
         data: { ocrStatus: 'No' },
@@ -455,7 +454,7 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
         Model: ScannedDocument,
         query: {
           _fileId: file._id,
-          status: { $ne: 'Deleted' },
+          status: { $nin: ['Deleted', 'Reclassified'] },
           _tenantId: req.user._tenantId,
         },
         data: { status: 'Deleted' },
@@ -490,7 +489,7 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
 
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -498,51 +497,11 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
 
   if (!document) return next(new AppError('Document not found', 404));
 
-  const documentsToUpdateQuery = {
-    _id: { $ne: id },
-    status: { $ne: 'Deleted' },
-    _tenantId: req.user._tenantId,
-    type: document.type,
-    classification: document.classification,
-    dateClassified: {
-      $gte: document.dateClassified,
-    },
-  };
-
-  const documents = await Document.find(documentsToUpdateQuery);
-
-  const updateArgs = [];
-  for (const documentToUpdate of documents) {
-    const controlNumberArr = documentToUpdate.controlNumber.split('-');
-
-    const fieldBased1 = controlNumberArr[0];
-    const seq1 = controlNumberArr[1];
-    const monthYr = controlNumberArr[2];
-    const seq2 = controlNumberArr[3];
-    const fieldBased2 = controlNumberArr[4];
-
-    const newControlNumber = `${fieldBased1}-${seq1}-${monthYr}-${(
-      parseInt(seq2) - 1
-    )
-      .toString()
-      .padStart(3, '0')}-${fieldBased2}`;
-
-    documentToUpdate.controlNumber = newControlNumber;
-
-    updateArgs.push({
-      Model: ScannedDocument,
-      query: {
-        _documentId: documentToUpdate._id,
-        status: { $ne: 'Deleted' },
-        _tenantId: req.user._tenantId,
-      },
-      data: {
-        controlNumber: newControlNumber,
-      },
-    });
-
-    await documentToUpdate.save({ validateBeforeSave: false });
-  }
+  const newDoc = _.omit(document._doc, ['_id', 'status']);
+  const duplicateDocument = await Document.create({
+    ...newDoc,
+    status: 'Reclassified',
+  });
 
   const controlNumberArr = document.controlNumber.split('-');
 
@@ -560,22 +519,24 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
   await document.save({ validateBeforeSave: false });
 
   // UPDATE SIDE EFFECTS
-  updateArgs.push({
-    Model: ScannedDocument,
-    query: {
-      _documentId: document._id,
-      status: { $ne: 'Deleted' },
-      _tenantId: req.user._tenantId,
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $nin: ['Deleted', 'Reclassified'] },
+        _tenantId: req.user._tenantId,
+      },
+      data: {
+        dateClassified: undefined,
+        classification: undefined,
+        subClassification: undefined,
+        subClassification: undefined,
+        remarks: undefined,
+        controlNumber: `${fieldBased1}-${seq1}-${monthYr}`,
+      },
     },
-    data: {
-      dateClassified: undefined,
-      classification: undefined,
-      subClassification: undefined,
-      subClassification: undefined,
-      remarks: undefined,
-      controlNumber: `${fieldBased1}-${seq1}-${monthYr}`,
-    },
-  });
+  ];
 
   await updateSideEffects(updateArgs);
 
@@ -591,9 +552,8 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: 'success',
-    affectedDocuments: updateArgs.length - 1,
     env: {
-      document,
+      document: duplicateDocument,
     },
   });
 });
@@ -613,7 +573,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -634,6 +594,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   });
 
   const classificationQuery = {
+    status: { $ne: 'Deleted' },
     type: document.type,
     classification: filteredBody.classification,
     createdAt: {
@@ -704,7 +665,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
       Model: ScannedDocument,
       query: {
         _documentId: document._id,
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Reclassified'] },
         _tenantId: req.user._tenantId,
       },
       data: filteredBody,
@@ -739,7 +700,7 @@ exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -766,7 +727,7 @@ exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
       Model: ScannedDocument,
       query: {
         _documentId: document._id,
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Reclassified'] },
         _tenantId: req.user._tenantId,
       },
       data: filteredBody,
@@ -799,7 +760,7 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -812,105 +773,46 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
       new AppError('Cannot delete documents with task assigned to it', 404)
     );
 
-  const fieldsToDelete = {
-    subject: undefined,
-    sender: undefined,
-    senderType: undefined,
-    requestDate: undefined,
-    receivedThru: undefined,
-    controlNumber: undefined,
-    dateClassified: undefined,
-    fileLength: undefined,
-    _files: undefined,
-    confidentialityLevel: undefined,
-    recipients: undefined,
-    dateReleased: undefined,
-    dateConfirmed: undefined,
-    message: undefined,
-    _includes: undefined,
-    _excludes: undefined,
-    classification: undefined,
-    subClassification: undefined,
-    remarks: undefined,
-  };
+  if (document.classification)
+    return next(new AppError('Cannot delete classified document', 404));
+
   const controlNumberArr = document.controlNumber.split('-');
   const fieldBased1 = controlNumberArr[0];
   const seq1 = controlNumberArr[1];
   const monthYr = controlNumberArr[2];
 
-  const newDocument = await Document.findByIdAndUpdate(
-    document._id,
-    {
-      $set: {
-        type: 'Initial',
-        controlNumber: `${fieldBased1}-${seq1}-${monthYr}`,
-      },
-      $unset: fieldsToDelete,
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  const defaultFields = {
+    subject: undefined,
+    requestDate: undefined,
+    sender: {},
+    senderType: undefined,
+    receivedThru: undefined,
+    fileLength: 0,
+    _files: [],
+    type: 'Initial',
+    recipients: [],
+    controlNumber: `${fieldBased1}-${seq1}-${monthYr}`,
+  };
 
-  const updateArgs = [];
-  if (document.classification) {
-    const documentsToUpdateQuery = {
-      _id: { $ne: id },
-      status: { $ne: 'Deleted' },
-      _tenantId: req.user._tenantId,
-      type: document.type,
-      classification: document.classification,
-      dateClassified: {
-        $gte: document.dateClassified,
-      },
-    };
-
-    const documents = await Document.find(documentsToUpdateQuery);
-
-    for (const documentToUpdate of documents) {
-      const controlNumberArr = documentToUpdate.controlNumber.split('-');
-
-      const fieldBased1 = controlNumberArr[0];
-      const seq1 = controlNumberArr[1];
-      const monthYr = controlNumberArr[2];
-      const seq2 = controlNumberArr[3];
-      const fieldBased2 = controlNumberArr[4];
-
-      const newControlNumber = `${fieldBased1}-${seq1}-${monthYr}-${(
-        parseInt(seq2) - 1
-      )
-        .toString()
-        .padStart(3, '0')}-${fieldBased2}`;
-
-      documentToUpdate.controlNumber = newControlNumber;
-
-      updateArgs.push({
-        Model: ScannedDocument,
-        query: {
-          _documentId: documentToUpdate._id,
-          status: { $ne: 'Deleted' },
-          _tenantId: req.user._tenantId,
-        },
-        data: {
-          controlNumber: newControlNumber,
-        },
-      });
-
-      await documentToUpdate.save({ validateBeforeSave: false });
-    }
+  for (const [key, value] of Object.entries(defaultFields)) {
+    document[key] = value;
   }
 
+  console.log(document);
+  await document.save();
+
   // UPDATE SIDE EFFECTS
-  updateArgs.push({
-    Model: ScannedDocument,
-    query: {
-      _documentId: document._id,
-      status: { $ne: 'Deleted' },
-      _tenantId: req.user._tenantId,
+  const updateArgs = [
+    {
+      Model: ScannedDocument,
+      query: {
+        _documentId: document._id,
+        status: { $nin: ['Deleted', 'Reclassified'] },
+        _tenantId: req.user._tenantId,
+      },
+      data: { ...defaultFields, type: 'Initial' },
     },
-    data: { ...fieldsToDelete, type: 'Initial' },
-  });
+  ];
 
   await updateSideEffects(updateArgs);
 
@@ -941,7 +843,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -959,7 +861,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
       Model: ScannedDocument,
       query: {
         _documentId: document._id,
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Reclassified'] },
         _tenantId: req.user._tenantId,
       },
       data: filteredBody,
@@ -995,7 +897,7 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -1020,7 +922,7 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
       Model: ScannedDocument,
       query: {
         _documentId: document._id,
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Reclassified'] },
         _tenantId: req.user._tenantId,
       },
       data: filteredBody,
@@ -1072,7 +974,7 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
 
   const initialQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -1091,7 +993,7 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
       Model: ScannedDocument,
       query: {
         _documentId: document._id,
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Reclassified'] },
         _tenantId: req.user._tenantId,
       },
       data: filteredBody,
@@ -1138,7 +1040,7 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
   for (const row of filteredBody.body) {
     const documentQuery = {
       _id: row,
-      status: { $ne: 'Deleted' },
+      status: { $nin: ['Deleted', 'Reclassified'] },
       _tenantId: req.user._tenantId,
     };
 
@@ -1185,7 +1087,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
 
   const documentQuery = {
     _id: id,
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
   };
 
@@ -1218,7 +1120,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
       Model: ScannedDocument,
       query: {
         _documentId: document._id,
-        status: { $ne: 'Deleted' },
+        status: { $nin: ['Deleted', 'Reclassified'] },
         _tenantId: req.user._tenantId,
       },
       data: { type: document.type },
@@ -1299,7 +1201,7 @@ exports.updateDocumentStorage = catchAsync(async (req, res, next) => {
   for (const row of filteredBody.body) {
     const documentQuery = {
       _id: row,
-      status: { $ne: 'Deleted' },
+      status: { $nin: ['Deleted', 'Reclassified'] },
       _tenantId: req.user._tenantId,
     };
 
@@ -1390,7 +1292,7 @@ exports.getFileTask = catchAsync(async (req, res, next) => {
 
 exports.getDocumentClassification = catchAsync(async (req, res, next) => {
   const initialQuery = {
-    status: { $ne: 'Deleted' },
+    status: { $nin: ['Deleted', 'Reclassified'] },
     _tenantId: req.user._tenantId,
     $or: [
       { $and: [{ type: 'Incoming' }, { fileLength: { $gte: 0 } }] },
