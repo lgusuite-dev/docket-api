@@ -626,6 +626,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
       },
     });
   } else {
+    const from = new Date(year, month - 1, 1).toISOString();
     const initialQuery = {
       status: { $ne: 'Deleted' },
       type: document.type,
