@@ -5,6 +5,8 @@ const scannedDocumentController = require('../../controllers/GENERAL/scanned_doc
 
 router.use(authController.authenticate);
 
-router.get('/', scannedDocumentController.searchDocument);
+router
+  .get('/', scannedDocumentController.searchDocument)
+  .post('/', scannedDocumentController.search);
 
 module.exports = router;

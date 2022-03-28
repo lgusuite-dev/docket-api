@@ -201,3 +201,66 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.search = catchAsync(async (req, res, next) => {
+  console.log(req.body);
+
+  var queryFromBody = JSON.parse(req.body.query || '{}');
+  var query = {
+    $and: [
+      {
+        $or: [
+          { _includes: req.user._id },
+          { confidentialityLevel: { $lte: req.user.access_level } },
+        ],
+      },
+    ],
+    _excludes: { $ne: req.user._id },
+    _tenantId: req.user._tenantId,
+    status: { $ne: 'Deleted' },
+  };
+
+  if (queryFromBody.$or.length) {
+    query.$and.push({ $and: queryFromBody.$or });
+  }
+
+  var documentQuery = { ...query };
+
+  query['$text'] = { $search: `${req.body.keyword}` };
+  query['score'] = { $meta: 'textScore' };
+  query['lean'] = true;
+  const sorter = { score: { $meta: 'textScore' } };
+
+  const count = ScannedDocument.find(query).count();
+
+  const ocrs = ScannedDocument.find(query)
+    .sort(sorter)
+    .populate({
+      path: '_documentId',
+      populate: {
+        path: '_files',
+      },
+    })
+    .limit(20);
+
+  documentQuery['$or'] = [
+    {
+      subject: { $regex: req.body.keyword, $options: 'i' },
+    },
+    {
+      controlNumber: { $regex: req.body.keyword, $options: 'i' },
+    },
+  ];
+  const documents = Document.find(documentQuery).limit(10);
+  const documentCount = Document.find(documentQuery).count();
+
+  res.status(200).json({
+    status: 'success',
+    query,
+    documentQuery,
+    count: await count,
+    ocrs: await ocrs,
+    documents: await documents,
+    documentCount: await documentCount,
+  });
+});
