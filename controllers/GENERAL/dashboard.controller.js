@@ -235,7 +235,7 @@ exports.classifierModule = catchAsync(async (req, res, next) => {
       $match: {
         type: 'Incoming',
         fileLength: { $gt: 0 },
-        controlNumber: { $eq: null },
+        classification: { $eq: null },
         status: 'Active',
         _tenantId: req.user._tenantId,
       },
@@ -251,7 +251,7 @@ exports.classifierModule = catchAsync(async (req, res, next) => {
       $match: {
         type: 'Outgoing',
         fileLength: { $gt: 0 },
-        controlNumber: { $eq: null },
+        classification: { $eq: null },
         status: 'Active',
         _tenantId: req.user._tenantId,
       },
@@ -267,7 +267,7 @@ exports.classifierModule = catchAsync(async (req, res, next) => {
       $match: {
         type: 'Internal',
         fileLength: { $gt: 0 },
-        controlNumber: { $eq: null },
+        classification: { $eq: null },
         status: 'Active',
         _tenantId: req.user._tenantId,
       },
@@ -283,7 +283,39 @@ exports.classifierModule = catchAsync(async (req, res, next) => {
       $match: {
         type: 'Archived',
         fileLength: { $gt: 0 },
-        controlNumber: { $eq: null },
+        classification: { $eq: null },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  // Personal for Classification
+  const personal_classification = await Document.aggregate([
+    {
+      $match: {
+        type: 'Personal',
+        fileLength: { $gt: 0 },
+        classification: { $eq: null },
+        status: 'Active',
+        _tenantId: req.user._tenantId,
+      },
+    },
+    {
+      $count: 'count',
+    },
+  ]);
+
+  // Not Defined for Classification
+  const not_defined_classification = await Document.aggregate([
+    {
+      $match: {
+        type: 'Not Defined',
+        fileLength: { $gt: 0 },
+        classification: { $eq: null },
         status: 'Active',
         _tenantId: req.user._tenantId,
       },
@@ -298,7 +330,7 @@ exports.classifierModule = catchAsync(async (req, res, next) => {
     {
       $match: {
         fileLength: { $gt: 0 },
-        controlNumber: { $ne: null },
+        classification: { $ne: null },
         status: 'Active',
         _tenantId: req.user._tenantId,
       },
@@ -315,6 +347,8 @@ exports.classifierModule = catchAsync(async (req, res, next) => {
       outbound_classification: outbound_classification[0] || { count: 0 },
       internal_classification: internal_classification[0] || { count: 0 },
       archived_classification: archived_classification[0] || { count: 0 },
+      personal_classification: personal_classification[0] || { count: 0 },
+      not_defined_classification: not_defined_classification[0] || { count: 0 },
       classified_documents: classified_documents[0] || { count: 0 },
     },
   });
