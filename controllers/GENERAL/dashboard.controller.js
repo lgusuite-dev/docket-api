@@ -511,7 +511,7 @@ exports.warehousingModule = catchAsync(async (req, res, next) => {
     {
       $match: {
         type: { $in: ['Incoming', 'Outgoing', 'Internal', 'Archived'] },
-        controlNumber: { $ne: null },
+        classification: { $ne: null },
         storage: { $eq: null },
         status: 'Active',
         _tenantId: req.user._tenantId,
@@ -798,7 +798,7 @@ exports.approverModule = catchAsync(async (req, res, next) => {
   const document_assignation = await Document.aggregate([
     {
       $match: {
-        controlNumber: { $ne: null },
+        classification: { $ne: null },
         type: 'Incoming',
         confidentialityLevel: { $eq: null },
         status: 'Active',
@@ -833,7 +833,7 @@ exports.approverModule = catchAsync(async (req, res, next) => {
     {
       $match: {
         type: { $in: ['Outgoing', 'Internal', 'Archived'] },
-        controlNumber: { $ne: null },
+        classification: { $ne: null },
         fileLength: { $gte: 0 },
         'process.printed': true,
         'process.signed': true,
