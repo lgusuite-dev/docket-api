@@ -108,6 +108,66 @@ exports.generateDocuments = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.documentsForTask = catchAsync(async (req, res, next) => {
+  const { _id } = req.query;
+
+  let initialQuery = {};
+
+  if (_id) {
+    initialQuery = {
+      _id,
+    };
+  } else {
+    initialQuery = {
+      status: { $nin: ['Deleted', 'Reclassified'] },
+      _tenantId: req.user._tenantId,
+      isAssinged: false,
+      classification: null,
+    };
+    const isApprover = false;
+    if (req.user._role && req.user._role.access) {
+      for (let access of req.user._role.access) {
+        if (access.children) {
+          for (let child of access.children) {
+            if (child.hasAccess && child.routeTo === 'for-approval') {
+              isApprover = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const userMyDocumentsQuery = {
+      _createdBy: req.user._id,
+      type: 'Not Defined',
+    };
+
+    if (req.user.type === 'Admin' || isApprover) {
+      initialQuery['$or'] = [
+        userMyDocumentsQuery,
+        {
+          type: { $ne: 'Not Defined' },
+        },
+      ];
+    } else {
+      initialQuery = {
+        ...initialQuery,
+        ...userMyDocumentsQuery,
+      };
+    }
+  }
+
+  const documents = await Document.find(initialQuery);
+
+  res.status(200).json({
+    status: 'Success',
+    env: {
+      documents,
+    },
+  });
+});
+
 exports.getAllDocuments = catchAsync(async (req, res, next) => {
   const initialQuery = {
     status: { $nin: ['Deleted', 'Reclassified'] },
@@ -496,6 +556,11 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
   const document = await Document.findOne(initialQuery);
 
   if (!document) return next(new AppError('Document not found', 404));
+
+  if (document._assignedTo)
+    return next(
+      new AppError('Assigned documents cannot be declassified.', 404)
+    );
 
   const newDoc = _.omit(document._doc, ['_id', 'status']);
   const duplicateDocument = await Document.create({

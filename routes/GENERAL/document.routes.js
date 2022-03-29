@@ -6,6 +6,7 @@ const authController = require('../../controllers/GENERAL/auth.controller');
 router.use(authController.authenticate);
 
 router.route('/generate').post(documentController.generateDocuments);
+router.route('/task-documents').get(documentController.documentsForTask);
 
 router
   .route('/')
