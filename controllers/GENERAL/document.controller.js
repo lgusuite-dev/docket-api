@@ -497,6 +497,8 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
 
   if (!document) return next(new AppError('Document not found', 404));
 
+  if (document._assignedTo) return next(new AppError('Assigned documents cannot be declassified.', 404));
+
   const newDoc = _.omit(document._doc, ['_id', 'status']);
   const duplicateDocument = await Document.create({
     ...newDoc,
