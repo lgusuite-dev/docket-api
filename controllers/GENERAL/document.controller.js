@@ -292,7 +292,7 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const initialQuery = {
     _id: id,
-    status: { $nin: ['Deleted', 'Reclassified'] },
+    status: 'Active',
     _tenantId: req.user._tenantId,
   };
 
@@ -301,7 +301,7 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
 
   const fileQuery = {
     _documentId: id,
-    _id: { $in: document._files },
+    // _id: { $in: document._files },
     status: { $ne: 'Deleted' },
   };
 
@@ -315,8 +315,8 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
     .sort()
     .limitFields()
     .filter()
-    .paginate()
-    .populate();
+    .paginate();
+  // .populate();
 
   const nFileQueryFeature = new QueryFeatures(
     File.find(fileQuery).populate({
@@ -476,7 +476,7 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
   const initialQuery = {
     _id: id,
     _documentId: _documentId,
-    status: { $nin: ['Deleted', 'Reclassified'] },
+    status: 'Active',
     _tenantId: req.user._tenantId,
   };
 
@@ -1451,11 +1451,18 @@ exports.migrateDocuments = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   const { documents } = filteredBody;
 
-  const insertedDocuments = await Document.insertMany(documents, {
-    ordered: false,
+  const migratedDocuments = await Document.insertMany(documents, {
+    new: true,
   });
+
+  // const insertedDocuments = await Document.insertMany(documents, {
+  //   ordered: false,
+  // });
 
   res.status(200).json({
     status: 'success',
+    env: {
+      documents: migratedDocuments,
+    },
   });
 });

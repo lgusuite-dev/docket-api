@@ -137,7 +137,7 @@ exports.updateBook = catchAsync(async (req, res, next) => {
     '_boxId',
   ];
   const filteredBody = _.pick(req.body, pickFields);
-  const documentIds = [...filteredBody._documents];
+
   const { id } = req.params;
   filteredBody._updatedBy = req.user._id;
   const initialQuery = {
@@ -148,9 +148,10 @@ exports.updateBook = catchAsync(async (req, res, next) => {
   const book = await Book.findOne(initialQuery);
   if (!book) return next(new AppError('Book not found', 404));
 
-  if (book.status === 'Empty') filteredBody.status = 'Open';
+  if (filteredBody._documents) {
+    if (book.status === 'Empty') filteredBody.status = 'Open';
 
-  if (documentIds) {
+    const documentIds = [...filteredBody._documents];
     if (book.status === 'Closed' || book.status === 'Boxed')
       return next(
         new AppError(`Cannot add documents on ${box.status} book`, 404)
