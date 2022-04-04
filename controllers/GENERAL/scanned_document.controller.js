@@ -205,7 +205,7 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
 });
 
 exports.search = catchAsync(async (req, res, next) => {
-  const { ocrpage, ocrlimit, docpage, doclimit } = req.query;
+  const { ocrpage, ocrlimit, docpage, doclimit } = req.body;
 
   // OCR PAGINATION
   const oPage = +ocrpage || 1;
