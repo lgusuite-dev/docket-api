@@ -11,7 +11,35 @@ exports.getAllAudit = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  const queryFeatures = new QueryFeatures(Audit.find(initialQuery), req.query)
+  const queryFeatures = new QueryFeatures(
+    Audit.find(initialQuery)
+      .populate({
+        path: '_userId',
+      })
+      .populate({
+        path: 'requestBody',
+        populate: {
+          path: 'document',
+          model: 'Document',
+          populate: {
+            path: '_createdBy',
+            model: 'User',
+          },
+        },
+      })
+      .populate({
+        path: 'requestBody',
+        populate: {
+          path: 'task',
+          model: 'Task',
+          populate: {
+            path: '_createdBy',
+            model: 'User',
+          },
+        },
+      }),
+    req.query
+  )
     .sort()
     .limitFields()
     .filter()
@@ -46,6 +74,22 @@ exports.getAudit = catchAsync(async (req, res, next) => {
 
   const audit = await queryFeatures.query;
   if (!audit) return next(new AppError('Log not found', 404));
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      audit,
+    },
+  });
+});
+
+exports.onCreateAudit = catchAsync(async (req, res, next) => {
+  const pickFields = ['_userId', 'requestBody', 'action', 'type'];
+
+  const filteredBody = _.pick(req.body, pickFields);
+  filteredBody._tenantId = req.user._tenantId;
+
+  const audit = await Audit.create(filteredBody);
 
   res.status(200).json({
     status: 'success',

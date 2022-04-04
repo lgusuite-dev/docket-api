@@ -3,6 +3,7 @@ const router = require('express').Router();
 const authController = require('../../controllers/GENERAL/auth.controller');
 const taskController = require('../../controllers/GENERAL/task.controller');
 
+router.route('/test').get(taskController.testApi);
 router.use(authController.authenticate);
 
 router.route('/').post(taskController.createTask).get(taskController.getTasks);

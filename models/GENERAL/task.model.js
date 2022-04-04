@@ -48,6 +48,8 @@ const TaskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Document',
     },
+    classification: String,
+    subClassification: String,
     status: {
       type: String,
       trim: true,

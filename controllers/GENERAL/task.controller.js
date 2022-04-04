@@ -10,6 +10,48 @@ const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 var ObjectId = require('mongoose').Types.ObjectId;
 
+exports.testApi = catchAsync(async (req, res, next) => {
+  const tasks = await Task.aggregate([
+    {
+      $lookup: {
+        from: 'documents',
+        localField: '_documentId',
+        foreignField: '_id',
+        as: '_document',
+      },
+    },
+    {
+      $unwind: {
+        path: '$_document',
+        preserveNullAndEmptyArrays: false,
+      },
+    },
+    {
+      $match: {
+        '_document.classification': {
+          $ne: null,
+        },
+        _tenantId: '',
+      },
+    },
+    // {
+    //   $addFields: {
+    //     classification: '$_document.classification',
+    //     subClassification: '$_document.subClassification',
+    //   },
+    // },
+  ]);
+
+  // execute add field classification and subclassification
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      tasks,
+    },
+  });
+});
+
 exports.createTask = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
@@ -326,7 +368,7 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     await audit.createAudit({
       _tenantId: req.user._tenantId,
       _userId: req.user._id,
-      type: 'Task',
+      _taskId: id,
       action: 'Reply',
       requestBody: filteredBody,
     });

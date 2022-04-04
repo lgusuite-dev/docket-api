@@ -5,7 +5,10 @@ const auditController = require('../../controllers/GENERAL/audit.controller');
 
 router.use(authController.authenticate);
 
-router.route('/').get(auditController.getAllAudit);
+router
+  .route('/')
+  .get(auditController.getAllAudit)
+  .post(auditController.onCreateAudit);
 
 router.route('/:id').get(auditController.getAudit);
 

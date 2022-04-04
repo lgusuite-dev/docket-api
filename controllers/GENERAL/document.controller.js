@@ -399,7 +399,7 @@ exports.updateDocument = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Document',
       action: 'Update',
-      requestBody: filteredBody,
+      requestBody: updatedDocument,
     });
   }
 
@@ -455,7 +455,7 @@ exports.uploadDocumentFile = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Document',
       action: 'Upload File',
-      requestBody: filteredBody,
+      requestBody: { document: document },
     });
   }
 
@@ -532,7 +532,7 @@ exports.updateUploadedDocumentFile = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Document',
       action: 'Update uploaded file',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -616,7 +616,7 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
     type: 'Document',
     action: 'Declassify',
     requestBody: {
-      documentId: id,
+      document: id,
     },
   });
 
@@ -753,7 +753,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Document',
       action: 'Classify',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -815,7 +815,7 @@ exports.acknowledgeDocument = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Document',
       action: 'Acknowledge',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -895,7 +895,7 @@ exports.deleteDocument = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
     type: 'Document',
     action: 'Delete',
-    requestBody: { documentId: id },
+    requestBody: { document: id },
   });
 
   res.status(204).json({
@@ -949,7 +949,7 @@ exports.forFinalAction = catchAsync(async (req, res, next) => {
       _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update for Final Action',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -1011,7 +1011,7 @@ exports.releaseDocument = catchAsync(async (req, res, next) => {
       _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Release',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -1081,7 +1081,7 @@ exports.documentAssignation = catchAsync(async (req, res, next) => {
       _userId: req.user._id,
       type: 'Document',
       action: 'Assign',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -1140,7 +1140,7 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
       _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update Process',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -1208,7 +1208,7 @@ exports.patchDocumentType = catchAsync(async (req, res, next) => {
       _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update Type',
-      requestBody: filteredBody,
+      requestBody: { document: id },
     });
   }
 
@@ -1254,7 +1254,7 @@ exports.patchDocumentStatus = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
     type: 'Document',
     action: 'Update Status',
-    requestBody: { status: action, documentId: id },
+    requestBody: { status: action, document: id },
   });
 
   res.status(200).json({
@@ -1435,7 +1435,7 @@ exports.updateDocumentIsAssigned = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
     type: 'Document',
     action: 'Update Assigned Status',
-    requestBody: { documentId: id },
+    requestBody: { document: id },
   });
 
   res.status(200).json({
