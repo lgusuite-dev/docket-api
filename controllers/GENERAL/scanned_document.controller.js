@@ -5,7 +5,7 @@ const Document = require('../../models/GENERAL/document.model');
 const catchAsync = require('../../utils/errors/catchAsync');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 
-const createPreview = (text) => {
+const createPreview = (text, keyword = '') => {
   const splitDocText = text.split(' ');
   let preview = '';
 
@@ -16,15 +16,17 @@ const createPreview = (text) => {
       : // if falsy, get left side value
         splitDocText[index - 2];
 
-    if (
-      text.includes('<strong>') &&
-      !nextValue.includes('<strong>') &&
-      !preview
-    ) {
+    // if (
+    //   text.includes('<strong>') &&
+    //   !nextValue.includes('<strong>') &&
+    //   !preview
+    // ) {
+
+    if (text.includes(keyword) && !preview) {
       // number of text from keyword to left
-      let start = index - 13;
+      let start = index - 20;
       // number of text from keyword to right
-      let end = index + 13;
+      let end = index + 20;
 
       if (start <= 0) {
         for (let i = index; i >= 0; i--) {
@@ -203,7 +205,17 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
 });
 
 exports.search = catchAsync(async (req, res, next) => {
-  console.log(req.body);
+  const { ocrpage, ocrlimit, docpage, doclimit } = req.query;
+
+  // OCR PAGINATION
+  const oPage = +ocrpage || 1;
+  const oLimit = +ocrlimit || 1500;
+  const oSkip = (oPage - 1) * oLimit;
+
+  // DOCUMENT PAGINATION
+  const dPage = +docpage || 1;
+  const dLimit = +doclimit || 1500;
+  const dSkip = (dPage - 1) * dLimit;
 
   var queryFromBody = JSON.parse(req.body.query || '{}');
   var query = {
@@ -231,17 +243,23 @@ exports.search = catchAsync(async (req, res, next) => {
   query['lean'] = true;
   const sorter = { score: { $meta: 'textScore' } };
 
-  const count = ScannedDocument.find(query).count();
+  const count = await ScannedDocument.find(query).count();
 
-  const ocrs = ScannedDocument.find(query)
+  const ocrs = await ScannedDocument.find(query)
     .sort(sorter)
+    .limit(oLimit)
+    .skip(oSkip)
+    .lean()
     .populate({
       path: '_documentId',
       populate: {
         path: '_files',
       },
-    })
-    .limit(20);
+    });
+
+  // for (let ocr of ocrs) {
+  //   ocr.preview = createPreview(ocr.text, req.body.keyword);
+  // }
 
   documentQuery['$or'] = [
     {
@@ -251,16 +269,19 @@ exports.search = catchAsync(async (req, res, next) => {
       controlNumber: { $regex: req.body.keyword, $options: 'i' },
     },
   ];
-  const documents = Document.find(documentQuery).limit(10);
-  const documentCount = Document.find(documentQuery).count();
+  const documents = await Document.find(documentQuery)
+    .limit(dLimit)
+    .skip(dSkip);
+
+  const documentCount = await Document.find(documentQuery).count();
 
   res.status(200).json({
     status: 'success',
     query,
     documentQuery,
-    count: await count,
-    ocrs: await ocrs,
-    documents: await documents,
-    documentCount: await documentCount,
+    count: count,
+    ocrs: ocrs,
+    documents: documents,
+    documentCount: documentCount,
   });
 });
