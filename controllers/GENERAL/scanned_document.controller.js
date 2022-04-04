@@ -205,18 +205,6 @@ exports.searchDocument = catchAsync(async (req, res, next) => {
 });
 
 exports.search = catchAsync(async (req, res, next) => {
-  const { ocrpage, ocrlimit, docpage, doclimit } = req.body;
-
-  // OCR PAGINATION
-  const oPage = +ocrpage || 1;
-  const oLimit = +ocrlimit || 1500;
-  const oSkip = (oPage - 1) * oLimit;
-
-  // DOCUMENT PAGINATION
-  const dPage = +docpage || 1;
-  const dLimit = +doclimit || 1500;
-  const dSkip = (dPage - 1) * dLimit;
-
   var queryFromBody = JSON.parse(req.body.query || '{}');
   var query = {
     $and: [
@@ -235,6 +223,18 @@ exports.search = catchAsync(async (req, res, next) => {
   if (queryFromBody.$or.length) {
     query.$and.push({ $and: queryFromBody.$or });
   }
+
+  const { ocrpage, ocrlimit, docpage, doclimit } = queryFromBody;
+
+  // OCR PAGINATION
+  const oPage = +ocrpage || 1;
+  const oLimit = +ocrlimit || 1500;
+  const oSkip = (oPage - 1) * oLimit;
+
+  // DOCUMENT PAGINATION
+  const dPage = +docpage || 1;
+  const dLimit = +doclimit || 1500;
+  const dSkip = (dPage - 1) * dLimit;
 
   var documentQuery = { ...query };
 
