@@ -1451,11 +1451,18 @@ exports.migrateDocuments = catchAsync(async (req, res, next) => {
   const filteredBody = _.pick(req.body, pickFields);
   const { documents } = filteredBody;
 
-  const insertedDocuments = await Document.insertMany(documents, {
-    ordered: false,
+  const migratedDocuments = await Document.insertMany(documents, {
+    new: true,
   });
+
+  // const insertedDocuments = await Document.insertMany(documents, {
+  //   ordered: false,
+  // });
 
   res.status(200).json({
     status: 'success',
+    env: {
+      documents: migratedDocuments,
+    },
   });
 });
