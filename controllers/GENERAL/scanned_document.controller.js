@@ -257,10 +257,6 @@ exports.search = catchAsync(async (req, res, next) => {
       },
     });
 
-  // for (let ocr of ocrs) {
-  //   ocr.preview = createPreview(ocr.text, req.body.keyword);
-  // }
-
   documentQuery['$or'] = [
     {
       subject: { $regex: req.body.keyword, $options: 'i' },
@@ -269,6 +265,19 @@ exports.search = catchAsync(async (req, res, next) => {
       controlNumber: { $regex: req.body.keyword, $options: 'i' },
     },
   ];
+
+  if (
+    req.user.type === 'Admin' ||
+    (req.user.access_level > 1 && req.user.type === 'User')
+  ) {
+    documentQuery['$or'].push({
+      type: 'Internal',
+      confidentialityLevel: { $gt: 1 },
+    });
+
+    delete documentQuery['$and'];
+  }
+
   const documents = await Document.find(documentQuery)
     .limit(dLimit)
     .skip(dSkip);
