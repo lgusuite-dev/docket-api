@@ -185,6 +185,7 @@ exports.getRoot = catchAsync(async (req, res, next) => {
     _createdBy: req.user._id,
     status: { $nin: ['Deleted', 'Reclassified'] },
     _parentId: { $eq: null },
+    migrated: { $ne: true },
   };
 
   const folder = await Folder.find(initialQuery).populate({
