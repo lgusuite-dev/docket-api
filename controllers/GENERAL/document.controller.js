@@ -1132,15 +1132,13 @@ exports.updateDocumentProcess = catchAsync(async (req, res, next) => {
 
     const updatedDocument = await document.save({ validateBeforeSave: false });
     updatedDocuments.push(updatedDocument);
-  }
 
-  if (!_.isEmpty(filteredBody)) {
     await audit.createAudit({
       _userId: req.user._id,
       _tenantId: req.user._tenantId,
       type: 'Document',
       action: 'Update Process',
-      requestBody: { document: id },
+      requestBody: { document: document._id },
     });
   }
 
