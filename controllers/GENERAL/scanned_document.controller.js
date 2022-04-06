@@ -220,9 +220,26 @@ exports.search = catchAsync(async (req, res, next) => {
     status: { $ne: 'Deleted' },
   };
 
-  if (queryFromBody.$or.length) {
-    query.$and.push({ $and: queryFromBody.$or });
+  if (req.user.type === 'Admin') {
+    delete query._excludes;
+    query.$and = [];
   }
+
+  if (req.user.access_level > 1) {
+    query.$and = [
+      {
+        $or: [
+          { _includes: req.user._id },
+          { confidentialityLevel: { $lte: req.user.access_level } },
+          {
+            type: 'Internal',
+          },
+        ],
+      },
+    ];
+  }
+
+  if (queryFromBody.$or.length) query.$and.push({ $and: queryFromBody.$or });
 
   const { ocrpage, ocrlimit, docpage, doclimit } = queryFromBody;
 
@@ -265,18 +282,6 @@ exports.search = catchAsync(async (req, res, next) => {
       controlNumber: { $regex: req.body.keyword, $options: 'i' },
     },
   ];
-
-  if (
-    req.user.type === 'Admin' ||
-    (req.user.access_level > 1 && req.user.type === 'User')
-  ) {
-    documentQuery['$or'].push({
-      type: 'Internal',
-      confidentialityLevel: { $gt: 1 },
-    });
-
-    delete documentQuery['$and'];
-  }
 
   const documents = await Document.find(documentQuery)
     .limit(dLimit)
