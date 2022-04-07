@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const Role = require('../../models/GENERAL/role.model');
+const { ObjectId } = require('mongodb');
 
 const audit = require('../../utils/audit/index.js');
 const catchAsync = require('../../utils/errors/catchAsync');
@@ -53,6 +54,42 @@ exports.getAllRoles = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'Success',
     total,
+    env: {
+      roles,
+    },
+  });
+});
+
+exports.getRoleCount = catchAsync(async (req, res, next) => {
+  const { roleIds } = req.body;
+
+  const objectIds = roleIds.map((roleId) => ObjectId(roleId));
+
+  const roles = await User.aggregate([
+    {
+      $match: {
+        _role: { $in: objectIds },
+      },
+    },
+    {
+      $group: {
+        _id: '$_role',
+        count: {
+          $sum: 1,
+        },
+      },
+    },
+    {
+      $match: {
+        count: {
+          $gt: 1,
+        },
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: 'Success',
     env: {
       roles,
     },

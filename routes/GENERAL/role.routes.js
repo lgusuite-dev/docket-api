@@ -20,4 +20,6 @@ router.route('/:id/:action').patch(roleController.patchRole);
 
 router.route('/checkRoleInUsers/:id').get(roleController.checkRoleInUsers);
 
+router.route('/roleCount').post(roleController.getRoleCount);
+
 module.exports = router;
