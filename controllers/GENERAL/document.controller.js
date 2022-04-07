@@ -1464,3 +1464,65 @@ exports.migrateDocuments = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.uploadMigratedDocumentFiles = catchAsync(async (req, res, next) => {
+  const { documentIdFiles } = req.body;
+
+  const updatedDocumentIds = [];
+  if (documentIdFiles) {
+    for (const [_documentId, fileMetadatas] of Object.entries(
+      documentIdFiles
+    )) {
+      if (!_documentId || !fileMetadatas || !Array.isArray(fileMetadatas)) {
+        continue;
+      }
+
+      const document = await Document.findById(_documentId);
+      if (!document) continue;
+
+      for (let metadata of fileMetadatas) {
+        const fileNameArr = metadata.name.split('.');
+        //remove file extension
+        fileNameArr.pop();
+
+        const insertFileBody = {
+          name: fileNameArr.join('.'),
+          _documentId,
+          _createdBy: req.user._id,
+          _tenantId: req.user._tenantId,
+          versionNumber: 'Version 1',
+          dropbox: metadata,
+        };
+        const insertedFile = await File.create(insertFileBody);
+
+        document._files.push(insertedFile._id);
+        document.fileLength = document._files.length;
+        document._updatedBy = req.user._id;
+        document.ocrStatus = 'No';
+      }
+
+      await document.save({ validateBeforeSave: false });
+
+      await audit.createAudit({
+        _tenantId: req.user._tenantId,
+        _userId: req.user._id,
+        type: 'Document Migration',
+        action: 'Migrated File',
+        requestBody: { document: document },
+      });
+
+      updatedDocumentIds.push(document._id);
+    }
+  }
+
+  const documents = await Document.find({
+    _id: { $in: updatedDocumentIds },
+  }).populate('_files');
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      documents: documents,
+    },
+  });
+});

@@ -17,6 +17,9 @@ router
   .route('/classification')
   .get(documentController.getDocumentClassification);
 
+router
+  .route('/migrate/files')
+  .post(documentController.uploadMigratedDocumentFiles);
 router.route('/migrate').post(documentController.migrateDocuments);
 
 router
