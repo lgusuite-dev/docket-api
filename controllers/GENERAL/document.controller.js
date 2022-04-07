@@ -301,7 +301,7 @@ exports.getDocumentFiles = catchAsync(async (req, res, next) => {
 
   const fileQuery = {
     _documentId: id,
-    // _id: { $in: document._files },
+    _id: { $in: document._files },
     status: { $ne: 'Deleted' },
   };
 
