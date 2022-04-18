@@ -82,7 +82,7 @@ exports.getRoleCount = catchAsync(async (req, res, next) => {
     {
       $match: {
         count: {
-          $gt: 1,
+          $gte: 1,
         },
       },
     },
