@@ -684,7 +684,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
     }
   }
 
-  if (document.type === 'Incoming') {
+  if (document.type === 'Incoming' && document.controlNumber) {
     const controlNumber = `${document.controlNumber}-${seq2}-${fieldBased2}`;
 
     filteredBody.controlNumber = controlNumber;
