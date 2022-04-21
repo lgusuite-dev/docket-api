@@ -5,6 +5,8 @@ const File = require('../../models/GENERAL/file.model');
 const Task = require('../../models/GENERAL/task.model');
 const ScannedDocument = require('../../models/GENERAL/scanned_document.model');
 
+const ObjectId = require('mongoose').Types.ObjectId;
+
 const ControlNumber = require('../../utils/control-number/controlNumber');
 const { evaluateString } = require('../../utils/function');
 
@@ -73,7 +75,7 @@ exports.generateDocuments = catchAsync(async (req, res, next) => {
     type: { $in: ['Incoming', 'Initial'] },
     _tenantId: req.user._tenantId,
     createdAt: {
-      $gte: from,
+      $gte: new Date(from),
     },
   };
 
@@ -624,6 +626,94 @@ exports.declassifyDocument = catchAsync(async (req, res, next) => {
     status: 'success',
     env: {
       document: duplicateDocument,
+    },
+  });
+});
+
+exports.predictDocumentNumber = catchAsync(async (req, res, next) => {
+  // aggregate
+
+  const { documentType } = req.body;
+
+  const now = new Date();
+
+  const month = now.toLocaleString('en-US', {
+    month: 'numeric',
+    timeZone: 'Asia/Singapore',
+  });
+
+  const year = now.toLocaleString('en-US', {
+    year: 'numeric',
+    timeZone: 'Asia/Singapore',
+  });
+
+  const from = new Date(year, month - 1, 1).toISOString();
+
+  // var doubles = await Document.aggregate([
+  //   {
+  //     $match: {
+  //       type: documentType,
+  //       _tenantId: ObjectId(req.user._tenantId),
+  //       classification: { $ne: null },
+  //       createdAt: { $gte: new Date(from) },
+  //     },
+  //   },
+  //   {
+  //     $project: {
+  //       controlNumber: 1,
+  //       f1: { $arrayElemAt: [{ $split: ['$controlNumber', '-'] }, 1] },
+  //     },
+  //   },
+  //   {
+  //     $group: {
+  //       _id: null,
+  //       count: { $sum: 1 },
+  //     },
+  //   },
+  //   {
+  //     $match: {
+  //       count: { $gt: 1 },
+  //     },
+  //   },
+  // ]);
+  //
+
+  const totalDocuments = await Document.find({
+    status: { $nin: ['Deleted', 'Reclassified'] },
+    type: documentType,
+    _tenantId: req.user._tenantId,
+    classification: { $ne: null },
+    createdAt: {
+      $gte: from,
+    },
+  }).count();
+
+  let fieldBased1 = '';
+  for (const logic of settings.CLASSIFICATION_LOGIC) {
+    if (evaluateString(logic.if, { type: documentType })) {
+      fieldBased1 = logic.then;
+      break;
+    }
+  }
+
+  // `${fieldBased1}-${seq1}-${mm}${yy}`\
+
+  // resets monthly
+  const seq1 = (totalDocuments + 1).toString().padStart(3, '0');
+  // month
+  const mm = month.toString().padStart(2, '0');
+
+  // year
+  const yy = year.toString().substring(2);
+
+  const predictedCn = `${fieldBased1}-${seq1}-${mm}${yy}`;
+
+  res.status(200).json({
+    status: 'success',
+    env: {
+      predictedCn,
+      // doubles,
+      // from,
     },
   });
 });

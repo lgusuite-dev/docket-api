@@ -21,6 +21,7 @@ router
   .route('/migrate/files')
   .post(documentController.uploadMigratedDocumentFiles);
 router.route('/migrate').post(documentController.migrateDocuments);
+router.route('/control-number').post(documentController.predictDocumentNumber);
 
 router
   .route('/:id')
