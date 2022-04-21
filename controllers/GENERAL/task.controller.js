@@ -80,7 +80,8 @@ exports.createTask = catchAsync(async (req, res, next) => {
     });
   } else if (filteredBody._documentId) {
     const document = await Document.findById(filteredBody._documentId);
-
+    filteredBody['classification'] = document.classification;
+    filteredBody['subClassification'] = document.subClassification;
     if (!document)
       return next(new AppError(`Document reference id not found.`, 404));
   } else {
@@ -91,6 +92,7 @@ exports.createTask = catchAsync(async (req, res, next) => {
     prevTask = await Task.findById(id);
     if (!prevTask) return next(new AppError(`Main Task Id not found.`, 404));
     filteredBody['_previousTaskId'] = id;
+
     filteredBody['_mainTaskId'] = prevTask._mainTaskId || id;
   }
 
