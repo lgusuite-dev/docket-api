@@ -698,7 +698,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   } else {
     const from = new Date(year, month - 1, 1).toISOString();
     const totalDocsQuery = {
-      status: { $nin: ['Deleted', 'Reclassified'] },
+      status: { $nin: ['Deleted'] },
       type: document.type,
       _tenantId: req.user._tenantId,
       classification: { $ne: null },
@@ -709,6 +709,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
 
     let totalDocuments = await Document.find(totalDocsQuery).count();
 
+    // R
     let fieldBased1 = '';
     for (const logic of settings.CLASSIFICATION_LOGIC) {
       if (evaluateString(logic.if, { type: document.type })) {
@@ -717,8 +718,13 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
       }
     }
 
+    // resets monthly
     const seq1 = (totalDocuments + 1).toString().padStart(3, '0');
+
+    // month
     const mm = month.toString().padStart(2, '0');
+
+    // year
     const yy = year.toString().substring(2);
 
     filteredBody.controlNumber = `${fieldBased1}-${seq1}-${mm}${yy}-${seq2}-${fieldBased2}`;
