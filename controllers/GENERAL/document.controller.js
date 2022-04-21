@@ -698,7 +698,7 @@ exports.classifyDocument = catchAsync(async (req, res, next) => {
   } else {
     const from = new Date(year, month - 1, 1).toISOString();
     const totalDocsQuery = {
-      status: { $nin: ['Deleted'] },
+      status: { $nin: ['Deleted', 'Reclassified'] },
       type: document.type,
       _tenantId: req.user._tenantId,
       classification: { $ne: null },
