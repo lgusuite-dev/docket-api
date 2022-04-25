@@ -9,6 +9,7 @@ const catchAsync = require('../../utils/errors/catchAsync');
 const AppError = require('../../utils/errors/AppError');
 const QueryFeatures = require('../../utils/query/queryFeatures');
 var ObjectId = require('mongoose').Types.ObjectId;
+const mongoose = require('mongoose');
 
 exports.testApi = catchAsync(async (req, res, next) => {
   const tasks = await Task.aggregate([
@@ -31,7 +32,7 @@ exports.testApi = catchAsync(async (req, res, next) => {
         '_document.classification': {
           $ne: null,
         },
-        _tenantId: '',
+        _tenantId: new mongoose.Types.ObjectId('622eb90fdeaf588e358a92ba'),
       },
     },
     // {
@@ -43,6 +44,17 @@ exports.testApi = catchAsync(async (req, res, next) => {
   ]);
 
   // execute add field classification and subclassification
+  tasks.forEach(async (task) => {
+    await Task.updateOne(
+      { _id: task._id },
+      {
+        classification: task._document.classification,
+        subClassification: task._document.subClassification,
+      }
+    );
+  });
+
+  console.log(tasks);
 
   res.status(200).json({
     status: 'success',
@@ -80,8 +92,11 @@ exports.createTask = catchAsync(async (req, res, next) => {
     });
   } else if (filteredBody._documentId) {
     const document = await Document.findById(filteredBody._documentId);
-    filteredBody['classification'] = document.classification;
-    filteredBody['subClassification'] = document.subClassification;
+    if (document.classification) {
+      filteredBody['classification'] = document.classification;
+      filteredBody['subClassification'] = document.subClassification;
+    }
+
     if (!document)
       return next(new AppError(`Document reference id not found.`, 404));
   } else {
@@ -339,23 +354,28 @@ exports.updateTask = catchAsync(async (req, res, next) => {
     _tenantId: req.user._tenantId,
   };
 
-  if (filteredBody._documentId && !ObjectId.isValid(filteredBody._documentId)) {
-    return res.status(400).json({
-      status: 'error',
-      message: 'Document reference id is not valid.',
-    });
-  } else if (filteredBody._documentId) {
+  let tempTask = await Task.findOne(initialQuery);
+  if (!tempTask) return next(new AppError('Task not found!', 404));
+
+  //remove task document ref
+  if (tempTask && tempTask._documentId && !filteredBody._documentId) {
+    filteredBody['classification'] = undefined;
+    filteredBody['subClassification'] = undefined;
+  }
+  //update task document ref
+  if (filteredBody._documentId) {
     const document = await Document.findById(filteredBody._documentId);
 
-    if (!document)
-      return res.status(404).json({
+    if (!document) {
+      return res.status(400).json({
         status: 'error',
-        error: {
-          message: 'Document reference id not found.',
-        },
+        message: 'Document reference id is not valid.',
       });
-  } else {
-    delete filteredBody._documentId;
+    }
+    if (document.classification) {
+      filteredBody['classification'] = document.classification;
+      filteredBody['subClassification'] = document.subClassification;
+    }
   }
 
   const task = await Task.findOneAndUpdate(initialQuery, filteredBody, {
