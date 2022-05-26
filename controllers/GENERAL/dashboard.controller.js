@@ -752,19 +752,19 @@ exports.taskModule = catchAsync(async (req, res, next) => {
   ]);
 
   // My Declined Task
-  const my_declined_task = await Task.aggregate([
-    {
-      $match: {
-        status: { $nin: ['Deleted', 'Cancelled'] },
-        status: { eq: 'Declined' },
-        _assigneeId: req.user._id,
-        _tenantId: req.user._tenantId,
-      },
-    },
-    {
-      $count: 'count',
-    },
-  ]);
+  // const my_declined_task = await Task.aggregate([
+  //   {
+  //     $match: {
+  //       status: { $nin: ['Deleted', 'Cancelled'] },
+  //       status: { eq: 'Declined' },
+  //       _assigneeId: req.user._id,
+  //       _tenantId: req.user._tenantId,
+  //     },
+  //   },
+  //   {
+  //     $count: 'count',
+  //   },
+  // ]);
 
   // My Completed Task
   const my_completed_task = await Task.aggregate([
@@ -786,7 +786,7 @@ exports.taskModule = catchAsync(async (req, res, next) => {
     env: {
       my_pending_task: my_pending_task[0] || { count: 0 },
       my_delayed_task: my_delayed_task[0] || { count: 0 },
-      my_declined_task: my_declined_task[0] || { count: 0 },
+      // my_declined_task: my_declined_task[0] || { count: 0 },
       my_completed_task: my_completed_task[0] || { count: 0 },
     },
   });
