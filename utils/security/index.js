@@ -3,6 +3,7 @@ const AppError = require('../../utils/errors/AppError');
 const allowedOrigins = [
   'https://docket-ph.herokuapp.com',
   'https://docket-clone.herokuapp.com',
+  'https://docket-ph-staging.herokuapp.com',
   'https://docket-ph-development.herokuapp.com',
   'https://docket-batac.herokuapp.com',
   'https://www.lgudocket.com',
