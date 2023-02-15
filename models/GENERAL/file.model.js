@@ -18,7 +18,7 @@ const FileSchema = new mongoose.Schema(
     ocrStatus: {
       type: String,
       default: 'No',
-      enum: ['No', 'Scanning', 'Done'],
+      enum: ['No', 'Scanning', 'Done', 'Failed'],
     },
     versionsLength: {
       type: Number,

@@ -95,7 +95,7 @@ const DocumentSchema = new mongoose.Schema(
     ocrStatus: {
       type: String,
       default: 'No',
-      enum: ['No', 'Scanning', 'Done'],
+      enum: ['No', 'Scanning', 'Done', 'Failed'],
     },
     recipients: [
       {
