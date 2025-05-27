@@ -1,0 +1,10 @@
+.github
+node_modules
+.gitignore
+.prettierrc
+Dockerfile
+docket.yml
+package*.json
+README.md
+
+

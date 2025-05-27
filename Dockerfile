@@ -16,9 +16,7 @@ COPY package*.json ./
 RUN npm install
 
 # Copy app files
-COPY src src
-COPY start-tunnel.sh ./
-COPY .env ./
+COPY . .
 
 EXPOSE 3000 9229
 
