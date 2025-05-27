@@ -1,11 +1,12 @@
 const AppError = require('../../utils/errors/AppError');
 
 const allowedOrigins = [
-  'https://docket-ph.herokuapp.com',
-  'https://docket-clone.herokuapp.com',
-  'https://docket-ph-staging.herokuapp.com',
-  'https://docket-ph-development.herokuapp.com',
-  'https://docket-batac.herokuapp.com',
+  // 'https://docket-ph.herokuapp.com',
+  // 'https://docket-clone.herokuapp.com',
+  // 'https://docket-ph-staging.herokuapp.com',
+  // 'https://docket-ph-development.herokuapp.com',
+  // 'https://docket-batac.herokuapp.com',
+  'https://uvtmymwarz.ap-southeast-1.awsapprunner.com',
   'https://www.lgudocket.com',
   'http://localhost:4200',
   'http://localhost:8100',
