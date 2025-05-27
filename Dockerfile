@@ -12,11 +12,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy and install app dependencies
-COPY package*.json ./
-RUN npm install
+COPY . .
 
 # Copy app files
-COPY . .
+RUN npm install
 
 EXPOSE 3000 9229
 
