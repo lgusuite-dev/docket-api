@@ -35,6 +35,6 @@ if [ "$NODE_DEBUG_MODE" = "true" ]; then
   echo "🛠 Starting Node in debug mode"
   node --inspect=0.0.0.0:9229 server.js
 else
-  echo "🚀 Starting Node normally 1.0.0"
+  echo "🚀 Starting Node normally 1.0.1"
   node server.js
 fi
