@@ -11,8 +11,6 @@ process.on('uncaughtException', (err) => {
 require('dotenv').config();
 const app = require('./app');
 
-console.log(process.env.DATABASE);
-
 mongoose
   .connect(process.env.DATABASE, {
     useNewUrlParser: true,
