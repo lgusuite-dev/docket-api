@@ -22,7 +22,7 @@ mongoose
     console.log('✅ Connected to MongoDB');
   })
   .catch((err) => {
-    console.error('❌ Failed to connect to MongoDB');
+    console.error('❌ Failed to connect to MongoDB' , new Date());
     console.error(err.name, err.message);
     process.exit(1); // Exit the app if DB connection fails
   });
