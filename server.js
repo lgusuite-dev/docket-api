@@ -14,8 +14,18 @@ const app = require('./app');
 console.log(process.env.DATABASE);
 
 mongoose
-  .connect(process.env.DATABASE)
-  .then(() => console.log('Connected to DB'));
+  .connect(process.env.DATABASE, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.error('❌ Failed to connect to MongoDB');
+    console.error(err.name, err.message);
+    process.exit(1); // Exit the app if DB connection fails
+  });
 
 sgMail.setApiKey(process.env.SEND_GRID_APIKEY);
 
