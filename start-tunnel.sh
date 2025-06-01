@@ -2,7 +2,7 @@
 
 # Start the SSH tunnel in the background but keep it running
 autossh -i /root/.ssh/key.pem \
-  -L 27017:47.128.230.76:27017 \
+  -L 27017:localhost:27017 \
   ubuntu@47.128.230.76 \
   -o StrictHostKeyChecking=no \
   -o GSSAPIAuthentication=no \

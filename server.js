@@ -1,6 +1,5 @@
-// const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const sgMail = require('@sendgrid/mail');
-const database = require('./loaders/database');
 
 // sync codes exception safety net
 process.on('uncaughtException', (err) => {
@@ -12,10 +11,9 @@ process.on('uncaughtException', (err) => {
 require('dotenv').config();
 const app = require('./app');
 
-// mongoose
-//   .connect(process.env.DATABASE)
-//   .then(() => console.log('Connected to DB'));
-database.connect(process.env.DATABASE)
+mongoose
+  .connect(process.env.DATABASE)
+  .then(() => console.log('Connected to DB'));
 
 sgMail.setApiKey(process.env.SEND_GRID_APIKEY);
 
