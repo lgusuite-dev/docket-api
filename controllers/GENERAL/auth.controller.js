@@ -43,7 +43,7 @@ const mailResetToken = async (user, resetToken) => {
   if (process.env.NODE_ENV === 'test') return;
 
   try {
-    const resetLink = `https://docket-ph.herokuapp.com/reset-password/${resetToken}`;
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
     const validityDate = new Date(Date.now() + 10 * 60 * 1000).toLocaleString();
 
     const mailOptions = {
