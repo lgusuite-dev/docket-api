@@ -1,10 +1,8 @@
 const mongoose = require('mongoose');
 
-// sync codes exception safety net
 process.on('uncaughtException', (err) => {
   console.log('UNCAUGHT EXCEPTION! Shutting down...');
   console.log(err.name, err.message);
-  // process.exit(1);
 });
 
 require('dotenv').config();
@@ -32,7 +30,4 @@ const server = app.listen(process.env.PORT, () =>
 process.on('unhandledRejection', (err) => {
   console.log('UNHANDLED REJECTION! Shutting down...');
   console.log(err.name, err.message);
-  // server.close(() => {
-  //   process.exit(1);
-  // });
 });
