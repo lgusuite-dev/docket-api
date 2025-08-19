@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: ap-southeast-1
-  AWS_PARAMETER_STORE: docket-main-staging-parameterstore
+  AWS_PARAMETER_STORE: docket-staging-api-parameterstore
   ECR_REPOSITORY: lgusuite-ecr-repository
   IMAGE_TAG: docket-staging-api
 
