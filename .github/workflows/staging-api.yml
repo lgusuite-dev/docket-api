@@ -1,0 +1,57 @@
+name: Run tests and deploy to AWS
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-southeast-1
+  AWS_PARAMETER_STORE: docket-staging-api-parameterstore
+  ECR_REPOSITORY: lgusuite-ecr-repository
+  IMAGE_TAG: docket-staging-api
+
+jobs:
+  # run-tests:
+  #   name: Run tests
+
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create PEM file from secret
+        run: |
+          echo "${{ secrets.DB_PEM_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Load secrets and save to .env
+        env:
+          AWS_PARAMETER_STORE: ${{ env.AWS_PARAMETER_STORE }}
+        run: aws ssm get-parameter --name $AWS_PARAMETER_STORE --with-decryption --query "Parameter.Value" --output text > .env
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          # OR IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT

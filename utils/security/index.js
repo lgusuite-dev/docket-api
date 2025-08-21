@@ -7,12 +7,14 @@ const allowedOrigins = [
   // 'https://docket-ph-development.herokuapp.com',
   // 'https://docket-batac.herokuapp.com',
   'https://uvtmymwarz.ap-southeast-1.awsapprunner.com',
+  'https://nhpwazsgq2.ap-southeast-1.awsapprunner.com', // staging UI
+  'https://staging.lgudocket.com', // staging UI
   'https://www.lgudocket.com',
   'http://localhost:4200',
   'http://localhost:8100',
   'http://localhost:8101',
   'http://localhost:4201',
-  'http://localhost',
+  'http://localhost:7777',
 ];
 
 exports.origin = function (origin, callback) {
