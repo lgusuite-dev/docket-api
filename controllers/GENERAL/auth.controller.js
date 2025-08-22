@@ -179,7 +179,7 @@ exports.authenticate = catchAsync(async (req, res, next) => {
 
   const verifiedToken = _verifyToken(token);
 
-  const user = await User.findById(verifiedToken.id);
+  const user = await User.findById(verifiedToken.id).populate('_role');
 
   if (!user || user.status === 'Deleted')
     return next(
@@ -197,14 +197,35 @@ exports.authenticate = catchAsync(async (req, res, next) => {
   next();
 });
 
+exports.restrictToSpecifiedAccess = () => {
+  return (req, res, next) => {
+    if (['Admin'].includes(req.user.type)) {
+      return next();
+    }
+
+    var hasAccess = req.user?._role?.access?.find(
+      (i) => i.label === 'User Management'
+    )?.hasAccess;
+
+    if (hasAccess) {
+      return next();
+    }
+
+    return next(
+      new AppError('You do not have permission to perform this action', 403)
+    );
+  };
+};
+
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.type))
+    if (!roles.includes(req.user.type)) {
       return next(
         new AppError('You do not have permission to perform this action', 403)
       );
+    }
 
-    next();
+    return next();
   };
 };
 
