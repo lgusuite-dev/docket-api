@@ -105,11 +105,11 @@ exports.login = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne(query).select('+password');
 
-  // if (!user || !(await user.isPasswordCorrect(password, user.password)))
-  //   return next(new AppError('Incorrect email or password', 401));
+  if (!user || !(await user.isPasswordCorrect(password, user.password)))
+    return next(new AppError('Incorrect email or password', 401));
 
-  // if (user.status === 'Suspended')
-  //   return next(new AppError('Your Account is Suspended', 403));
+  if (user.status === 'Suspended')
+    return next(new AppError('Your Account is Suspended', 403));
 
   // const log = audit.createLogData(user._id, 'Authentication', 'Login');
   await audit.createAudit({
