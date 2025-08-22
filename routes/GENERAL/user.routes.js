@@ -30,7 +30,7 @@ router
 router
   .route('/users/:id')
   .get(userController.getUser)
-  .put(authController.restrictTo('Admin'), userController.updateUser)
+  .put(authController.restrictToSpecifiedAccess(), userController.updateUser)
   .delete(
     authController.restrictToSpecifiedAccess(),
     userController.deleteUser
