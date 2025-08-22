@@ -194,6 +194,8 @@ exports.authenticate = catchAsync(async (req, res, next) => {
 
   req.user = user;
 
+  delete req.user._role;
+
   req.user.canUpdateUsers = req.user?._role?.access?.find(
     (i) => i.label === 'User Management'
   )?.hasAccess;
@@ -211,7 +213,7 @@ exports.restrictToSpecifiedAccess = () => {
       return next();
     }
 
-    return next(
+    next(
       new AppError('You do not have permission to perform this action', 403)
     );
   };
@@ -224,8 +226,7 @@ exports.restrictTo = (...roles) => {
         new AppError('You do not have permission to perform this action', 403)
       );
     }
-
-    return next();
+    next();
   };
 };
 
