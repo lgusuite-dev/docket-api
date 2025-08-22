@@ -194,7 +194,7 @@ exports.authenticate = catchAsync(async (req, res, next) => {
 
   req.user = user;
 
-  req.user.hasUserManagementAccess = req.user?._role?.access?.find(
+  req.user.canUpdateUsers = req.user?._role?.access?.find(
     (i) => i.label === 'User Management'
   )?.hasAccess;
 
@@ -207,7 +207,7 @@ exports.restrictToSpecifiedAccess = () => {
       return next();
     }
 
-    if (req.user.hasUserManagementAccess) {
+    if (req.user.canUpdateUsers) {
       return next();
     }
 
