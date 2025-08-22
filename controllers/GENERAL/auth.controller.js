@@ -194,6 +194,10 @@ exports.authenticate = catchAsync(async (req, res, next) => {
 
   req.user = user;
 
+  req.user.hasUserManagementAccess = req.user?._role?.access?.find(
+    (i) => i.label === 'User Management'
+  )?.hasAccess;
+
   next();
 });
 
@@ -203,11 +207,7 @@ exports.restrictToSpecifiedAccess = () => {
       return next();
     }
 
-    var hasAccess = req.user?._role?.access?.find(
-      (i) => i.label === 'User Management'
-    )?.hasAccess;
-
-    if (hasAccess) {
+    if (req.user.hasUserManagementAccess) {
       return next();
     }
 
