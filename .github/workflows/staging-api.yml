@@ -2,8 +2,7 @@ name: Run tests and deploy to AWS
 
 on:
   push:
-    branches: [staging]
-  workflow_dispatch:
+    branches: [staging2]
 
 env:
   AWS_REGION: ap-southeast-1
