@@ -4,3 +4,4 @@ node_modules/
 *.pem
 docker-compose.yml
 sandbox.js
+docketmobile.json
