@@ -2,7 +2,7 @@ name: Run tests and deploy to AWS
 
 on:
   push:
-    branches: [staging2]
+    branches: [staging]
 
 env:
   AWS_REGION: ap-southeast-1
