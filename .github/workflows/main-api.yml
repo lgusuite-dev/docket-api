@@ -37,6 +37,11 @@ jobs:
           echo "${{ secrets.DB_PEM_KEY }}" > key.pem
           chmod 600 key.pem
 
+      - name: Create Firebase file from secret
+        run: |
+          echo '${{ secrets.FIREBASE_JSON }}' > docketmobile.json
+          chmod 600 docketmobile.json
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2

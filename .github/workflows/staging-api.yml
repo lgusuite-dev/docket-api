@@ -37,7 +37,7 @@ jobs:
 
       - name: Create Firebase file from secret
         run: |
-          echo "${{ secrets.FIREBASE_JSON }}" > docketmobile.json
+          echo '${{ secrets.FIREBASE_JSON }}' > docketmobile.json
           chmod 600 docketmobile.json
 
       - name: Login to Amazon ECR
