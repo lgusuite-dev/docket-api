@@ -3,7 +3,6 @@ name: Run tests and deploy to AWS
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 env:
   AWS_REGION: ap-southeast-1
