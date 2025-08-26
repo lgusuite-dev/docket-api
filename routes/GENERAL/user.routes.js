@@ -30,8 +30,11 @@ router
 router
   .route('/users/:id')
   .get(userController.getUser)
-  .put(authController.restrictTo('Admin'), userController.updateUser)
-  .delete(authController.restrictTo('Admin'), userController.deleteUser);
+  .put(authController.restrictToSpecifiedAccess(), userController.updateUser)
+  .delete(
+    authController.restrictToSpecifiedAccess(),
+    userController.deleteUser
+  );
 
 router
   .route('/admins/:id/:action')
@@ -39,6 +42,6 @@ router
 
 router
   .route('/users/:id/:action')
-  .patch(authController.restrictTo('Admin'), userController.patchUser);
+  .patch(authController.restrictToSpecifiedAccess(), userController.patchUser);
 
 module.exports = router;
