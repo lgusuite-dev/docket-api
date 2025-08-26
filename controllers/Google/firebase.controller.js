@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../../docketmobile-firebase-adminsdk-jmzg1-d0dec12b77.json');
+const serviceAccount = require('../../docketmobile.json');
 
 const catchAsync = require('../../utils/errors/catchAsync');
 

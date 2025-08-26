@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const { sendMail } = require('../../utils/comms/email');
 const { sendSMS } = require('../../utils/comms/sms');
-const serviceAccount = require('../../docketmobile-firebase-adminsdk-jmzg1-d0dec12b77.json');
+const serviceAccount = require('../../docketmobile.json');
 const admin = require('firebase-admin');
 
 const TaskSchema = new mongoose.Schema(
